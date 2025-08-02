@@ -1,0 +1,3 @@
+# Pingo
+
+Pingo is a self-hosted, open-source monitoring tool designed as a portfolio project to demonstrate full-stack development skills. The project provides basic uptime monitoring, supports email and webhook notifications, and includes a simple admin interface for managing monitoring targets. Designed as a learning-focused alternative to commercial solutions like Pingdom, Pingo showcases modern development practices while delivering a fully functional monitoring
