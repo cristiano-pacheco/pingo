@@ -1,18 +1,30 @@
--- Users table
-CREATE TABLE IF NOT EXISTS users (
+-- Create user status enum
+CREATE TYPE user_status AS ENUM ('pending', 'active', 'inactive', 'suspended');
+
+-- Create users table
+CREATE TABLE users (
     id BIGSERIAL PRIMARY KEY,
-    "name" VARCHAR(255) NOT NULL,
-    email VARCHAR(320) NOT NULL,
-    password_hash BYTEA NOT NULL,
-    "status" VARCHAR(50) NOT NULL,
-    reset_password_token BYTEA NULL,
-    account_confirmation_token BYTEA NULL,
-    last_login_at TIMESTAMP NULL,
-    email_verified_at TIMESTAMP NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+    email TEXT NOT NULL UNIQUE,
+    first_name TEXT NOT NULL,
+    last_name TEXT NOT NULL,
+    status user_status NOT NULL DEFAULT 'pending',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE UNIQUE INDEX IF NOT EXISTS user_email_idx ON users (email);
-CREATE INDEX IF NOT EXISTS idx_users_status ON users(status);
-CREATE INDEX IF NOT EXISTS idx_users_reset_token ON users(reset_password_token) WHERE reset_password_token IS NOT NULL;
+-- Create magic tokens table for one-time login links
+CREATE TABLE magic_tokens (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    token BYTEA NOT NULL UNIQUE,
+    expires_at TIMESTAMPTZ NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    used_at TIMESTAMPTZ,
+    CONSTRAINT unused_token CHECK (used_at IS NULL OR created_at <= used_at)
+);
+
+-- Create indexes for performance
+CREATE INDEX idx_users_email ON users(email);
+CREATE INDEX idx_users_status ON users(status);
+CREATE INDEX idx_magic_tokens_user ON magic_tokens(user_id);
+CREATE INDEX idx_magic_tokens_token ON magic_tokens(token);
