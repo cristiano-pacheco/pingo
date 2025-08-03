@@ -32,7 +32,7 @@ func (r *userRepository) FindByID(ctx context.Context, id string) (model.UserMod
 		}
 		return model.UserModel{}, err
 	}
-	return user, err
+	return user, nil
 }
 
 func (r *userRepository) FindByEmail(ctx context.Context, email string) (model.UserModel, error) {
