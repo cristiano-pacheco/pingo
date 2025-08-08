@@ -2,4 +2,4 @@ package errs
 
 import "go.uber.org/fx"
 
-var Module = fx.Module("shared/errs", fx.Provide(New))
+var Module = fx.Module("kernel/errs", fx.Provide(New))

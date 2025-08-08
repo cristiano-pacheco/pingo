@@ -7,11 +7,11 @@ import (
 	"github.com/cristiano-pacheco/pingo/pkg/database"
 )
 
-type GoflixDB struct {
+type PingoDB struct {
 	*gorm.DB
 }
 
-func New(cfg config.Config) *GoflixDB {
+func New(cfg config.Config) *PingoDB {
 	dbConfig := database.Config{
 		Host:               cfg.DB.Host,
 		User:               cfg.DB.User,
@@ -27,9 +27,9 @@ func New(cfg config.Config) *GoflixDB {
 
 	db := database.OpenConnection(dbConfig)
 
-	return &GoflixDB{DB: db}
+	return &PingoDB{DB: db}
 }
 
-func NewFromGorm(db *gorm.DB) *GoflixDB {
-	return &GoflixDB{db}
+func NewFromGorm(db *gorm.DB) *PingoDB {
+	return &PingoDB{db}
 }

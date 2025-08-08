@@ -3,7 +3,7 @@ package errs
 import (
 	ut "github.com/go-playground/universal-translator"
 
-	"github.com/cristiano-pacheco/pingo/internal/shared/modules/validator"
+	"github.com/cristiano-pacheco/goflix/internal/shared/modules/validator"
 )
 
 type ErrorMapper interface {

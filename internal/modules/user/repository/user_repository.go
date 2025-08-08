@@ -14,6 +14,7 @@ type UserRepository interface {
 	FindByEmail(ctx context.Context, email string) (model.UserModel, error)
 	Create(ctx context.Context, user model.UserModel) (model.UserModel, error)
 	Update(ctx context.Context, user model.UserModel) error
+	IsUserActivated(ctx context.Context, userID uint64) (bool, error)
 }
 
 type userRepository struct {
@@ -62,4 +63,19 @@ func (r *userRepository) Update(ctx context.Context, user model.UserModel) error
 	}
 
 	return nil
+}
+
+func (r *userRepository) IsUserActivated(ctx context.Context, userID uint64) (bool, error) {
+	var isActivated bool
+	err := r.db.WithContext(ctx).
+		Table("users").
+		Select("is_activated").
+		Where("id = ?", userID).
+		Scan(&isActivated).Error
+
+	if err != nil {
+		return false, err
+	}
+
+	return isActivated, nil
 }

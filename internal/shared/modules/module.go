@@ -7,7 +7,6 @@ import (
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/database"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/errs"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/http/httpserver"
-	"github.com/cristiano-pacheco/pingo/internal/shared/modules/http/middleware"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/http/router"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/jwt"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/logger"
@@ -31,6 +30,5 @@ var Module = fx.Module(
 	errs.Module,
 	redis.Module,
 	router.Module,
-	middleware.Module,
 	httpserver.Module,
 )

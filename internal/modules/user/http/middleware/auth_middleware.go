@@ -8,8 +8,9 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 
-	"github.com/cristiano-pacheco/pingo/internal/shared/modules/database"
+	"github.com/cristiano-pacheco/pingo/internal/modules/user/repository"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/errs"
+	shared_errs "github.com/cristiano-pacheco/pingo/internal/shared/modules/errs"
 	internal_jwt "github.com/cristiano-pacheco/pingo/internal/shared/modules/jwt"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/logger"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/registry"
@@ -19,20 +20,26 @@ import (
 
 type AuthMiddleware struct {
 	jwtParser          *jwt.Parser
-	db                 *database.GoflixDB
 	logger             logger.Logger
-	errorMapper        errs.ErrorMapper
+	errorMapper        shared_errs.ErrorMapper
 	privateKeyRegistry registry.PrivateKeyRegistry
+	userRepository     repository.UserRepository
 }
 
 func NewAuthMiddleware(
 	jwtParser *jwt.Parser,
-	db *database.GoflixDB,
 	logger logger.Logger,
 	errorMapper errs.ErrorMapper,
 	privateKeyRegistry registry.PrivateKeyRegistry,
+	userRepository repository.UserRepository,
 ) *AuthMiddleware {
-	return &AuthMiddleware{jwtParser, db, logger, errorMapper, privateKeyRegistry}
+	return &AuthMiddleware{
+		jwtParser,
+		logger,
+		errorMapper,
+		privateKeyRegistry,
+		userRepository,
+	}
 }
 
 func (m *AuthMiddleware) Middleware(next http.HandlerFunc) http.HandlerFunc {
@@ -70,9 +77,9 @@ func (m *AuthMiddleware) Middleware(next http.HandlerFunc) http.HandlerFunc {
 		}
 
 		ctx := r.Context()
-		isActivated, err := m.isUserActivated(ctx, userID)
+		isActivated, err := m.userRepository.IsUserActivated(ctx, userID)
 		if err != nil {
-			m.handleError(w, errs.ErrInternalServer)
+			m.handleError(w, shared_errs.ErrInternalServer)
 			return
 		}
 
@@ -88,22 +95,6 @@ func (m *AuthMiddleware) Middleware(next http.HandlerFunc) http.HandlerFunc {
 		// Call next handler with updated context
 		next(w, r.WithContext(ctx))
 	}
-}
-
-func (m *AuthMiddleware) isUserActivated(ctx context.Context, userID uint64) (bool, error) {
-	var isActivated bool
-	err := m.db.WithContext(ctx).
-		Table("users").
-		Select("is_activated").
-		Where("id = ?", userID).
-		Scan(&isActivated).Error
-
-	if err != nil {
-		m.logger.Error("error checking if user is activated", "error", err)
-		return false, err
-	}
-
-	return isActivated, nil
 }
 
 func (m *AuthMiddleware) handleError(w http.ResponseWriter, err error) {
