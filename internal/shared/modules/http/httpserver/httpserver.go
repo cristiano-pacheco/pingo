@@ -29,7 +29,7 @@ func NewHTTPServer(
 	}
 
 	isOtelEnabled := true
-	server := httpserver.NewHTTPServerWithChi(corsConfig, conf.App.Name, isOtelEnabled, conf.HTTPPort)
+	server := httpserver.NewHTTPServer(corsConfig, conf.App.Name, isOtelEnabled, conf.HTTPPort)
 
 	httpServer := &HTTPServer{
 		server: server,
@@ -46,6 +46,6 @@ func NewHTTPServer(
 	return httpServer
 }
 
-func (s *HTTPServer) Router() *chi.Mux {
+func (s *HTTPServer) Router() chi.Router {
 	return s.server.Router()
 }

@@ -14,6 +14,6 @@ func NewRouter(server *httpserver.HTTPServer) *Router {
 	return &Router{server: server}
 }
 
-func (r *Router) Router() *chi.Mux {
+func (r *Router) Router() chi.Router {
 	return r.server.Router()
 }
