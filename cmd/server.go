@@ -5,6 +5,7 @@ package cmd
 
 import (
 	"github.com/cristiano-pacheco/pingo/internal/modules/user"
+	shared "github.com/cristiano-pacheco/pingo/internal/shared/modules"
 	"github.com/spf13/cobra"
 	"go.uber.org/fx"
 )
@@ -14,7 +15,8 @@ var serverCmd = &cobra.Command{
 	Short: "REST API server",
 	Run: func(cmd *cobra.Command, args []string) {
 		app := fx.New(
-			fx.Provide(user.Module),
+			shared.Module,
+			user.Module,
 		)
 		app.Run()
 	},
