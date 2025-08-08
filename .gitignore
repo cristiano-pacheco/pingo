@@ -1,0 +1,6 @@
+.env
+cover.html
+cover.out
+.DS_Store
+reports
+__debug*
