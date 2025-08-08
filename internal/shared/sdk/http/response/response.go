@@ -7,7 +7,7 @@ import (
 	"maps"
 	"net/http"
 
-	"github.com/cristiano-pacheco/goflix/internal/shared/modules/errs"
+	"github.com/cristiano-pacheco/pingo/internal/shared/modules/errs"
 )
 
 func Error(w http.ResponseWriter, err error) {
