@@ -8,9 +8,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 
+	"github.com/cristiano-pacheco/pingo/internal/modules/user/errs"
 	"github.com/cristiano-pacheco/pingo/internal/modules/user/repository"
-	"github.com/cristiano-pacheco/pingo/internal/shared/modules/errs"
-	shared_errs "github.com/cristiano-pacheco/pingo/internal/shared/modules/errs"
 	internal_jwt "github.com/cristiano-pacheco/pingo/internal/shared/modules/jwt"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/logger"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/registry"
@@ -20,7 +19,6 @@ import (
 type AuthMiddleware struct {
 	jwtParser          *jwt.Parser
 	logger             logger.Logger
-	errorMapper        shared_errs.ErrorMapper
 	privateKeyRegistry registry.PrivateKeyRegistry
 	userRepository     repository.UserRepository
 }
@@ -28,14 +26,12 @@ type AuthMiddleware struct {
 func NewAuthMiddleware(
 	jwtParser *jwt.Parser,
 	logger logger.Logger,
-	errorMapper errs.ErrorMapper,
 	privateKeyRegistry registry.PrivateKeyRegistry,
 	userRepository repository.UserRepository,
 ) *AuthMiddleware {
 	return &AuthMiddleware{
 		jwtParser,
 		logger,
-		errorMapper,
 		privateKeyRegistry,
 		userRepository,
 	}
