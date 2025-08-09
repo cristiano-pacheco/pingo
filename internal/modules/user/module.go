@@ -1,8 +1,8 @@
 package user
 
 import (
-	"github.com/cristiano-pacheco/pingo/internal/modules/user/http/handler"
-	"github.com/cristiano-pacheco/pingo/internal/modules/user/http/router"
+	"github.com/cristiano-pacheco/pingo/internal/modules/user/http/gin/handler"
+	"github.com/cristiano-pacheco/pingo/internal/modules/user/http/gin/router"
 	"go.uber.org/fx"
 )
 

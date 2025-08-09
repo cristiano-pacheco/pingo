@@ -1,11 +1,11 @@
 package middleware
 
 import (
-	"context"
 	"net/http"
 	"strconv"
 	"strings"
 
+	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 
 	"github.com/cristiano-pacheco/pingo/internal/modules/user/repository"
@@ -15,7 +15,6 @@ import (
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/logger"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/registry"
 	"github.com/cristiano-pacheco/pingo/internal/shared/sdk/http/request"
-	"github.com/cristiano-pacheco/pingo/internal/shared/sdk/http/response"
 )
 
 type AuthMiddleware struct {
@@ -42,12 +41,12 @@ func NewAuthMiddleware(
 	}
 }
 
-func (m *AuthMiddleware) Middleware(next http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		// Extract and validate token
-		bearerToken := r.Header.Get("Authorization")
+func (m *AuthMiddleware) Middleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		bearerToken := c.GetHeader("Authorization")
 		if !strings.HasPrefix(bearerToken, "Bearer ") {
-			m.handleError(w, errs.ErrInvalidToken)
+			m.handleGinError(c, errs.ErrInvalidToken)
+			c.Abort()
 			return
 		}
 
@@ -60,44 +59,42 @@ func (m *AuthMiddleware) Middleware(next http.HandlerFunc) http.HandlerFunc {
 
 		var claims internal_jwt.Claims
 		token, err := m.jwtParser.ParseWithClaims(jwtToken, &claims, tokenKeyFunc)
-		if err != nil {
-			m.handleError(w, errs.ErrInvalidToken)
-			return
-		}
-
-		if !token.Valid {
-			m.handleError(w, errs.ErrInvalidToken)
+		if err != nil || !token.Valid {
+			m.handleGinError(c, errs.ErrInvalidToken)
+			c.Abort()
 			return
 		}
 
 		userID, err := strconv.ParseUint(claims.Subject, 10, 64)
 		if err != nil {
-			m.handleError(w, errs.ErrInvalidToken)
+			m.handleGinError(c, errs.ErrInvalidToken)
+			c.Abort()
 			return
 		}
 
-		ctx := r.Context()
+		ctx := c.Request.Context()
 		isActivated, err := m.userRepository.IsUserActivated(ctx, userID)
 		if err != nil {
-			m.handleError(w, shared_errs.ErrInternalServer)
+			m.handleGinError(c, shared_errs.ErrInternalServer)
+			c.Abort()
 			return
 		}
 
 		if !isActivated {
 			mError := m.errorMapper.MapCustomError(http.StatusUnauthorized, errs.ErrUserIsNotActivated.Error())
-			response.Error(w, mError)
+			c.JSON(http.StatusUnauthorized, mError)
+			c.Abort()
 			return
 		}
 
 		// Store user ID in context
-		ctx = context.WithValue(ctx, request.UserIDKey, userID)
+		c.Set(string(request.UserIDKey), userID)
 
-		// Call next handler with updated context
-		next(w, r.WithContext(ctx))
+		c.Next()
 	}
 }
 
-func (m *AuthMiddleware) handleError(w http.ResponseWriter, err error) {
+func (m *AuthMiddleware) handleGinError(c *gin.Context, err error) {
 	rError := m.errorMapper.Map(err)
-	response.Error(w, rError)
+	c.JSON(http.StatusUnauthorized, rError)
 }
