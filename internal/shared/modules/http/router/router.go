@@ -1,19 +1,19 @@
 package router
 
 import (
-	"github.com/go-chi/chi/v5"
+	"github.com/gin-gonic/gin"
 
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/http/httpserver"
 )
 
 type Router struct {
-	server *httpserver.HTTPServer
+	server *httpserver.GinHTTPServer
 }
 
-func NewRouter(server *httpserver.HTTPServer) *Router {
+func NewRouter(server *httpserver.GinHTTPServer) *Router {
 	return &Router{server: server}
 }
 
-func (r *Router) Router() chi.Router {
-	return r.server.Router()
+func (r *Router) Router() *gin.Engine {
+	return r.server.Engine()
 }
