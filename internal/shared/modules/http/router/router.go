@@ -1,19 +1,18 @@
 package router
 
 import (
-	"github.com/gin-gonic/gin"
-
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/http/httpserver"
+	"github.com/gofiber/fiber/v2"
 )
 
 type Router struct {
-	server *httpserver.GinHTTPServer
+	server *httpserver.FiberHTTPServer
 }
 
-func NewRouter(server *httpserver.GinHTTPServer) *Router {
+func NewRouter(server *httpserver.FiberHTTPServer) *Router {
 	return &Router{server: server}
 }
 
-func (r *Router) Router() *gin.Engine {
-	return r.server.Engine()
+func (r *Router) Router() *fiber.App {
+	return r.server.App()
 }

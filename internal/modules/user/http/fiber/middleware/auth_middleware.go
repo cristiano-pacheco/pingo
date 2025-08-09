@@ -1,11 +1,10 @@
 package middleware
 
 import (
-	"net/http"
 	"strconv"
 	"strings"
 
-	"github.com/gin-gonic/gin"
+	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
 
 	"github.com/cristiano-pacheco/pingo/internal/modules/user/errs"
@@ -37,13 +36,11 @@ func NewAuthMiddleware(
 	}
 }
 
-func (m *AuthMiddleware) Middleware() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		bearerToken := c.GetHeader("Authorization")
+func (m *AuthMiddleware) Middleware() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		bearerToken := c.Get("Authorization")
 		if !strings.HasPrefix(bearerToken, "Bearer ") {
-			m.handleGinError(c, errs.ErrInvalidToken)
-			c.Abort()
-			return
+			return fiber.ErrUnauthorized
 		}
 
 		jwtToken := strings.TrimSpace(bearerToken[7:])
@@ -56,41 +53,27 @@ func (m *AuthMiddleware) Middleware() gin.HandlerFunc {
 		var claims internal_jwt.Claims
 		token, err := m.jwtParser.ParseWithClaims(jwtToken, &claims, tokenKeyFunc)
 		if err != nil || !token.Valid {
-			m.handleGinError(c, errs.ErrInvalidToken)
-			c.Abort()
-			return
+			return errs.ErrInvalidToken
 		}
 
 		userID, err := strconv.ParseUint(claims.Subject, 10, 64)
 		if err != nil {
-			m.handleGinError(c, errs.ErrInvalidToken)
-			c.Abort()
-			return
+			return errs.ErrInvalidToken
 		}
 
-		ctx := c.Request.Context()
+		ctx := c.Context()
 		isActivated, err := m.userRepository.IsUserActivated(ctx, userID)
 		if err != nil {
-			m.handleGinError(c, shared_errs.ErrInternalServer)
-			c.Abort()
-			return
+			return err
 		}
 
 		if !isActivated {
-			mError := m.errorMapper.MapCustomError(http.StatusUnauthorized, errs.ErrUserIsNotActivated.Error())
-			c.JSON(http.StatusUnauthorized, mError)
-			c.Abort()
-			return
+			return errs.ErrUserIsNotActive
 		}
 
 		// Store user ID in context
-		c.Set(string(request.UserIDKey), userID)
+		c.Locals(string(request.UserIDKey), userID)
 
-		c.Next()
+		return nil
 	}
-}
-
-func (m *AuthMiddleware) handleGinError(c *gin.Context, err error) {
-	rError := m.errorMapper.Map(err)
-	c.JSON(http.StatusUnauthorized, rError)
 }
