@@ -3,7 +3,6 @@ module github.com/cristiano-pacheco/pingo
 go 1.24.5
 
 require (
-	github.com/go-chi/chi/v5 v5.2.2
 	github.com/go-mail/mail/v2 v2.3.0
 	github.com/go-playground/locales v0.14.1
 	github.com/go-playground/universal-translator v0.18.1
