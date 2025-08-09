@@ -1,10 +1,14 @@
 package errs
 
-import "errors"
+import (
+	"net/http"
+
+	"github.com/cristiano-pacheco/pingo/pkg/errs"
+)
 
 var (
-	ErrUserIsNotActivated              = errors.New("the user is not activated")
-	ErrInvalidCredentials              = errors.New("invalid credentials")
-	ErrInvalidToken                    = errors.New("invalid token")
-	ErrInvalidAccountConfirmationToken = errors.New("invalid account confirmation token")
+	ErrInvalidAccountConfirmationToken = errs.New(http.StatusBadRequest, "INVALID_ACCOUNT_CONFIRMATION_TOKEN", "Invalid account confirmation token", nil)
+	ErrUserIsNotActive                 = errs.New(http.StatusUnauthorized, "USER_IS_NOT_ACTIVE", "User is not active", nil)
+	ErrInvalidToken                    = errs.New(http.StatusUnauthorized, "INVALID_TOKEN", "Invalid token", nil)
+	ErrInvalidCredentials              = errs.New(http.StatusUnauthorized, "INVALID_CREDENTIALS", "Invalid credentials", nil)
 )
