@@ -5,7 +5,6 @@ import (
 
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/config"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/database"
-	"github.com/cristiano-pacheco/pingo/internal/shared/modules/errs"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/http/httpserver"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/http/router"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/jwt"
@@ -27,7 +26,6 @@ var Module = fx.Module(
 	registry.Module,
 	jwt.Module,
 	mailer.Module,
-	errs.Module,
 	redis.Module,
 	router.Module,
 	httpserver.Module,

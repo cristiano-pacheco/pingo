@@ -5,9 +5,14 @@ import (
 	"crypto/x509"
 	"encoding/base64"
 	"encoding/pem"
+	"errors"
 
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/config"
-	"github.com/cristiano-pacheco/pingo/internal/shared/modules/errs"
+)
+
+var (
+	ErrKeyMustBePEMEncoded = errors.New("invalid key: Key must be a PEM encoded PKCS1 or PKCS8 key")
+	ErrNotRSAPrivateKey    = errors.New("key is not a valid RSA private key")
 )
 
 type PrivateKeyRegistry interface {
@@ -47,7 +52,7 @@ func mapPEMToRSAPrivateKey(key []byte) (*rsa.PrivateKey, error) {
 
 	var block *pem.Block
 	if block, _ = pem.Decode(key); block == nil {
-		return nil, errs.ErrKeyMustBePEMEncoded
+		return nil, ErrKeyMustBePEMEncoded
 	}
 
 	var parsedKey interface{}
@@ -60,7 +65,7 @@ func mapPEMToRSAPrivateKey(key []byte) (*rsa.PrivateKey, error) {
 	var pkey *rsa.PrivateKey
 	var ok bool
 	if pkey, ok = parsedKey.(*rsa.PrivateKey); !ok {
-		return nil, errs.ErrNotRSAPrivateKey
+		return nil, ErrNotRSAPrivateKey
 	}
 
 	return pkey, nil
