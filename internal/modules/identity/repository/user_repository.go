@@ -10,7 +10,7 @@ import (
 )
 
 type UserRepository interface {
-	FindByID(ctx context.Context, id string) (model.UserModel, error)
+	FindByID(ctx context.Context, userID uint64) (model.UserModel, error)
 	FindByEmail(ctx context.Context, email string) (model.UserModel, error)
 	Create(ctx context.Context, user model.UserModel) (model.UserModel, error)
 	Update(ctx context.Context, user model.UserModel) error
@@ -25,7 +25,7 @@ func NewUserRepository(db *gorm.DB) UserRepository {
 	return &userRepository{db: db}
 }
 
-func (r *userRepository) FindByID(ctx context.Context, id string) (model.UserModel, error) {
+func (r *userRepository) FindByID(ctx context.Context, userID uint64) (model.UserModel, error) {
 	user, err := gorm.G[model.UserModel](r.db).First(ctx)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {

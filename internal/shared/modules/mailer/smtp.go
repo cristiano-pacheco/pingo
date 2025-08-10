@@ -8,21 +8,21 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-type SMTPMailer interface {
+type SMTP interface {
 	Send(ctx context.Context, md MailData) error
 }
 
-type smtpMailer struct {
+type smtp struct {
 	dialer *mail.Dialer
 }
 
-func NewSMTPMailer(dialer *mail.Dialer) SMTPMailer {
-	return &smtpMailer{dialer}
+func NewSMTP(dialer *mail.Dialer) SMTP {
+	return &smtp{dialer}
 }
 
-func (m *smtpMailer) Send(ctx context.Context, md MailData) error {
+func (m *smtp) Send(ctx context.Context, md MailData) error {
 	span := trace.SpanFromContext(ctx)
-	span.SetAttributes(attribute.String("method", "SmtpMailer.Send"))
+	span.SetAttributes(attribute.String("method", "SMTP.Send"))
 	defer span.End()
 
 	msg := mail.NewMessage()

@@ -20,7 +20,7 @@ func (e *Error) Error() string {
 	return fmt.Sprintf("[%s] %s", e.Code, e.Message)
 }
 
-func New(status int, code, message string, details []Detail) *Error {
+func New(code, message string, status int, details []Detail) *Error {
 	return &Error{
 		Status:  status,
 		Code:    code,

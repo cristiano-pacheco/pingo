@@ -7,8 +7,8 @@ import (
 )
 
 var (
-	ErrInvalidAccountConfirmationToken = errs.New(http.StatusBadRequest, "INVALID_ACCOUNT_CONFIRMATION_TOKEN", "Invalid account confirmation token", nil)
-	ErrUserIsNotActive                 = errs.New(http.StatusUnauthorized, "USER_IS_NOT_ACTIVE", "User is not active", nil)
-	ErrInvalidToken                    = errs.New(http.StatusUnauthorized, "INVALID_TOKEN", "Invalid token", nil)
-	ErrInvalidCredentials              = errs.New(http.StatusUnauthorized, "INVALID_CREDENTIALS", "Invalid credentials", nil)
+	ErrInvalidAccountConfirmationToken = errs.New("INVALID_ACCOUNT_CONFIRMATION_TOKEN", "Invalid account confirmation token", http.StatusBadRequest, nil)
+	ErrUserIsNotActive                 = errs.New("USER_IS_NOT_ACTIVE", "User is not active", http.StatusUnauthorized, nil)
+	ErrInvalidToken                    = errs.New("INVALID_TOKEN", "Invalid token", http.StatusUnauthorized, nil)
+	ErrInvalidCredentials              = errs.New("INVALID_CREDENTIALS", "Invalid credentials", http.StatusUnauthorized, nil)
 )

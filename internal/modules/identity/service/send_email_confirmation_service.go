@@ -4,7 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/cristiano-pacheco/pingo/internal/identity/repository"
+	"github.com/cristiano-pacheco/pingo/internal/modules/identity/errs"
+	"github.com/cristiano-pacheco/pingo/internal/modules/identity/repository"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/config"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/logger"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/mailer"
@@ -19,23 +20,23 @@ type SendEmailConfirmationService interface {
 }
 
 type sendEmailConfirmationService struct {
-	mailerTemplate mailer.MailerTemplate
-	mailer         mailer.SmtpMailer
+	mailerTemplate mailer.Template
+	mailerSMTP     mailer.SMTP
 	userRepository repository.UserRepository
 	logger         logger.Logger
 	cfg            config.Config
 }
 
 func NewSendEmailConfirmationService(
-	mailerTemplate mailer.MailerTemplate,
-	smtpMailer mailer.SmtpMailer,
+	mailerTemplate mailer.Template,
+	mailerSMTP mailer.SMTP,
 	userRepository repository.UserRepository,
 	logger logger.Logger,
 	cfg config.Config,
 ) SendEmailConfirmationService {
 	return &sendEmailConfirmationService{
 		mailerTemplate,
-		smtpMailer,
+		mailerSMTP,
 		userRepository,
 		logger,
 		cfg,
@@ -53,12 +54,18 @@ func (s *sendEmailConfirmationService) Execute(ctx context.Context, userID uint6
 		return err
 	}
 
+	if user.ConfirmationToken == nil {
+		return errs.ErrInvalidAccountConfirmationToken
+	}
+
+	confirmationToken := string(user.ConfirmationToken)
+
 	// generate the account confirmation link
 	accountConfLink := fmt.Sprintf(
 		"%s/user/confirmation?id=%d&token=%s",
 		s.cfg.App.BaseURL,
-		user.ID(),
-		*user.ConfirmationToken(),
+		user.ID,
+		confirmationToken,
 	)
 
 	// compile the template
@@ -66,7 +73,7 @@ func (s *sendEmailConfirmationService) Execute(ctx context.Context, userID uint6
 		Name                    string
 		AccountConfirmationLink string
 	}{
-		Name:                    user.Name(),
+		Name:                    fmt.Sprintf("%s %s", user.FirstName, user.LastName),
 		AccountConfirmationLink: accountConfLink,
 	}
 
@@ -79,13 +86,13 @@ func (s *sendEmailConfirmationService) Execute(ctx context.Context, userID uint6
 
 	md := mailer.MailData{
 		Sender:  s.cfg.MAIL.Sender,
-		ToName:  user.Name(),
-		ToEmail: user.Email(),
+		ToName:  fmt.Sprintf("%s %s", user.FirstName, user.LastName),
+		ToEmail: user.Email,
 		Subject: sendAccountConfirmationEmailSubject,
 		Content: content,
 	}
 
-	err = s.mailer.Send(ctx, md)
+	err = s.mailerSMTP.Send(ctx, md)
 	if err != nil {
 		message := "error sending email"
 		s.logger.Error(message, "error", err)
