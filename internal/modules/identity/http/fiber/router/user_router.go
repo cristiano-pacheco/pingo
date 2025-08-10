@@ -7,7 +7,7 @@ import (
 
 func SetupUserRoutes(router *router.Router, handler *handler.UserHandler) {
 	r := router.Router()
-	r.Post("/users", handler.CreateUser)
-	r.Put("/users", handler.UpdateUser)
-	r.Post("/users/activate", handler.ActivateUser)
+	r.Post("/api/v1/users", handler.CreateUser)
+	r.Put("/api/v1/users", handler.UpdateUser)
+	r.Post("/api/v1/users/activate", handler.ActivateUser)
 }
