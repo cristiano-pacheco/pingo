@@ -7,8 +7,8 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
 
-	"github.com/cristiano-pacheco/pingo/internal/modules/user/errs"
-	"github.com/cristiano-pacheco/pingo/internal/modules/user/repository"
+	"github.com/cristiano-pacheco/pingo/internal/modules/identity/errs"
+	"github.com/cristiano-pacheco/pingo/internal/modules/identity/repository"
 	internal_jwt "github.com/cristiano-pacheco/pingo/internal/shared/modules/jwt"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/logger"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/registry"

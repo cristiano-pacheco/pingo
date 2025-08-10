@@ -1,7 +1,7 @@
 package router
 
 import (
-	"github.com/cristiano-pacheco/pingo/internal/modules/user/http/fiber/handler"
+	"github.com/cristiano-pacheco/pingo/internal/modules/identity/http/fiber/handler"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/http/router"
 )
 
