@@ -6,6 +6,7 @@ import (
 
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/errs"
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/repository"
+	"github.com/cristiano-pacheco/pingo/internal/modules/identity/ui/email/templates"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/config"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/logger"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/mailer"
@@ -77,7 +78,16 @@ func (s *sendEmailConfirmationService) Execute(ctx context.Context, userID uint6
 		AccountConfirmationLink: accountConfLink,
 	}
 
-	content, err := s.mailerTemplate.CompileTemplate(sendAccountConfirmationEmailTemplate, tplData)
+	compileTemplateInput := mailer.CompileTemplateInput{
+		TemplateName:        sendAccountConfirmationEmailTemplate,
+		LayoutTpl:           "layout_default.gohtml",
+		TemplatePath:        "",
+		TemplateSectionName: "htmlBody",
+		TemplateFS:          templates.EmailTemplatesFS,
+		Data:                tplData,
+	}
+
+	content, err := s.mailerTemplate.CompileTemplate(compileTemplateInput)
 	if err != nil {
 		message := "error compiling template"
 		s.logger.Error(message, "error", err)
