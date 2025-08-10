@@ -4,7 +4,7 @@ Copyright © 2025 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
-	"github.com/cristiano-pacheco/pingo/internal/modules/user"
+	"github.com/cristiano-pacheco/pingo/internal/modules/identity"
 	shared "github.com/cristiano-pacheco/pingo/internal/shared/modules"
 	"github.com/spf13/cobra"
 	"go.uber.org/fx"
@@ -16,7 +16,7 @@ var serverCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		app := fx.New(
 			shared.Module,
-			user.Module,
+			identity.Module,
 		)
 		app.Run()
 	},
