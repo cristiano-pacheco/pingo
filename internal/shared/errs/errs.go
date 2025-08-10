@@ -1,7 +1,7 @@
 package errs
 
-import "errors"
+import "github.com/cristiano-pacheco/pingo/pkg/errs"
 
 var (
-	ErrRecordNotFound = errors.New("record not found")
+	ErrRecordNotFound = errs.New("RECORD_NOT_FOUND", "Record not found", 404, nil)
 )

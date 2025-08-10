@@ -6,7 +6,6 @@ import (
 
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/errs"
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/repository"
-	"github.com/cristiano-pacheco/pingo/internal/modules/identity/ui/email/templates"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/config"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/logger"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/mailer"
@@ -21,22 +20,22 @@ type SendEmailConfirmationService interface {
 }
 
 type sendEmailConfirmationService struct {
-	mailerTemplate mailer.Template
-	mailerSMTP     mailer.SMTP
-	userRepository repository.UserRepository
-	logger         logger.Logger
-	cfg            config.Config
+	emailTemplateService EmailTemplateService
+	mailerSMTP           mailer.SMTP
+	userRepository       repository.UserRepository
+	logger               logger.Logger
+	cfg                  config.Config
 }
 
 func NewSendEmailConfirmationService(
-	mailerTemplate mailer.Template,
+	emailTemplateService EmailTemplateService,
 	mailerSMTP mailer.SMTP,
 	userRepository repository.UserRepository,
 	logger logger.Logger,
 	cfg config.Config,
 ) SendEmailConfirmationService {
 	return &sendEmailConfirmationService{
-		mailerTemplate,
+		emailTemplateService,
 		mailerSMTP,
 		userRepository,
 		logger,
@@ -69,34 +68,15 @@ func (s *sendEmailConfirmationService) Execute(ctx context.Context, userID uint6
 		confirmationToken,
 	)
 
-	// compile the template
-	tplData := struct {
-		Name                    string
-		AccountConfirmationLink string
-	}{
-		Name:                    fmt.Sprintf("%s %s", user.FirstName, user.LastName),
+	name := fmt.Sprintf("%s %s", user.FirstName, user.LastName)
+	emailTemplateInput := AccountConfirmationInput{
+		Name:                    name,
 		AccountConfirmationLink: accountConfLink,
 	}
-
-	compileTemplateInput := mailer.CompileTemplateInput{
-		TemplateName:        sendAccountConfirmationEmailTemplate,
-		LayoutTpl:           "layout_default.gohtml",
-		TemplatePath:        "",
-		TemplateSectionName: "htmlBody",
-		TemplateFS:          templates.EmailTemplatesFS,
-		Data:                tplData,
-	}
-
-	content, err := s.mailerTemplate.CompileTemplate(compileTemplateInput)
-	if err != nil {
-		message := "error compiling template"
-		s.logger.Error(message, "error", err)
-		return err
-	}
-
+	content, err := s.emailTemplateService.CompileAccountConfirmationTemplate(ctx, emailTemplateInput)
 	md := mailer.MailData{
 		Sender:  s.cfg.MAIL.Sender,
-		ToName:  fmt.Sprintf("%s %s", user.FirstName, user.LastName),
+		ToName:  name,
 		ToEmail: user.Email,
 		Subject: sendAccountConfirmationEmailSubject,
 		Content: content,
