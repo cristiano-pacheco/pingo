@@ -11,4 +11,5 @@ var (
 	ErrUserIsNotActive                 = errs.New("IDENTITY_02", "User is not active", http.StatusUnauthorized, nil)
 	ErrInvalidToken                    = errs.New("IDENTITY_03", "Invalid token", http.StatusUnauthorized, nil)
 	ErrInvalidCredentials              = errs.New("IDENTITY_04", "Invalid credentials", http.StatusUnauthorized, nil)
+	ErrEmailAlreadyInUse               = errs.New("IDENTITY_05", "Email already in use", http.StatusConflict, nil)
 )

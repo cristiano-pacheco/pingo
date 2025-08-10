@@ -2,12 +2,11 @@ package usecase
 
 import (
 	"context"
-	"encoding/base64"
-	"errors"
-	"time"
 
 	"github.com/cristiano-pacheco/pingo/internal/identity/repository"
-	"github.com/cristiano-pacheco/pingo/internal/identity/service"
+	"github.com/cristiano-pacheco/pingo/internal/modules/identity/errs"
+	"github.com/cristiano-pacheco/pingo/internal/modules/identity/repository/model"
+	"github.com/cristiano-pacheco/pingo/internal/modules/identity/service"
 	"github.com/cristiano-pacheco/pingo/internal/shared/logger"
 	"github.com/cristiano-pacheco/pingo/internal/shared/otel"
 	"github.com/cristiano-pacheco/pingo/internal/shared/validator"
@@ -18,15 +17,17 @@ type UserCreateUseCase interface {
 }
 
 type UserCreateInput struct {
-	Name     string `validate:"required,min=3,max=255"`
-	Email    string `validate:"required,email"`
-	Password string `validate:"required,min=8"`
+	FirstName string `validate:"required,min=3,max=255"`
+	LastName  string `validate:"required,min=3,max=255"`
+	Email     string `validate:"required,email"`
+	Password  string `validate:"required,min=8"`
 }
 
 type UserCreateOutput struct {
-	Name   string
-	Email  string
-	UserID uint64
+	FirstName string
+	LastName  string
+	Email     string
+	UserID    uint64
 }
 
 type userCreateUseCase struct {
@@ -65,20 +66,13 @@ func (uc *userCreateUseCase) Execute(ctx context.Context, input UserCreateInput)
 	}
 
 	user, err := uc.userRepository.FindByEmail(ctx, input.Email)
-	if err != nil && !errors.Is(err, kernel_errs.ErrNotFound) {
+	if err != nil {
 		uc.logger.Error("error finding user by email", "error", err)
 		return output, err
 	}
 
-	if user.ID() != 0 {
+	if user.ID != 0 {
 		return output, errs.ErrEmailAlreadyInUse
-	}
-
-	ph, err := uc.hashService.GenerateFromPassword([]byte(input.Password))
-	if err != nil {
-		message := "error generating password hash"
-		uc.logger.Error(message, "error", err)
-		return output, err
 	}
 
 	token, err := uc.hashService.GenerateRandomBytes()
@@ -88,31 +82,26 @@ func (uc *userCreateUseCase) Execute(ctx context.Context, input UserCreateInput)
 		return output, err
 	}
 
-	// encode the token
-	confirmationToken := base64.StdEncoding.EncodeToString(token)
-	confirmationExpiresAt := time.Now().UTC().Add(time.Hour * 24)
-
-	userModel, err := model.CreateUserModel(
-		input.Name,
-		input.Email,
-		string(ph),
-		confirmationToken,
-		confirmationExpiresAt,
-	)
+	userModel := model.UserModel{
+		FirstName:         input.FirstName,
+		LastName:          input.LastName,
+		Email:             input.Email,
+		ConfirmationToken: token,
+	}
 	if err != nil {
 		message := "error creating user model"
 		uc.logger.Error(message, "error", err)
 		return output, err
 	}
 
-	newUserModel, err := uc.userRepository.Create(ctx, userModel)
+	createdUser, err := uc.userRepository.Create(ctx, userModel)
 	if err != nil {
 		message := "error creating user"
 		uc.logger.Error(message, "error", err)
 		return output, err
 	}
 
-	err = uc.sendEmailConfirmationService.Execute(ctx, newUserModel.ID())
+	err = uc.sendEmailConfirmationService.Execute(ctx, createdUser.ID)
 	if err != nil {
 		message := "error sending account confirmation email"
 		uc.logger.Error(message, "error", err)
@@ -120,9 +109,10 @@ func (uc *userCreateUseCase) Execute(ctx context.Context, input UserCreateInput)
 	}
 
 	output = UserCreateOutput{
-		UserID: newUserModel.ID(),
-		Name:   newUserModel.Name(),
-		Email:  newUserModel.Email(),
+		UserID:    createdUser.ID,
+		FirstName: createdUser.FirstName,
+		LastName:  createdUser.LastName,
+		Email:     createdUser.Email,
 	}
 
 	return output, nil

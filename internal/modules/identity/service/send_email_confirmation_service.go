@@ -12,7 +12,6 @@ import (
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/otel"
 )
 
-const sendAccountConfirmationEmailTemplate = "account_confirmation.gohtml"
 const sendAccountConfirmationEmailSubject = "Account Confirmation"
 
 type SendEmailConfirmationService interface {
