@@ -3,14 +3,15 @@ package httpserver
 import (
 	"context"
 	"fmt"
+	"time"
 
+	"github.com/ansrivas/fiberprometheus/v2"
 	"github.com/goccy/go-json"
 
 	"github.com/gofiber/contrib/otelfiber"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/helmet"
-	"github.com/gofiber/fiber/v2/middleware/limiter"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/gofiber/fiber/v2/middleware/requestid"
@@ -34,8 +35,8 @@ func NewFiberHTTPServer(
 		DisableStartupMessage: false,
 		Prefork:               false,           // set to true for multi-core, false for Docker/local dev
 		BodyLimit:             1 * 1024 * 1024, // 1MB limit for REST API
-		ReadTimeout:           10,
-		WriteTimeout:          10,
+		ReadTimeout:           10 * time.Second,
+		WriteTimeout:          10 * time.Second,
 		CaseSensitive:         true,
 		StrictRouting:         true,
 		AppName:               appName,
@@ -47,14 +48,11 @@ func NewFiberHTTPServer(
 	app.Use(requestid.New())
 	app.Use(logger.New())
 	app.Use(helmet.New())
-	app.Use(limiter.New(limiter.Config{
-		Max:        100,
-		Expiration: 60,
-		LimitReached: func(c *fiber.Ctx) error {
-			return c.Status(fiber.StatusTooManyRequests).JSON(fiber.Map{"error": "rate limit exceeded"})
-		},
-	}))
 	app.Use(cors.New(corsConfig))
+
+	prometheus := fiberprometheus.New(appName)
+	prometheus.RegisterAt(app, "/metrics")
+	app.Use(prometheus.Middleware)
 
 	if isOtelEnabled {
 		app.Use(otelfiber.Middleware())
