@@ -69,6 +69,7 @@ mocks:
 
 .PHONY: cover
 update-swagger:
+	go install github.com/swaggo/swag/cmd/swag@latest
 	swag fmt -d docs
 	swag i --parseDependency
 
