@@ -88,11 +88,6 @@ func (uc *userCreateUseCase) Execute(ctx context.Context, input UserCreateInput)
 		Email:             input.Email,
 		ConfirmationToken: token,
 	}
-	if err != nil {
-		message := "error creating user model"
-		uc.logger.Error(message, "error", err)
-		return output, err
-	}
 
 	createdUser, err := uc.userRepository.Create(ctx, userModel)
 	if err != nil {
