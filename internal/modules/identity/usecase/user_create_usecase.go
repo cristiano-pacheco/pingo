@@ -12,10 +12,6 @@ import (
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/validator"
 )
 
-type UserCreateUseCase interface {
-	Execute(ctx context.Context, input UserCreateInput) (UserCreateOutput, error)
-}
-
 type UserCreateInput struct {
 	FirstName string `validate:"required,min=3,max=255"`
 	LastName  string `validate:"required,min=3,max=255"`
@@ -30,7 +26,7 @@ type UserCreateOutput struct {
 	UserID    uint64
 }
 
-type userCreateUseCase struct {
+type UserCreateUseCase struct {
 	sendEmailConfirmationService service.SendEmailConfirmationService
 	hashService                  service.HashService
 	userRepository               repository.UserRepository
@@ -44,8 +40,8 @@ func NewUserCreateUseCase(
 	userRepo repository.UserRepository,
 	validate validator.Validate,
 	logger logger.Logger,
-) UserCreateUseCase {
-	return &userCreateUseCase{
+) *UserCreateUseCase {
+	return &UserCreateUseCase{
 		sendEmailConfirmationService,
 		hashService,
 		userRepo,
@@ -54,7 +50,7 @@ func NewUserCreateUseCase(
 	}
 }
 
-func (uc *userCreateUseCase) Execute(ctx context.Context, input UserCreateInput) (UserCreateOutput, error) {
+func (uc *UserCreateUseCase) Execute(ctx context.Context, input UserCreateInput) (UserCreateOutput, error) {
 	ctx, span := otel.Trace().StartSpan(ctx, "UserCreateUseCase.Execute")
 	defer span.End()
 

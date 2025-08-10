@@ -4,15 +4,22 @@ import (
 	"net/http"
 
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/http/fiber/dto"
+	"github.com/cristiano-pacheco/pingo/internal/modules/identity/usecase"
+	"github.com/cristiano-pacheco/pingo/internal/shared/modules/logger"
 	"github.com/cristiano-pacheco/pingo/internal/shared/sdk/http/response"
 	"github.com/gofiber/fiber/v2"
 )
 
 type UserHandler struct {
+	userCreateUseCase *usecase.UserCreateUseCase
+	logger            logger.Logger
 }
 
-func NewUserHandler() *UserHandler {
-	return &UserHandler{}
+func NewUserHandler(userCreateUseCase *usecase.UserCreateUseCase, logger logger.Logger) *UserHandler {
+	return &UserHandler{
+		userCreateUseCase: userCreateUseCase,
+		logger:            logger,
+	}
 }
 
 // @Summary		Create user
@@ -26,13 +33,27 @@ func NewUserHandler() *UserHandler {
 // @Failure		500	{object}	errs.Error	"Internal server error"
 // @Router		/api/v1/users [post]
 func (h *UserHandler) CreateUser(c *fiber.Ctx) error {
-	createUserReponse := dto.CreateUserResponse{
-		UserID:    1,
-		FirstName: "John",
-		LastName:  "Doe",
+	ctx := c.UserContext()
+	var createUserRequest dto.CreateUserRequest
+	if err := c.BodyParser(&createUserRequest); err != nil {
+		h.logger.Error("Failed to parse request body", "error", err)
+		return err
 	}
-	response := response.NewEnvelope(createUserReponse)
-	return c.Status(http.StatusCreated).JSON(response)
+
+	input := usecase.UserCreateInput{
+		FirstName: createUserRequest.FirstName,
+		LastName:  createUserRequest.LastName,
+		Email:     createUserRequest.Email,
+	}
+
+	createUserResponse, err := h.userCreateUseCase.Execute(ctx, input)
+	if err != nil {
+		h.logger.Error("Failed to create user", "error", err)
+		return err
+	}
+
+	res := response.NewEnvelope(createUserResponse)
+	return c.Status(http.StatusCreated).JSON(res)
 }
 
 // @Summary		Update user
