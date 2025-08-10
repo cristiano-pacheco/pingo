@@ -4,22 +4,19 @@ import (
 	"context"
 	"fmt"
 
-	"time"
+	"github.com/goccy/go-json"
 
 	"github.com/gofiber/contrib/otelfiber"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
+	"github.com/gofiber/fiber/v2/middleware/helmet"
+	"github.com/gofiber/fiber/v2/middleware/limiter"
+	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/fiber/v2/middleware/recover"
+	"github.com/gofiber/fiber/v2/middleware/requestid"
 	fiberSwagger "github.com/swaggo/fiber-swagger"
 
 	_ "github.com/cristiano-pacheco/pingo/docs" // imports swagger docs for API documentation
-)
-
-const (
-	readHeaderTimeout = 10 * time.Second
-	readTimeout       = 30 * time.Second
-	writeTimeout      = 30 * time.Second
-	idleTimeout       = 60 * time.Second
 )
 
 type FiberHTTPServer struct {
@@ -28,23 +25,46 @@ type FiberHTTPServer struct {
 
 func NewFiberHTTPServer(
 	corsConfig cors.Config,
-	otelHandlerName string,
+	appName string,
 	isOtelEnabled bool,
 	httpPort uint,
 ) *FiberHTTPServer {
-	app := fiber.New()
+	config := fiber.Config{
+		EnablePrintRoutes:     true,
+		DisableStartupMessage: false,
+		Prefork:               false,           // set to true for multi-core, false for Docker/local dev
+		BodyLimit:             1 * 1024 * 1024, // 1MB limit for REST API
+		ReadTimeout:           10,
+		WriteTimeout:          10,
+		CaseSensitive:         true,
+		StrictRouting:         true,
+		AppName:               appName,
+		JSONEncoder:           json.Marshal,
+		JSONDecoder:           json.Unmarshal,
+	}
+	app := fiber.New(config)
 	app.Use(recover.New())
+	app.Use(requestid.New())
+	app.Use(logger.New())
+	app.Use(helmet.New())
+	app.Use(limiter.New(limiter.Config{
+		Max:        100,
+		Expiration: 60,
+		LimitReached: func(c *fiber.Ctx) error {
+			return c.Status(fiber.StatusTooManyRequests).JSON(fiber.Map{"error": "rate limit exceeded"})
+		},
+	}))
 	app.Use(cors.New(corsConfig))
 
 	if isOtelEnabled {
 		app.Use(otelfiber.Middleware())
 	}
+
 	// Health check
 	app.Get("/healthcheck", func(c *fiber.Ctx) error {
 		return c.SendString("OK")
 	})
-	// Metrics endpoint (not implemented: prometheus middleware not available for Fiber v2)
-	// TODO: Add metrics endpoint if needed
+
 	// Swagger
 	app.Get("/swagger/*", fiberSwagger.WrapHandler)
 	return &FiberHTTPServer{app: app}
