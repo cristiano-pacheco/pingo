@@ -15,7 +15,7 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/gofiber/fiber/v2/middleware/requestid"
-	fiberSwagger "github.com/swaggo/fiber-swagger"
+	"github.com/gofiber/swagger"
 
 	_ "github.com/cristiano-pacheco/pingo/docs" // imports swagger docs for API documentation
 )
@@ -64,7 +64,7 @@ func NewFiberHTTPServer(
 	})
 
 	// Swagger
-	app.Get("/swagger/*", fiberSwagger.WrapHandler)
+	app.Get("/swagger/*", swagger.HandlerDefault) // default
 	return &FiberHTTPServer{app: app}
 }
 
