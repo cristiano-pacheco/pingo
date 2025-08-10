@@ -3,13 +3,13 @@ package usecase
 import (
 	"context"
 
-	"github.com/cristiano-pacheco/pingo/internal/identity/repository"
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/errs"
+	"github.com/cristiano-pacheco/pingo/internal/modules/identity/repository"
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/repository/model"
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/service"
-	"github.com/cristiano-pacheco/pingo/internal/shared/logger"
-	"github.com/cristiano-pacheco/pingo/internal/shared/otel"
-	"github.com/cristiano-pacheco/pingo/internal/shared/validator"
+	"github.com/cristiano-pacheco/pingo/internal/shared/modules/logger"
+	"github.com/cristiano-pacheco/pingo/internal/shared/modules/otel"
+	"github.com/cristiano-pacheco/pingo/internal/shared/modules/validator"
 )
 
 type UserCreateUseCase interface {
