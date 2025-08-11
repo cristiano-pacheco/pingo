@@ -9,6 +9,7 @@ import (
 
 	_ "github.com/cristiano-pacheco/pingo/docs" // imports swagger docs for API documentation
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/config"
+	"github.com/cristiano-pacheco/pingo/internal/shared/modules/http/middleware"
 	httpserver "github.com/cristiano-pacheco/pingo/pkg/httpserver/fiber"
 )
 
@@ -19,6 +20,7 @@ type FiberHTTPServer struct {
 func NewHTTPServer(
 	lc fx.Lifecycle,
 	conf config.Config,
+	errorMiddleware *middleware.FiberErrorMiddleware,
 ) *FiberHTTPServer {
 	corsConfig := cors.Config{
 		AllowOrigins:     conf.CORS.AllowedOrigins,
@@ -35,6 +37,8 @@ func NewHTTPServer(
 	httpServer := &FiberHTTPServer{
 		server: server,
 	}
+
+	server.App().Use(errorMiddleware.Middleware())
 
 	lc.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
