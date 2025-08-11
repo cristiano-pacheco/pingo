@@ -5,7 +5,7 @@ import (
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/http/router"
 )
 
-func SetupAuthRoutes(r *router.Router, h *handler.AuthHandler) {
+func SetupAuthRoutes(r *router.FiberRouter, h *handler.AuthHandler) {
 	router := r.Router()
 	router.Post("/auth/login", h.GenerateJWTToken)
 }

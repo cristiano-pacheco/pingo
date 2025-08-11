@@ -5,14 +5,14 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-type Router struct {
+type FiberRouter struct {
 	server *httpserver.FiberHTTPServer
 }
 
-func NewRouter(server *httpserver.FiberHTTPServer) *Router {
-	return &Router{server: server}
+func NewFiberRouter(server *httpserver.FiberHTTPServer) *FiberRouter {
+	return &FiberRouter{server: server}
 }
 
-func (r *Router) Router() *fiber.App {
+func (r *FiberRouter) Router() *fiber.App {
 	return r.server.App()
 }
