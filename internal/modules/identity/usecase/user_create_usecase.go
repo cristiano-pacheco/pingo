@@ -16,7 +16,6 @@ type UserCreateInput struct {
 	FirstName string `validate:"required,min=3,max=255"`
 	LastName  string `validate:"required,min=3,max=255"`
 	Email     string `validate:"required,email"`
-	Password  string `validate:"required,min=8"`
 }
 
 type UserCreateOutput struct {
