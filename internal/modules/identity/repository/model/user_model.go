@@ -8,6 +8,7 @@ type UserModel struct {
 	LastName          string
 	Email             string `gorm:"uniqueIndex"`
 	Status            string
+	PasswordHash      []byte `gorm:"type:bytea"`
 	ConfirmationToken []byte `gorm:"type:bytea"`
 	ConfirmedAt       *time.Time
 	CreatedAt         time.Time

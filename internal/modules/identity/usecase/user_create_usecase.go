@@ -2,11 +2,15 @@ package usecase
 
 import (
 	"context"
+	"errors"
 
+	"github.com/cristiano-pacheco/pingo/internal/modules/identity/enum"
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/errs"
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/repository"
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/repository/model"
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/service"
+	identity_validator "github.com/cristiano-pacheco/pingo/internal/modules/identity/validator"
+	shared_errs "github.com/cristiano-pacheco/pingo/internal/shared/errs"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/logger"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/otel"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/validator"
@@ -15,6 +19,7 @@ import (
 type UserCreateInput struct {
 	FirstName string `validate:"required,min=3,max=255"`
 	LastName  string `validate:"required,min=3,max=255"`
+	Password  string `validate:"required,min=8"`
 	Email     string `validate:"required,email"`
 }
 
@@ -30,6 +35,7 @@ type UserCreateUseCase struct {
 	hashService                  service.HashService
 	userRepository               repository.UserRepository
 	validate                     validator.Validate
+	passwordValidator            identity_validator.PasswordValidator
 	logger                       logger.Logger
 }
 
@@ -38,6 +44,7 @@ func NewUserCreateUseCase(
 	hashService service.HashService,
 	userRepo repository.UserRepository,
 	validate validator.Validate,
+	passwordValidator identity_validator.PasswordValidator,
 	logger logger.Logger,
 ) *UserCreateUseCase {
 	return &UserCreateUseCase{
@@ -45,6 +52,7 @@ func NewUserCreateUseCase(
 		hashService,
 		userRepo,
 		validate,
+		passwordValidator,
 		logger,
 	}
 }
@@ -60,8 +68,12 @@ func (uc *UserCreateUseCase) Execute(ctx context.Context, input UserCreateInput)
 		return output, err
 	}
 
+	if err := uc.passwordValidator.Validate(input.Password); err != nil {
+		return output, err
+	}
+
 	user, err := uc.userRepository.FindByEmail(ctx, input.Email)
-	if err != nil {
+	if err != nil && !errors.Is(err, shared_errs.ErrRecordNotFound) {
 		uc.logger.Error("error finding user by email", "error", err)
 		return output, err
 	}
@@ -72,22 +84,29 @@ func (uc *UserCreateUseCase) Execute(ctx context.Context, input UserCreateInput)
 
 	token, err := uc.hashService.GenerateRandomBytes()
 	if err != nil {
-		message := "error generating random bytes"
-		uc.logger.Error(message, "error", err)
+		uc.logger.Error("error generating random bytes", "error", err)
 		return output, err
 	}
 
+	passwordHash, err := uc.hashService.GenerateFromPassword([]byte(input.Password))
+	if err != nil {
+		uc.logger.Error("error generating password hash", "error", err)
+		return output, err
+	}
+
+	pendingUserStatus := enum.UserStatusPending
 	userModel := model.UserModel{
 		FirstName:         input.FirstName,
 		LastName:          input.LastName,
 		Email:             input.Email,
+		PasswordHash:      passwordHash,
+		Status:            pendingUserStatus,
 		ConfirmationToken: token,
 	}
 
 	createdUser, err := uc.userRepository.Create(ctx, userModel)
 	if err != nil {
-		message := "error creating user"
-		uc.logger.Error(message, "error", err)
+		uc.logger.Error("error creating user", "error", err)
 		return output, err
 	}
 

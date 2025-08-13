@@ -28,7 +28,7 @@ func NewUserRepository(db *database.PingoDB) UserRepository {
 }
 
 func (r *userRepository) FindByID(ctx context.Context, userID uint64) (model.UserModel, error) {
-	user, err := gorm.G[model.UserModel](r.db.DB).First(ctx)
+	user, err := gorm.G[model.UserModel](r.db.DB).Limit(1).First(ctx)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return model.UserModel{}, errs.ErrRecordNotFound
@@ -39,7 +39,7 @@ func (r *userRepository) FindByID(ctx context.Context, userID uint64) (model.Use
 }
 
 func (r *userRepository) FindByEmail(ctx context.Context, email string) (model.UserModel, error) {
-	user, err := gorm.G[model.UserModel](r.db.DB).Where("email = ?", email).First(ctx)
+	user, err := gorm.G[model.UserModel](r.db.DB).Where("email = ?", email).Limit(1).First(ctx)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return model.UserModel{}, errs.ErrRecordNotFound
@@ -50,7 +50,8 @@ func (r *userRepository) FindByEmail(ctx context.Context, email string) (model.U
 }
 
 func (r *userRepository) FindByConfirmationToken(ctx context.Context, confirmationToken []byte) (model.UserModel, error) {
-	user, err := gorm.G[model.UserModel](r.db.DB).Where("confirmation_token = ?", confirmationToken).First(ctx)
+	user, err := gorm.G[model.UserModel](r.db.DB).
+		Where("confirmation_token = ?", confirmationToken).Limit(1).First(ctx)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return model.UserModel{}, errs.ErrRecordNotFound
