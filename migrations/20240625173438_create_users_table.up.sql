@@ -8,6 +8,7 @@ CREATE TABLE users (
     first_name TEXT NOT NULL,
     last_name TEXT NOT NULL,
     status user_status NOT NULL DEFAULT 'pending',
+    password_hash BYTEA NOT NULL,
     confirmation_token BYTEA,
     confirmed_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -28,5 +29,6 @@ CREATE TABLE magic_tokens (
 -- Create indexes for performance
 CREATE INDEX idx_users_email ON users(email);
 CREATE INDEX idx_users_status ON users(status);
+CREATE INDEX idx_users_confirmation_token ON users(confirmation_token);
 CREATE INDEX idx_magic_tokens_user ON magic_tokens(user_id);
 CREATE INDEX idx_magic_tokens_token ON magic_tokens(token);
