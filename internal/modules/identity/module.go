@@ -6,6 +6,7 @@ import (
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/repository"
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/service"
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/usecase"
+	"github.com/cristiano-pacheco/pingo/internal/modules/identity/validator"
 	"go.uber.org/fx"
 )
 
@@ -21,6 +22,8 @@ var Module = fx.Module(
 		service.NewEmailTemplateService,
 		service.NewTokenService,
 		service.NewHashService,
+
+		validator.NewPasswordValidator,
 
 		usecase.NewUserActivateUseCase,
 		usecase.NewUserCreateUseCase,
