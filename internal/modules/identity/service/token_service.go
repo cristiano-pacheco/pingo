@@ -52,8 +52,7 @@ func (s *tokenService) GenerateJWT(ctx context.Context, user model.UserModel) (s
 	pk := s.privateKeyRegistry.Get()
 	signedToken, err := token.SignedString(pk)
 	if err != nil {
-		message := "[generate_token] error signing token"
-		s.logger.Error(message, "error", err)
+		s.logger.Error().Msgf("error signing token: %v", err)
 		return "", err
 	}
 

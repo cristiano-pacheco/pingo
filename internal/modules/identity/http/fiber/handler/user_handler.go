@@ -36,7 +36,7 @@ func (h *UserHandler) CreateUser(c *fiber.Ctx) error {
 	ctx := c.UserContext()
 	var createUserRequest dto.CreateUserRequest
 	if err := c.BodyParser(&createUserRequest); err != nil {
-		h.logger.Error("Failed to parse request body", "error", err)
+		h.logger.Error().Msgf("Failed to parse request body: %v", err)
 		return err
 	}
 
@@ -48,7 +48,7 @@ func (h *UserHandler) CreateUser(c *fiber.Ctx) error {
 
 	createUserResponse, err := h.userCreateUseCase.Execute(ctx, input)
 	if err != nil {
-		h.logger.Error("Failed to create user", "error", err)
+		h.logger.Error().Msgf("Failed to create user: %v", err)
 		return err
 	}
 

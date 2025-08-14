@@ -74,7 +74,7 @@ func (uc *UserCreateUseCase) Execute(ctx context.Context, input UserCreateInput)
 
 	user, err := uc.userRepository.FindByEmail(ctx, input.Email)
 	if err != nil && !errors.Is(err, shared_errs.ErrRecordNotFound) {
-		uc.logger.Error("error finding user by email", "error", err)
+		uc.logger.Error().Msgf("error finding user by email: %v", err)
 		return output, err
 	}
 
@@ -84,13 +84,13 @@ func (uc *UserCreateUseCase) Execute(ctx context.Context, input UserCreateInput)
 
 	token, err := uc.hashService.GenerateRandomBytes()
 	if err != nil {
-		uc.logger.Error("error generating random bytes", "error", err)
+		uc.logger.Error().Msgf("error generating random bytes: %v", err)
 		return output, err
 	}
 
 	passwordHash, err := uc.hashService.GenerateFromPassword([]byte(input.Password))
 	if err != nil {
-		uc.logger.Error("error generating password hash", "error", err)
+		uc.logger.Error().Msgf("error generating password hash: %v", err)
 		return output, err
 	}
 
@@ -106,14 +106,13 @@ func (uc *UserCreateUseCase) Execute(ctx context.Context, input UserCreateInput)
 
 	createdUser, err := uc.userRepository.Create(ctx, userModel)
 	if err != nil {
-		uc.logger.Error("error creating user", "error", err)
+		uc.logger.Error().Msgf("error creating user: %v", err)
 		return output, err
 	}
 
 	err = uc.sendEmailConfirmationService.Execute(ctx, createdUser.ID)
 	if err != nil {
-		message := "error sending account confirmation email"
-		uc.logger.Error(message, "error", err)
+		uc.logger.Error().Msgf("error sending account confirmation email: %v", err)
 		return output, err
 	}
 

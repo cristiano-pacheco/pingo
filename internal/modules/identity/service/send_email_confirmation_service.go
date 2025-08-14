@@ -48,8 +48,7 @@ func (s *sendEmailConfirmationService) Execute(ctx context.Context, userID uint6
 
 	user, err := s.userRepository.FindByID(ctx, userID)
 	if err != nil {
-		message := "error finding user"
-		s.logger.Error(message, "error", err)
+		s.logger.Error().Msgf("error finding user with ID %d: %v", userID, err)
 		return err
 	}
 
@@ -83,8 +82,7 @@ func (s *sendEmailConfirmationService) Execute(ctx context.Context, userID uint6
 
 	err = s.mailerSMTP.Send(ctx, md)
 	if err != nil {
-		message := "error sending email"
-		s.logger.Error(message, "error", err)
+		s.logger.Error().Msgf("error sending the confirmation email for the user ID %d: %v", userID, err)
 		return err
 	}
 
