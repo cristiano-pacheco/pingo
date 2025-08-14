@@ -20,15 +20,15 @@ type UserRepository interface {
 }
 
 type userRepository struct {
-	db *database.PingoDB
+	*database.PingoDB
 }
 
 func NewUserRepository(db *database.PingoDB) UserRepository {
-	return &userRepository{db: db}
+	return &userRepository{db}
 }
 
 func (r *userRepository) FindByID(ctx context.Context, userID uint64) (model.UserModel, error) {
-	user, err := gorm.G[model.UserModel](r.db.DB).Limit(1).First(ctx)
+	user, err := gorm.G[model.UserModel](r.DB).Limit(1).First(ctx)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return model.UserModel{}, errs.ErrRecordNotFound
@@ -39,7 +39,7 @@ func (r *userRepository) FindByID(ctx context.Context, userID uint64) (model.Use
 }
 
 func (r *userRepository) FindByEmail(ctx context.Context, email string) (model.UserModel, error) {
-	user, err := gorm.G[model.UserModel](r.db.DB).Where("email = ?", email).Limit(1).First(ctx)
+	user, err := gorm.G[model.UserModel](r.DB).Where("email = ?", email).Limit(1).First(ctx)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return model.UserModel{}, errs.ErrRecordNotFound
@@ -50,7 +50,7 @@ func (r *userRepository) FindByEmail(ctx context.Context, email string) (model.U
 }
 
 func (r *userRepository) FindByConfirmationToken(ctx context.Context, confirmationToken []byte) (model.UserModel, error) {
-	user, err := gorm.G[model.UserModel](r.db.DB).
+	user, err := gorm.G[model.UserModel](r.DB).
 		Where("confirmation_token = ?", confirmationToken).Limit(1).First(ctx)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -62,12 +62,12 @@ func (r *userRepository) FindByConfirmationToken(ctx context.Context, confirmati
 }
 
 func (r *userRepository) Create(ctx context.Context, user model.UserModel) (model.UserModel, error) {
-	err := gorm.G[model.UserModel](r.db.DB).Create(ctx, &user)
+	err := gorm.G[model.UserModel](r.DB).Create(ctx, &user)
 	return user, err
 }
 
 func (r *userRepository) Update(ctx context.Context, user model.UserModel) error {
-	rowsAffected, err := gorm.G[model.UserModel](r.db.DB).Where("id = ?", user.ID).Updates(ctx, user)
+	rowsAffected, err := gorm.G[model.UserModel](r.DB).Where("id = ?", user.ID).Updates(ctx, user)
 	if rowsAffected == 0 {
 		return errs.ErrRecordNotFound
 	}
@@ -81,7 +81,7 @@ func (r *userRepository) Update(ctx context.Context, user model.UserModel) error
 
 func (r *userRepository) IsUserActivated(ctx context.Context, userID uint64) (bool, error) {
 	var isActivated bool
-	err := r.db.DB.WithContext(ctx).
+	err := r.DB.WithContext(ctx).
 		Table("users").
 		Select("is_activated").
 		Where("id = ?", userID).
