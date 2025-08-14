@@ -22,9 +22,9 @@ type zerologAdapter struct {
 }
 
 // NewLogger returns a new Logger instance with the given log level
-func NewLogger(config Config) Logger {
+func New(config Config) Logger {
 	var level zerolog.Level
-	switch config.LogLevel {
+	switch config.LogLevel.String() {
 	case "debug":
 		level = zerolog.DebugLevel
 	case "info":

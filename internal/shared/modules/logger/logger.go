@@ -9,10 +9,10 @@ type Logger interface {
 	logger.Logger
 }
 
-func New(config config.Config) Logger {
+func New(cfg config.Config) Logger {
+	logLevel := logger.MustLogLevel(cfg.Log.LogLevel)
 	logConfig := logger.Config{
-		IsEnabled: config.Log.IsEnabled,
-		LogLevel:  logger.LogLevel(config.Log.LogLevel),
+		LogLevel: logLevel,
 	}
 	return logger.New(logConfig)
 }
