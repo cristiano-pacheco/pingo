@@ -5,6 +5,5 @@ CREATE TABLE IF NOT EXISTS contacts (
     contact_data VARCHAR(500) NOT NULL,
     is_enabled BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    CONSTRAINT fk_user_id FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW()
 );

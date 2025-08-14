@@ -1,4 +1,5 @@
 -- Create user status enum
+DROP TYPE IF EXISTS user_status;
 CREATE TYPE user_status AS ENUM ('pending', 'active', 'inactive', 'suspended');
 
 -- Create users table
