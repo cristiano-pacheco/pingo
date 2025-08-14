@@ -3,7 +3,7 @@ package handler
 import (
 	"net/http"
 
-	"github.com/cristiano-pacheco/pingo/internal/modules/identity/http/fiber/dto"
+	"github.com/cristiano-pacheco/pingo/internal/modules/identity/http/dto"
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/usecase"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/logger"
 	"github.com/cristiano-pacheco/pingo/internal/shared/sdk/http/response"
