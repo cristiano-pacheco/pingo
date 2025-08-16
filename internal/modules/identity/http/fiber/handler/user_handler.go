@@ -44,6 +44,7 @@ func (h *UserHandler) CreateUser(c *fiber.Ctx) error {
 		FirstName: createUserRequest.FirstName,
 		LastName:  createUserRequest.LastName,
 		Email:     createUserRequest.Email,
+		Password:  createUserRequest.Password,
 	}
 
 	createUserResponse, err := h.userCreateUseCase.Execute(ctx, input)
