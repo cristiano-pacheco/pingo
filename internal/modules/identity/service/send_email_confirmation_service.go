@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/errs"
@@ -56,7 +57,7 @@ func (s *sendEmailConfirmationService) Execute(ctx context.Context, userID uint6
 		return errs.ErrInvalidAccountConfirmationToken
 	}
 
-	confirmationToken := string(user.ConfirmationToken)
+	confirmationToken := base64.StdEncoding.EncodeToString(user.ConfirmationToken)
 
 	// generate the account confirmation link
 	accountConfLink := fmt.Sprintf(

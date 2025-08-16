@@ -2,9 +2,11 @@ package usecase
 
 import (
 	"context"
+	"encoding/base64"
 	"errors"
 	"time"
 
+	"github.com/cristiano-pacheco/pingo/internal/modules/identity/enum"
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/errs"
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/repository"
 	shared_errs "github.com/cristiano-pacheco/pingo/internal/shared/errs"
@@ -40,8 +42,15 @@ func (uc *UserActivateUseCase) Execute(ctx context.Context, input UserActivateIn
 		return err
 	}
 
-	user, err := uc.userRepository.FindPendingConfirmation(ctx, []byte(input.Token))
+	token, err := base64.StdEncoding.DecodeString(input.Token)
+	if err != nil {
+		uc.logger.Error().Msgf("Failed to decode token: %v", err)
+		return err
+	}
+
+	user, err := uc.userRepository.FindPendingConfirmation(ctx, token)
 	if err != nil && !errors.Is(err, shared_errs.ErrRecordNotFound) {
+		uc.logger.Error().Msgf("Failed to find user with confirmation token for the user_id: %d, error: %v", user.ID, err)
 		return err
 	}
 
@@ -52,9 +61,11 @@ func (uc *UserActivateUseCase) Execute(ctx context.Context, input UserActivateIn
 	now := time.Now().UTC()
 	user.ConfirmedAt = &now
 	user.UpdatedAt = now
-	user.ConfirmationToken = nil
+	user.ConfirmationToken = []byte{}
+	user.Status = enum.UserStatusActive
 	err = uc.userRepository.Update(ctx, user)
 	if err != nil {
+		uc.logger.Error().Msgf("Failed to update user confirmation status for the user_id: %d, error %v", user.ID, err)
 		return err
 	}
 
