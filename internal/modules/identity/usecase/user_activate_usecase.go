@@ -2,9 +2,12 @@ package usecase
 
 import (
 	"context"
+	"errors"
 	"time"
 
+	"github.com/cristiano-pacheco/pingo/internal/modules/identity/errs"
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/repository"
+	shared_errs "github.com/cristiano-pacheco/pingo/internal/shared/errs"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/logger"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/otel"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/validator"
@@ -37,14 +40,19 @@ func (uc *UserActivateUseCase) Execute(ctx context.Context, input UserActivateIn
 		return err
 	}
 
-	user, err := uc.userRepository.FindByConfirmationToken(ctx, []byte(input.Token))
-	if err != nil {
+	user, err := uc.userRepository.FindPendingConfirmation(ctx, []byte(input.Token))
+	if err != nil && !errors.Is(err, shared_errs.ErrRecordNotFound) {
 		return err
+	}
+
+	if user.ID == 0 {
+		return errs.ErrInvalidAccountConfirmationToken
 	}
 
 	now := time.Now().UTC()
 	user.ConfirmedAt = &now
 	user.UpdatedAt = now
+	user.ConfirmationToken = nil
 	err = uc.userRepository.Update(ctx, user)
 	if err != nil {
 		return err

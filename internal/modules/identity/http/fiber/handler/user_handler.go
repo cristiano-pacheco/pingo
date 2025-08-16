@@ -11,14 +11,20 @@ import (
 )
 
 type UserHandler struct {
-	userCreateUseCase *usecase.UserCreateUseCase
-	logger            logger.Logger
+	userCreateUseCase   *usecase.UserCreateUseCase
+	userActivateUseCase *usecase.UserActivateUseCase
+	logger              logger.Logger
 }
 
-func NewUserHandler(userCreateUseCase *usecase.UserCreateUseCase, logger logger.Logger) *UserHandler {
+func NewUserHandler(
+	userCreateUseCase *usecase.UserCreateUseCase,
+	userActivateUseCase *usecase.UserActivateUseCase,
+	logger logger.Logger,
+) *UserHandler {
 	return &UserHandler{
-		userCreateUseCase: userCreateUseCase,
-		logger:            logger,
+		userCreateUseCase:   userCreateUseCase,
+		userActivateUseCase: userActivateUseCase,
+		logger:              logger,
 	}
 }
 
@@ -47,10 +53,17 @@ func (h *UserHandler) CreateUser(c *fiber.Ctx) error {
 		Password:  createUserRequest.Password,
 	}
 
-	createUserResponse, err := h.userCreateUseCase.Execute(ctx, input)
+	output, err := h.userCreateUseCase.Execute(ctx, input)
 	if err != nil {
 		h.logger.Error().Msgf("Failed to create user: %v", err)
 		return err
+	}
+
+	createUserResponse := dto.CreateUserResponse{
+		UserID:    output.UserID,
+		FirstName: output.FirstName,
+		LastName:  output.LastName,
+		Email:     output.Email,
 	}
 
 	res := response.NewEnvelope(createUserResponse)
@@ -70,7 +83,7 @@ func (h *UserHandler) CreateUser(c *fiber.Ctx) error {
 // @Failure		401	{object}	errs.Error	"Invalid credentials"
 // @Failure		404	{object}	errs.Error	"User not found"
 // @Failure		500	{object}	errs.Error	"Internal server error"
-// @Router		/api/v1/users/{id} [put]
+// @Router		/api/v1/users [put]
 func (h *UserHandler) UpdateUser(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"message": "UpdateUser"})
 }
@@ -86,5 +99,22 @@ func (h *UserHandler) UpdateUser(c *fiber.Ctx) error {
 // @Failure		500	{object}	errs.Error	"Internal server error"
 // @Router		/api/v1/users/activate [post]
 func (h *UserHandler) ActivateUser(c *fiber.Ctx) error {
-	return c.JSON(fiber.Map{"message": "ActivateUser"})
+	ctx := c.UserContext()
+	var activateUserRequest dto.ActivateUserRequest
+	if err := c.BodyParser(&activateUserRequest); err != nil {
+		h.logger.Error().Msgf("Failed to parse request body: %v", err)
+		return err
+	}
+
+	input := usecase.UserActivateInput{
+		Token: activateUserRequest.Token,
+	}
+
+	err := h.userActivateUseCase.Execute(ctx, input)
+	if err != nil {
+		h.logger.Error().Msgf("Failed to activate the user: %v", err)
+		return err
+	}
+
+	return c.SendStatus(http.StatusNoContent)
 }
