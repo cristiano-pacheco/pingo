@@ -38,3 +38,12 @@ func (s *hashService) GenerateRandomBytes() ([]byte, error) {
 
 	return buffer, nil
 }
+
+func (s *hashService) GenerateRandomString(n int) (string, error) {
+	bytes, err := s.GenerateRandomBytes()
+	if err != nil {
+		return "", err
+	}
+
+	return string(bytes[:n]), nil
+}
