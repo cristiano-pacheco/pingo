@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/cristiano-pacheco/pingo/internal/modules/identity/repository/model"
+	"github.com/cristiano-pacheco/pingo/internal/modules/identity/model"
 	"github.com/cristiano-pacheco/pingo/internal/shared/errs"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/database"
 	"gorm.io/gorm"
