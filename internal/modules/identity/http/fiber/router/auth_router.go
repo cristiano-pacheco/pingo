@@ -7,5 +7,5 @@ import (
 
 func SetupAuthRoutes(r *router.FiberRouter, h *handler.AuthHandler) {
 	router := r.Router()
-	router.Post("/auth/login", h.GenerateJWTToken)
+	router.Post("/api/v1/auth/login", h.Login)
 }

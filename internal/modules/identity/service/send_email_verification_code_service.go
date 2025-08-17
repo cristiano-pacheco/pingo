@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"fmt"
-	"math/rand"
 
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/repository"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/config"
@@ -62,10 +61,7 @@ func (s *sendEmailVerificationCodeService) Execute(
 
 	name := fmt.Sprintf("%s %s", user.FirstName, user.LastName)
 
-	// generate 6 digit random numbers
-	code := fmt.Sprintf("%06d", rand.Intn(1000000))
-
-	content, err := s.emailTemplateService.CompileAuthVerificationCodeTemplate(ctx, name, code)
+	content, err := s.emailTemplateService.CompileAuthVerificationCodeTemplate(ctx, name, input.Code)
 	md := mailer.MailData{
 		Sender:  s.cfg.MAIL.Sender,
 		ToName:  name,

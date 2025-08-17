@@ -17,6 +17,7 @@ var Module = fx.Module(
 		handler.NewUserHandler,
 
 		repository.NewUserRepository,
+		repository.NewVerificationCodeRepository,
 
 		service.NewSendEmailConfirmationService,
 		service.NewSendEmailVerificationCodeService,

@@ -4,15 +4,20 @@ import (
 	"net/http"
 
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/http/dto"
-	"github.com/cristiano-pacheco/pingo/internal/shared/sdk/http/response"
+	"github.com/cristiano-pacheco/pingo/internal/modules/identity/usecase"
 	"github.com/gofiber/fiber/v2"
 )
 
 type AuthHandler struct {
+	authLoginUseCase *usecase.AuthLoginUseCase
 }
 
-func NewAuthHandler() *AuthHandler {
-	return &AuthHandler{}
+func NewAuthHandler(
+	authLoginUseCase *usecase.AuthLoginUseCase,
+) *AuthHandler {
+	return &AuthHandler{
+		authLoginUseCase: authLoginUseCase,
+	}
 }
 
 // @Summary		Generate authentication token
@@ -26,15 +31,22 @@ func NewAuthHandler() *AuthHandler {
 // @Failure		401	{object}	errs.Error	"Invalid credentials"
 // @Failure		404	{object}	errs.Error	"User not found"
 // @Failure		500	{object}	errs.Error	"Internal server error"
-// @Router		/api/v1/auth/token [post]
-func (h *AuthHandler) GenerateJWTToken(c *fiber.Ctx) error {
-	createUserReponse := dto.CreateUserResponse{
-		UserID:    1,
-		FirstName: "John",
-		LastName:  "Doe",
+// @Router		/api/v1/auth/login [post]
+func (h *AuthHandler) Login(c *fiber.Ctx) error {
+	ctx := c.UserContext()
+	var authLoginRequest dto.AuthLoginRequest
+	if err := c.BodyParser(&authLoginRequest); err != nil {
+		return err
 	}
-	response := response.NewEnvelope(createUserReponse)
-	return c.Status(http.StatusCreated).JSON(response)
+	input := usecase.AuthLoginInput{
+		Email:    authLoginRequest.Email,
+		Password: authLoginRequest.Password,
+	}
+	err := h.authLoginUseCase.Execute(ctx, input)
+	if err != nil {
+		return err
+	}
+	return c.SendStatus(http.StatusNoContent)
 }
 
 // @Summary		Generate authentication token
