@@ -12,6 +12,7 @@ CREATE TABLE users (
     password_hash BYTEA NOT NULL,
     confirmation_token BYTEA,
     confirmed_at TIMESTAMPTZ,
+    reset_password_token BYTEA,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
