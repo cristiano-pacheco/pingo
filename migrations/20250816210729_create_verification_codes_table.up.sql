@@ -9,5 +9,4 @@ CREATE TABLE verification_codes (
     CONSTRAINT valid_code_format CHECK (code ~ '^[0-9]{6}$')
 );
 
-CREATE INDEX idx_verification_lookup ON verification_codes (user_id, code) 
-WHERE used_at IS NULL AND expires_at > NOW();
+CREATE UNIQUE INDEX idx_verification_lookup ON verification_codes (user_id, code);

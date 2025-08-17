@@ -19,6 +19,7 @@ var Module = fx.Module(
 		repository.NewUserRepository,
 
 		service.NewSendEmailConfirmationService,
+		service.NewSendEmailVerificationCodeService,
 		service.NewEmailTemplateService,
 		service.NewTokenService,
 		service.NewHashService,
@@ -27,6 +28,7 @@ var Module = fx.Module(
 
 		usecase.NewUserActivateUseCase,
 		usecase.NewUserCreateUseCase,
+		usecase.NewAuthLoginUseCase,
 	),
 	fx.Invoke(
 		router.SetupUserRoutes,

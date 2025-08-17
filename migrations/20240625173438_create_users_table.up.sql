@@ -21,5 +21,3 @@ CREATE TABLE users (
 CREATE INDEX idx_users_email ON users(email);
 CREATE INDEX idx_users_status ON users(status);
 CREATE INDEX idx_users_confirmation_token ON users(confirmation_token);
-CREATE INDEX idx_magic_tokens_user ON magic_tokens(user_id);
-CREATE INDEX idx_magic_tokens_token ON magic_tokens(token);
