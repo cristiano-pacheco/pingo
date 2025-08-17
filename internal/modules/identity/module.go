@@ -30,6 +30,7 @@ var Module = fx.Module(
 		usecase.NewUserActivateUseCase,
 		usecase.NewUserCreateUseCase,
 		usecase.NewAuthLoginUseCase,
+		usecase.NewAuthGenerateTokenUseCase,
 	),
 	fx.Invoke(
 		router.SetupUserRoutes,
