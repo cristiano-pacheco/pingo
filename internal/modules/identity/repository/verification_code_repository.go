@@ -15,6 +15,7 @@ type VerificationCodeRepository interface {
 	FindByUserAndCode(ctx context.Context, userID uint, code string) (model.VerificationCodeModel, error)
 	Create(ctx context.Context, v model.VerificationCodeModel) (model.VerificationCodeModel, error)
 	Update(ctx context.Context, v model.VerificationCodeModel) error
+	DeleteByUserID(ctx context.Context, userID uint64) error
 }
 
 type verificationCodeRepository struct {
@@ -59,5 +60,16 @@ func (r *verificationCodeRepository) Update(ctx context.Context, v model.Verific
 		return err
 	}
 
+	return nil
+}
+
+func (r *verificationCodeRepository) DeleteByUserID(ctx context.Context, userID uint64) error {
+	rowsAffected, err := gorm.G[model.VerificationCodeModel](r.DB).Where("user_id = ?", userID).Delete(ctx)
+	if err != nil {
+		return err
+	}
+	if rowsAffected == 0 {
+		return errs.ErrRecordNotFound
+	}
 	return nil
 }

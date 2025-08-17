@@ -5,8 +5,8 @@ import (
 )
 
 type VerificationCodeModel struct {
-	ID        uint `gorm:"primarykey"`
-	UserID    uint
+	ID        uint64 `gorm:"primarykey"`
+	UserID    uint64
 	Code      string
 	ExpiresAt time.Time
 	CreatedAt time.Time
