@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/cristiano-pacheco/pingo/internal/modules/identity/repository/model"
+	"github.com/cristiano-pacheco/pingo/internal/modules/identity/model"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/config"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/logger"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/otel"
