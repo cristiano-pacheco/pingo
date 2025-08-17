@@ -6,8 +6,8 @@ import (
 
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/enum"
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/errs"
+	"github.com/cristiano-pacheco/pingo/internal/modules/identity/model"
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/repository"
-	"github.com/cristiano-pacheco/pingo/internal/modules/identity/repository/model"
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/service"
 	identity_validator "github.com/cristiano-pacheco/pingo/internal/modules/identity/validator"
 	shared_errs "github.com/cristiano-pacheco/pingo/internal/shared/errs"
