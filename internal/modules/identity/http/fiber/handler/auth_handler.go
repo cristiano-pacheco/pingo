@@ -5,18 +5,22 @@ import (
 
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/http/dto"
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/usecase"
+	"github.com/cristiano-pacheco/pingo/internal/shared/sdk/http/response"
 	"github.com/gofiber/fiber/v2"
 )
 
 type AuthHandler struct {
-	authLoginUseCase *usecase.AuthLoginUseCase
+	authLoginUseCase         *usecase.AuthLoginUseCase
+	authGenerateTokenUseCase *usecase.AuthGenerateTokenUseCase
 }
 
 func NewAuthHandler(
 	authLoginUseCase *usecase.AuthLoginUseCase,
+	authGenerateTokenUseCase *usecase.AuthGenerateTokenUseCase,
 ) *AuthHandler {
 	return &AuthHandler{
-		authLoginUseCase: authLoginUseCase,
+		authLoginUseCase:         authLoginUseCase,
+		authGenerateTokenUseCase: authGenerateTokenUseCase,
 	}
 }
 
@@ -60,7 +64,25 @@ func (h *AuthHandler) Login(c *fiber.Ctx) error {
 // @Failure		401	{object}	errs.Error	"Invalid credentials"
 // @Failure		404	{object}	errs.Error	"User not found"
 // @Failure		500	{object}	errs.Error	"Internal server error"
-// @Router		/api/v1/auth/magic-link [post]
-func (h *AuthHandler) SendMagicLink(c *fiber.Ctx) error {
-	return c.JSON(fiber.Map{"message": "SendMagicLink"})
+// @Router		/api/v1/auth/token [post]
+func (h *AuthHandler) GenerateJWT(c *fiber.Ctx) error {
+	ctx := c.UserContext()
+	var generateJWTRequest dto.AuthGenerateJWTRequest
+	if err := c.BodyParser(&generateJWTRequest); err != nil {
+		return err
+	}
+	input := usecase.GenerateTokenInput{
+		UserID: generateJWTRequest.UserID,
+		Code:   generateJWTRequest.Code,
+	}
+	output, err := h.authGenerateTokenUseCase.Execute(ctx, input)
+	if err != nil {
+		return err
+	}
+
+	generateJWTResponse := dto.AuthGenerateJWTResponse{
+		Token: output.Token,
+	}
+	res := response.NewEnvelope(generateJWTResponse)
+	return c.Status(http.StatusOK).JSON(res)
 }
