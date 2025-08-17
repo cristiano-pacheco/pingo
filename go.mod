@@ -16,6 +16,8 @@ require (
 	github.com/golang-migrate/migrate/v4 v4.18.3
 	github.com/redis/go-redis/extra/redisotel/v9 v9.12.0
 	github.com/redis/go-redis/v9 v9.12.0
+	github.com/rs/zerolog v1.34.0
+	github.com/samber/lo v1.51.0
 	github.com/spf13/cobra v1.9.1
 	github.com/spf13/viper v1.20.1
 	github.com/stretchr/testify v1.10.0
@@ -75,7 +77,6 @@ require (
 	github.com/prometheus/procfs v0.15.1 // indirect
 	github.com/redis/go-redis/extra/rediscmd/v9 v9.12.0 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
-	github.com/rs/zerolog v1.34.0 // indirect
 	github.com/sagikazarmark/locafero v0.7.0 // indirect
 	github.com/sourcegraph/conc v0.3.0 // indirect
 	github.com/spf13/afero v1.12.0 // indirect
