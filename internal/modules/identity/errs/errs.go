@@ -18,4 +18,5 @@ var (
 	ErrPasswordNoLowercase             = errs.New("IDENTITY_09", "Password must contain at least one lowercase letter", http.StatusBadRequest, nil)
 	ErrPasswordNoNumber                = errs.New("IDENTITY_10", "Password must contain at least one number", http.StatusBadRequest, nil)
 	ErrPasswordNoSpecialChar           = errs.New("IDENTITY_11", "Password must contain at least one special character", http.StatusBadRequest, nil)
+	ErrUserNotFound                    = errs.New("IDENTITY_12", "User not found", http.StatusNotFound, nil)
 )

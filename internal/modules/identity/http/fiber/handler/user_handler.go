@@ -13,17 +13,20 @@ import (
 type UserHandler struct {
 	userCreateUseCase   *usecase.UserCreateUseCase
 	userActivateUseCase *usecase.UserActivateUseCase
+	userUpdateUseCase   *usecase.UserUpdateUseCase
 	logger              logger.Logger
 }
 
 func NewUserHandler(
 	userCreateUseCase *usecase.UserCreateUseCase,
 	userActivateUseCase *usecase.UserActivateUseCase,
+	userUpdateUseCase *usecase.UserUpdateUseCase,
 	logger logger.Logger,
 ) *UserHandler {
 	return &UserHandler{
 		userCreateUseCase:   userCreateUseCase,
 		userActivateUseCase: userActivateUseCase,
+		userUpdateUseCase:   userUpdateUseCase,
 		logger:              logger,
 	}
 }
@@ -84,7 +87,32 @@ func (h *UserHandler) CreateUser(c *fiber.Ctx) error {
 // @Failure		500	{object}	errs.Error	"Internal server error"
 // @Router		/api/v1/users [put]
 func (h *UserHandler) UpdateUser(c *fiber.Ctx) error {
-	return c.JSON(fiber.Map{"message": "UpdateUser"})
+	ctx := c.UserContext()
+	var updateUserRequest dto.UpdateUserRequest
+	if err := c.BodyParser(&updateUserRequest); err != nil {
+		h.logger.Error().Msgf("Failed to parse request body: %v", err)
+		return err
+	}
+
+	userID, ok := ctx.Value("user_id").(uint64)
+	if !ok || userID == 0 {
+		h.logger.Error().Msg("UserID not found in context")
+		return fiber.NewError(http.StatusUnauthorized, "UserID not found")
+	}
+
+	input := usecase.UserUpdateInput{
+		UserID:    userID,
+		FirstName: updateUserRequest.FirstName,
+		LastName:  updateUserRequest.LastName,
+	}
+
+	err := h.userUpdateUseCase.Execute(ctx, input)
+	if err != nil {
+		h.logger.Error().Msgf("Failed to update user: %v", err)
+		return err
+	}
+
+	return c.SendStatus(http.StatusNoContent)
 }
 
 // @Summary		Activate user
