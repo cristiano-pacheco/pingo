@@ -76,7 +76,6 @@ func (h *UserHandler) CreateUser(c *fiber.Ctx) error {
 // @Accept		json
 // @Produce		json
 // @Security 	BearerAuth
-// @Param		id		path	integer		true	"User ID"
 // @Param		request	body	dto.UpdateUserRequest	true	"User data"
 // @Success		204		"Successfully updated user"
 // @Failure		422	{object}	errs.Error	"Invalid request format or validation error"

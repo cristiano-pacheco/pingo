@@ -24,8 +24,8 @@ func NewAuthHandler(
 	}
 }
 
-// @Summary		Generate authentication token
-// @Description	Authenticates user credentials and returns an access token
+// @Summary		Authenticate the user
+// @Description	Authenticates user credentials and send the verification code
 // @Tags		Authentication
 // @Accept		json
 // @Produce		json
@@ -55,7 +55,7 @@ func (h *AuthHandler) Login(c *fiber.Ctx) error {
 }
 
 // @Summary		Generate authentication token
-// @Description	Authenticates user credentials and returns an access token
+// @Description	Generate the JWT token for the user
 // @Tags		Authentication
 // @Accept		json
 // @Produce		json

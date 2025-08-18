@@ -7,6 +7,20 @@ definitions:
       user_id:
         type: integer
     type: object
+  dto.AuthGenerateJWTRequest:
+    properties:
+      code:
+        type: string
+      user_id:
+        type: integer
+    type: object
+  dto.AuthLoginRequest:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    type: object
   dto.CreateUserRequest:
     properties:
       email:
@@ -14,11 +28,6 @@ definitions:
       first_name:
         type: string
       last_name:
-        type: string
-    type: object
-  dto.GenerateTokenRequest:
-    properties:
-      email:
         type: string
       password:
         type: string
@@ -59,18 +68,18 @@ info:
   title: Pingo API
   version: "1.0"
 paths:
-  /api/v1/auth/magic-link:
+  /api/v1/auth/login:
     post:
       consumes:
       - application/json
-      description: Authenticates user credentials and returns an access token
+      description: Authenticates user credentials and send the verification code
       parameters:
       - description: Login credentials (email and password)
         in: body
         name: request
         required: true
         schema:
-          $ref: '#/definitions/dto.GenerateTokenRequest'
+          $ref: '#/definitions/dto.AuthLoginRequest'
       produces:
       - application/json
       responses:
@@ -94,21 +103,21 @@ paths:
           description: Internal server error
           schema:
             $ref: '#/definitions/errs.Error'
-      summary: Generate authentication token
+      summary: Authenticate the user
       tags:
       - Authentication
   /api/v1/auth/token:
     post:
       consumes:
       - application/json
-      description: Authenticates user credentials and returns an access token
+      description: Generate the JWT token for the user
       parameters:
       - description: Login credentials (email and password)
         in: body
         name: request
         required: true
         schema:
-          $ref: '#/definitions/dto.GenerateTokenRequest'
+          $ref: '#/definitions/dto.AuthGenerateJWTRequest'
       produces:
       - application/json
       responses:
@@ -165,17 +174,11 @@ paths:
       summary: Create user
       tags:
       - Users
-  /api/v1/users/{id}:
     put:
       consumes:
       - application/json
       description: Updates an existing user
       parameters:
-      - description: User ID
-        in: path
-        name: id
-        required: true
-        type: integer
       - description: User data
         in: body
         name: request
