@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 
+	"github.com/cristiano-pacheco/pingo/internal/modules/identity/enum"
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/model"
 	"github.com/cristiano-pacheco/pingo/internal/shared/errs"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/database"
@@ -82,16 +83,18 @@ func (r *userRepository) Update(ctx context.Context, user model.UserModel) error
 }
 
 func (r *userRepository) IsUserActivated(ctx context.Context, userID uint64) (bool, error) {
-	var isActivated bool
-	err := r.DB.WithContext(ctx).
-		Table("users").
-		Select("is_activated").
-		Where("id = ?", userID).
-		Scan(&isActivated).Error
-
+	user, err := r.FindByID(ctx, userID)
 	if err != nil {
 		return false, err
 	}
 
-	return isActivated, nil
+	if user.ID == 0 {
+		return false, nil
+	}
+
+	if user.Status == enum.UserStatusActive {
+		return true, nil
+	}
+
+	return false, nil
 }
