@@ -5,6 +5,10 @@ type AuthLoginRequest struct {
 	Password string `json:"password"`
 }
 
+type AuthLoginResponse struct {
+	UserID uint64 `json:"user_id"`
+}
+
 type AuthGenerateJWTRequest struct {
 	UserID uint64 `json:"user_id"`
 	Code   string `json:"code"`

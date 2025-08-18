@@ -29,8 +29,8 @@ func NewAuthHandler(
 // @Tags		Authentication
 // @Accept		json
 // @Produce		json
-// @Param		request	body	dto.GenerateTokenRequest	true	"Login credentials (email and password)"
-// @Success		200	{object}	response.Envelope[dto.GenerateTokenResponse]	"Successfully generated token"
+// @Param		request	body	dto.AuthLoginRequest	true	"Login credentials (email and password)"
+// @Success		200	{object}	response.Envelope[dto.AuthLoginResponse]	"Successfully generated token"
 // @Failure		400	{object}	errs.Error	"Invalid request format or validation error"
 // @Failure		401	{object}	errs.Error	"Invalid credentials"
 // @Failure		404	{object}	errs.Error	"User not found"
@@ -46,11 +46,12 @@ func (h *AuthHandler) Login(c *fiber.Ctx) error {
 		Email:    authLoginRequest.Email,
 		Password: authLoginRequest.Password,
 	}
-	err := h.authLoginUseCase.Execute(ctx, input)
+	output, err := h.authLoginUseCase.Execute(ctx, input)
 	if err != nil {
 		return err
 	}
-	return c.SendStatus(http.StatusNoContent)
+	res := response.NewEnvelope(dto.AuthLoginResponse{UserID: output.UserID})
+	return c.Status(http.StatusOK).JSON(res)
 }
 
 // @Summary		Generate authentication token
@@ -58,8 +59,8 @@ func (h *AuthHandler) Login(c *fiber.Ctx) error {
 // @Tags		Authentication
 // @Accept		json
 // @Produce		json
-// @Param		request	body	dto.GenerateTokenRequest	true	"Login credentials (email and password)"
-// @Success		200	{object}	response.Envelope[dto.GenerateTokenResponse]	"Successfully generated token"
+// @Param		request	body	dto.AuthGenerateJWTRequest	true	"Login credentials (email and password)"
+// @Success		200	{object}	response.Envelope[dto.AuthGenerateJWTResponse]	"Successfully generated token"
 // @Failure		400	{object}	errs.Error	"Invalid request format or validation error"
 // @Failure		401	{object}	errs.Error	"Invalid credentials"
 // @Failure		404	{object}	errs.Error	"User not found"

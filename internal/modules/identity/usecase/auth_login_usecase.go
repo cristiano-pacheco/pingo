@@ -22,6 +22,10 @@ type AuthLoginInput struct {
 	Password string `validate:"required"`
 }
 
+type AuthLoginOutput struct {
+	UserID uint64
+}
+
 type AuthLoginUseCase struct {
 	verificationCodeRepository       repository.VerificationCodeRepository
 	userRepository                   repository.UserRepository
@@ -49,36 +53,36 @@ func NewAuthLoginUseCase(
 	}
 }
 
-func (u *AuthLoginUseCase) Execute(ctx context.Context, input AuthLoginInput) error {
+func (u *AuthLoginUseCase) Execute(ctx context.Context, input AuthLoginInput) (AuthLoginOutput, error) {
 	ctx, span := otel.Trace().StartSpan(ctx, "AuthLoginUseCase.Execute")
 	defer span.End()
 
 	if err := u.validator.Struct(input); err != nil {
-		return err
+		return AuthLoginOutput{}, err
 	}
 
 	user, err := u.userRepository.FindByEmail(ctx, input.Email)
 	if err != nil && !errors.Is(err, shared_errs.ErrRecordNotFound) {
 		u.logger.Error().Msgf("error finding by email %v", err)
-		return err
+		return AuthLoginOutput{}, err
 	}
 
 	if user.ID == 0 {
-		return errs.ErrInvalidCredentials
+		return AuthLoginOutput{}, errs.ErrInvalidCredentials
 	}
 
 	if user.Status != "active" {
-		return errs.ErrUserIsNotActive
+		return AuthLoginOutput{}, errs.ErrUserIsNotActive
 	}
 
 	if err := u.hashService.CompareHashAndPassword(user.PasswordHash, []byte(input.Password)); err != nil {
-		return errs.ErrInvalidCredentials
+		return AuthLoginOutput{}, errs.ErrInvalidCredentials
 	}
 
 	err = u.verificationCodeRepository.DeleteByUserID(ctx, user.ID)
 	if err != nil && !errors.Is(err, shared_errs.ErrRecordNotFound) {
 		u.logger.Error().Msgf("error deleting verification codes for user ID %d: %v", user.ID, err)
-		return err
+		return AuthLoginOutput{}, err
 	}
 
 	code := fmt.Sprintf("%06d", rand.Intn(1000000))
@@ -92,15 +96,15 @@ func (u *AuthLoginUseCase) Execute(ctx context.Context, input AuthLoginInput) er
 	_, err = u.verificationCodeRepository.Create(ctx, verificationCode)
 	if err != nil {
 		u.logger.Error().Msgf("error creating verification code for user ID %d: %v", user.ID, err)
-		return err
+		return AuthLoginOutput{}, err
 	}
 
 	sendEmailVerificationCodeInput := service.SendEmailVerificationCodeInput{UserID: user.ID, Code: code}
 	err = u.sendEmailVerificationCodeService.Execute(ctx, sendEmailVerificationCodeInput)
 	if err != nil {
 		u.logger.Error().Msgf("error sending verification code email for user ID %d: %v", user.ID, err)
-		return err
+		return AuthLoginOutput{}, err
 	}
 
-	return nil
+	return AuthLoginOutput{UserID: user.ID}, nil
 }
