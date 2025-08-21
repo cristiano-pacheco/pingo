@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"context"
 	"strconv"
 	"strings"
 
@@ -61,7 +62,7 @@ func (m *AuthMiddleware) Middleware() fiber.Handler {
 			return errs.ErrInvalidToken
 		}
 
-		ctx := c.Context()
+		ctx := c.UserContext()
 		isActivated, err := m.userRepository.IsUserActivated(ctx, userID)
 		if err != nil {
 			return err
@@ -71,8 +72,8 @@ func (m *AuthMiddleware) Middleware() fiber.Handler {
 			return errs.ErrUserIsNotActive
 		}
 
-		// Store user ID in context
-		c.Locals(string(request.UserIDKey), userID)
+		newCtx := context.WithValue(ctx, request.UserIDKey, userID)
+		c.SetUserContext(newCtx)
 
 		return nil
 	}
