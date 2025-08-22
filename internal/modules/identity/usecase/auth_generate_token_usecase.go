@@ -49,7 +49,10 @@ type GenerateTokenOutput struct {
 	Token string
 }
 
-func (uc *AuthGenerateTokenUseCase) Execute(ctx context.Context, input GenerateTokenInput) (GenerateTokenOutput, error) {
+func (uc *AuthGenerateTokenUseCase) Execute(
+	ctx context.Context,
+	input GenerateTokenInput,
+) (GenerateTokenOutput, error) {
 	ctx, span := otel.Trace().StartSpan(ctx, "AuthGenerateTokenUseCase.Execute")
 	defer span.End()
 

@@ -50,7 +50,10 @@ func (r *userRepository) FindByEmail(ctx context.Context, email string) (model.U
 	return user, nil
 }
 
-func (r *userRepository) FindPendingConfirmation(ctx context.Context, confirmationToken []byte) (model.UserModel, error) {
+func (r *userRepository) FindPendingConfirmation(
+	ctx context.Context,
+	confirmationToken []byte,
+) (model.UserModel, error) {
 	user, err := gorm.G[model.UserModel](r.DB).
 		Where("confirmation_token = ?", confirmationToken).
 		Where("status = ?", "pending").

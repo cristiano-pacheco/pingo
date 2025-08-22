@@ -50,7 +50,8 @@ func (uc *UserActivateUseCase) Execute(ctx context.Context, input UserActivateIn
 
 	user, err := uc.userRepository.FindPendingConfirmation(ctx, token)
 	if err != nil && !errors.Is(err, shared_errs.ErrRecordNotFound) {
-		uc.logger.Error().Msgf("Failed to find user with confirmation token for the user_id: %d, error: %v", user.ID, err)
+		uc.logger.Error().
+			Msgf("Failed to find user with confirmation token for the user_id: %d, error: %v", user.ID, err)
 		return err
 	}
 

@@ -26,7 +26,11 @@ func NewVerificationCodeRepository(db *database.PingoDB) VerificationCodeReposit
 	return &verificationCodeRepository{db}
 }
 
-func (r *verificationCodeRepository) FindByUserAndCode(ctx context.Context, userID uint64, code string) (model.VerificationCodeModel, error) {
+func (r *verificationCodeRepository) FindByUserAndCode(
+	ctx context.Context,
+	userID uint64,
+	code string,
+) (model.VerificationCodeModel, error) {
 	now := time.Now()
 	v, err := gorm.G[model.VerificationCodeModel](r.DB).
 		Where("user_id = ?", userID).
@@ -45,7 +49,10 @@ func (r *verificationCodeRepository) FindByUserAndCode(ctx context.Context, user
 	return v, nil
 }
 
-func (r *verificationCodeRepository) Create(ctx context.Context, v model.VerificationCodeModel) (model.VerificationCodeModel, error) {
+func (r *verificationCodeRepository) Create(
+	ctx context.Context,
+	v model.VerificationCodeModel,
+) (model.VerificationCodeModel, error) {
 	err := gorm.G[model.VerificationCodeModel](r.DB).Create(ctx, &v)
 	return v, err
 }

@@ -36,7 +36,8 @@ func (m *FiberErrorMiddleware) Middleware() fiber.Handler {
 		}
 
 		// validation error flow
-		if validationErrors, ok := err.(lib_validator.ValidationErrors); ok {
+		var validationErrors lib_validator.ValidationErrors
+		if errors.As(err, &validationErrors) {
 			var details []errs.Detail
 			for _, e := range validationErrors {
 				details = append(details, errs.Detail{

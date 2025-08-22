@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -40,7 +41,7 @@ var dbMigrateCmd = &cobra.Command{
 			log.Fatal(err)
 		}
 
-		if err := m.Up(); err != nil && err != migrate.ErrNoChange {
+		if err := m.Up(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
 			log.Fatal(err)
 		}
 
