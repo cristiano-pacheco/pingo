@@ -6,6 +6,7 @@ import (
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/http/dto"
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/usecase"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/logger"
+	"github.com/cristiano-pacheco/pingo/internal/shared/sdk/http/request"
 	"github.com/cristiano-pacheco/pingo/internal/shared/sdk/http/response"
 	"github.com/gofiber/fiber/v2"
 )
@@ -94,7 +95,7 @@ func (h *UserHandler) UpdateUser(c *fiber.Ctx) error {
 		return err
 	}
 
-	userID, ok := ctx.Value("user_id").(uint64)
+	userID, ok := ctx.Value(request.UserIDKey).(uint64)
 	if !ok || userID == 0 {
 		h.logger.Error().Msg("UserID not found in context")
 		return fiber.NewError(http.StatusUnauthorized, "UserID not found")

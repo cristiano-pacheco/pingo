@@ -15,7 +15,5 @@ func SetupUserRoutes(
 	r.Post("/api/v1/users", handler.CreateUser)
 	r.Post("/api/v1/users/activate", handler.ActivateUser)
 
-	authenticatedGroup := r.Group("/api/v1/users")
-	authenticatedGroup.Use(authMiddleware.Middleware())
-	authenticatedGroup.Put("/", handler.UpdateUser)
+	r.Put("/api/v1/users", authMiddleware.Middleware(), handler.UpdateUser)
 }

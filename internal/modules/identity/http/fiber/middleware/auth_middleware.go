@@ -75,6 +75,6 @@ func (m *AuthMiddleware) Middleware() fiber.Handler {
 		newCtx := context.WithValue(ctx, request.UserIDKey, userID)
 		c.SetUserContext(newCtx)
 
-		return nil
+		return c.Next()
 	}
 }
