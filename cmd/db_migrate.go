@@ -2,8 +2,7 @@ package cmd
 
 import (
 	"errors"
-	"fmt"
-	"log"
+	"log/slog"
 	"os"
 
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/config"
@@ -38,14 +37,16 @@ var dbMigrateCmd = &cobra.Command{
 
 		m, err := migrate.New("file://migrations", dsn)
 		if err != nil {
-			log.Fatal(err)
+			slog.Error("failed to create migrate instance", "err", err)
+			os.Exit(1)
 		}
 
 		if err := m.Up(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
-			log.Fatal(err)
+			slog.Error("failed to run migrations", "err", err)
+			os.Exit(1)
 		}
 
-		fmt.Println("Migrations executed successfully")
+		slog.Info("Migrations executed successfully")
 		os.Exit(0)
 	},
 }

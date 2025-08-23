@@ -67,16 +67,8 @@ func (u *AuthLoginUseCase) Execute(ctx context.Context, input AuthLoginInput) (A
 		return AuthLoginOutput{}, err
 	}
 
-	if user.ID == 0 {
-		return AuthLoginOutput{}, errs.ErrInvalidCredentials
-	}
-
-	if user.Status != "active" {
-		return AuthLoginOutput{}, errs.ErrUserIsNotActive
-	}
-
-	if err := u.hashService.CompareHashAndPassword(user.PasswordHash, []byte(input.Password)); err != nil {
-		return AuthLoginOutput{}, errs.ErrInvalidCredentials
+	if err := u.validateUserForLogin(user, input.Password); err != nil {
+		return AuthLoginOutput{}, err
 	}
 
 	err = u.verificationCodeRepository.DeleteByUserID(ctx, user.ID)
@@ -107,4 +99,20 @@ func (u *AuthLoginUseCase) Execute(ctx context.Context, input AuthLoginInput) (A
 	}
 
 	return AuthLoginOutput{UserID: user.ID}, nil
+}
+
+func (u *AuthLoginUseCase) validateUserForLogin(user model.UserModel, password string) error {
+	if user.ID == 0 {
+		return errs.ErrInvalidCredentials
+	}
+
+	if user.Status != "active" {
+		return errs.ErrUserIsNotActive
+	}
+
+	if err := u.hashService.CompareHashAndPassword(user.PasswordHash, []byte(password)); err != nil {
+		return errs.ErrInvalidCredentials
+	}
+
+	return nil
 }
