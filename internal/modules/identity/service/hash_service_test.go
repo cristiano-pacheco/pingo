@@ -29,7 +29,7 @@ func (s *HashServiceTestSuite) TestGenerateFromPassword_ValidPassword_ReturnsHas
 	hashedPassword, err := s.sut.GenerateFromPassword(password)
 
 	// Assert
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.NotNil(hashedPassword)
 	s.NotEqual(password, hashedPassword)
 	s.NotEmpty(hashedPassword)
@@ -43,7 +43,7 @@ func (s *HashServiceTestSuite) TestGenerateFromPassword_EmptyPassword_ReturnsHas
 	hashedPassword, err := s.sut.GenerateFromPassword(password)
 
 	// Assert
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.NotNil(hashedPassword)
 	s.NotEmpty(hashedPassword)
 }
@@ -52,13 +52,13 @@ func (s *HashServiceTestSuite) TestCompareHashAndPassword_ValidPasswordAndHash_R
 	// Arrange
 	password := []byte("testpassword123")
 	hashedPassword, err := bcrypt.GenerateFromPassword(password, bcrypt.DefaultCost)
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	// Act
 	err = s.sut.CompareHashAndPassword(hashedPassword, password)
 
 	// Assert
-	s.NoError(err)
+	s.Require().NoError(err)
 }
 
 func (s *HashServiceTestSuite) TestCompareHashAndPassword_InvalidPassword_ReturnsError() {
@@ -66,13 +66,13 @@ func (s *HashServiceTestSuite) TestCompareHashAndPassword_InvalidPassword_Return
 	password := []byte("testpassword123")
 	wrongPassword := []byte("wrongpassword")
 	hashedPassword, err := bcrypt.GenerateFromPassword(password, bcrypt.DefaultCost)
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	// Act
 	err = s.sut.CompareHashAndPassword(hashedPassword, wrongPassword)
 
 	// Assert
-	s.Error(err)
+	s.Require().Error(err)
 	s.ErrorIs(err, bcrypt.ErrMismatchedHashAndPassword)
 }
 
@@ -85,7 +85,7 @@ func (s *HashServiceTestSuite) TestCompareHashAndPassword_InvalidHash_ReturnsErr
 	err := s.sut.CompareHashAndPassword(invalidHash, password)
 
 	// Assert
-	s.Error(err)
+	s.Require().Error(err)
 }
 
 func (s *HashServiceTestSuite) TestGenerateRandomBytes_DefaultSize_ReturnsRandomBytes() {
@@ -96,7 +96,7 @@ func (s *HashServiceTestSuite) TestGenerateRandomBytes_DefaultSize_ReturnsRandom
 	randomBytes, err := s.sut.GenerateRandomBytes()
 
 	// Assert
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.NotNil(randomBytes)
 	s.Len(randomBytes, expectedSize)
 }
@@ -109,7 +109,7 @@ func (s *HashServiceTestSuite) TestGenerateRandomBytes_MultipleCalls_ReturnsDiff
 	randomBytes2, err2 := s.sut.GenerateRandomBytes()
 
 	// Assert
-	s.NoError(err1)
-	s.NoError(err2)
+	s.Require().NoError(err1)
+	s.Require().NoError(err2)
 	s.NotEqual(randomBytes1, randomBytes2)
 }

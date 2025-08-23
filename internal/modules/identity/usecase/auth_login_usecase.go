@@ -72,7 +72,7 @@ func (u *AuthLoginUseCase) Execute(ctx context.Context, input AuthLoginInput) (A
 		return AuthLoginOutput{}, err
 	}
 
-	if err := u.createAndSendVerification(ctx, user); err != nil {
+	if err = u.createAndSendVerification(ctx, user); err != nil {
 		return AuthLoginOutput{}, err
 	}
 
