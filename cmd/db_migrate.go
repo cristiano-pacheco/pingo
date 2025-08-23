@@ -13,7 +13,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// dbMigrateCmd represents the migrate command
 var dbMigrateCmd = &cobra.Command{
 	Use:   "db:migrate",
 	Short: "Run database migrations",
@@ -35,18 +34,22 @@ var dbMigrateCmd = &cobra.Command{
 		}
 		dsn := database.GeneratePostgresDatabaseDSN(dbConfig)
 
+		logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
+			Level: slog.LevelInfo,
+		}))
+
 		m, err := migrate.New("file://migrations", dsn)
 		if err != nil {
-			slog.Error("failed to create migrate instance", "err", err)
+			logger.Error("failed to create migrate instance", "err", err)
 			os.Exit(1)
 		}
 
 		if err := m.Up(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
-			slog.Error("failed to run migrations", "err", err)
+			logger.Error("failed to run migrations", "err", err)
 			os.Exit(1)
 		}
 
-		slog.Info("Migrations executed successfully")
+		logger.Info("Migrations executed successfully")
 		os.Exit(0)
 	},
 }

@@ -21,7 +21,8 @@ import (
 )
 
 type FiberHTTPServer struct {
-	app *fiber.App
+	app      *fiber.App
+	httpPort uint
 }
 
 func NewFiberHTTPServer(
@@ -65,7 +66,7 @@ func NewFiberHTTPServer(
 
 	// Swagger
 	app.Get("/swagger/*", swagger.HandlerDefault) // default
-	return &FiberHTTPServer{app: app}
+	return &FiberHTTPServer{app: app, httpPort: httpPort}
 }
 
 func (s *FiberHTTPServer) App() *fiber.App {
@@ -74,12 +75,12 @@ func (s *FiberHTTPServer) App() *fiber.App {
 
 func (s *FiberHTTPServer) Run() {
 	go func() {
-		if err := s.app.Listen(fmt.Sprintf(":%d", 8080)); err != nil {
+		if err := s.app.Listen(fmt.Sprintf(":%d", s.httpPort)); err != nil {
 			panic(err)
 		}
 	}()
 }
 
 func (s *FiberHTTPServer) Shutdown(ctx context.Context) error {
-	return s.app.Shutdown()
+	return s.app.ShutdownWithContext(ctx)
 }

@@ -41,7 +41,7 @@ func NewHTTPServer(
 	server.App().Use(errorMiddleware.Middleware())
 
 	lc.Append(fx.Hook{
-		OnStart: func(ctx context.Context) error {
+		OnStart: func(_ context.Context) error {
 			server.Run()
 			return nil
 		},

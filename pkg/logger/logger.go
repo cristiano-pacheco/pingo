@@ -6,7 +6,6 @@ import (
 	"github.com/rs/zerolog"
 )
 
-// Logger interface mimics zerolog.Logger methods to avoid direct imports
 type Logger interface {
 	Debug() *zerolog.Event
 	Info() *zerolog.Event
@@ -21,7 +20,6 @@ type zerologAdapter struct {
 	logLevel zerolog.Level
 }
 
-// NewLogger returns a new Logger instance with the given log level
 func New(config Config) Logger {
 	var level zerolog.Level
 	switch config.LogLevel.String() {

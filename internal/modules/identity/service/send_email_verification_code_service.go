@@ -61,7 +61,11 @@ func (s *sendEmailVerificationCodeService) Execute(
 
 	name := fmt.Sprintf("%s %s", user.FirstName, user.LastName)
 
-	content, err := s.emailTemplateService.CompileAuthVerificationCodeTemplate(ctx, name, input.Code)
+	content, err := s.emailTemplateService.CompileAuthVerificationCodeTemplate(name, input.Code)
+	if err != nil {
+		s.logger.Error().Msgf("error compiling auth verification code template: %v", err)
+		return err
+	}
 	md := mailer.MailData{
 		Sender:  s.cfg.MAIL.Sender,
 		ToName:  name,

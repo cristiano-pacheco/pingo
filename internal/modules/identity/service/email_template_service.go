@@ -2,13 +2,12 @@ package service
 
 import (
 	"bytes"
-	"context"
 	"html/template"
 )
 
 type EmailTemplateService interface {
-	CompileAccountConfirmationTemplate(ctx context.Context, input AccountConfirmationInput) (string, error)
-	CompileAuthVerificationCodeTemplate(ctx context.Context, name string, code string) (string, error)
+	CompileAccountConfirmationTemplate(input AccountConfirmationInput) (string, error)
+	CompileAuthVerificationCodeTemplate(name string, code string) (string, error)
 }
 
 type emailTemplateService struct {
@@ -23,10 +22,7 @@ type AccountConfirmationInput struct {
 	AccountConfirmationLink string
 }
 
-func (s *emailTemplateService) CompileAccountConfirmationTemplate(
-	ctx context.Context,
-	input AccountConfirmationInput,
-) (string, error) {
+func (s *emailTemplateService) CompileAccountConfirmationTemplate(input AccountConfirmationInput) (string, error) {
 	// Load templates
 	tmpl, err := template.New("layout_default.gohtml").
 		ParseFiles(
@@ -53,11 +49,7 @@ func (s *emailTemplateService) CompileAccountConfirmationTemplate(
 	return buf.String(), nil
 }
 
-func (s *emailTemplateService) CompileAuthVerificationCodeTemplate(
-	ctx context.Context,
-	name string,
-	code string,
-) (string, error) {
+func (s *emailTemplateService) CompileAuthVerificationCodeTemplate(name string, code string) (string, error) {
 	// Load templates
 	tmpl, err := template.New("layout_default.gohtml").
 		ParseFiles(

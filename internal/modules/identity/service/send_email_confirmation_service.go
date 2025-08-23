@@ -72,7 +72,11 @@ func (s *sendEmailConfirmationService) Execute(ctx context.Context, userID uint6
 		Name:                    name,
 		AccountConfirmationLink: accountConfLink,
 	}
-	content, err := s.emailTemplateService.CompileAccountConfirmationTemplate(ctx, emailTemplateInput)
+	content, err := s.emailTemplateService.CompileAccountConfirmationTemplate(emailTemplateInput)
+	if err != nil {
+		s.logger.Error().Msgf("error compiling account confirmation template: %v", err)
+		return err
+	}
 	md := mailer.MailData{
 		Sender:  s.cfg.MAIL.Sender,
 		ToName:  name,
