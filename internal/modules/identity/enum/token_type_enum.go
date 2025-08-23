@@ -6,7 +6,7 @@ import (
 
 const (
 	TokenTypeAccountConfirmation = "account_confirmation"
-	TokenTypeLoginVerification   = "login_verification"
+	TokenTypeLoginVerification   = "login_verification" // #nosec G101 -- false positive: enum token type, not credentials
 	TokenTypeResetPassword       = "reset_password"
 )
 
