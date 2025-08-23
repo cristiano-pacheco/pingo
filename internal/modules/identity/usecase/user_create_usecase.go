@@ -68,7 +68,7 @@ func (uc *UserCreateUseCase) Execute(ctx context.Context, input UserCreateInput)
 		return output, err
 	}
 
-	if err := uc.passwordValidator.Validate(input.Password); err != nil {
+	if err = uc.passwordValidator.Validate(input.Password); err != nil {
 		return output, err
 	}
 

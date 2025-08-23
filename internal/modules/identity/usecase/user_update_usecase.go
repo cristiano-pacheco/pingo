@@ -71,10 +71,11 @@ func (uc *UserUpdateUseCase) Execute(ctx context.Context, input UserUpdateInput)
 	}
 
 	if input.Password != "" {
-		if err := uc.passwordValidator.Validate(input.Password); err != nil {
+		if err = uc.passwordValidator.Validate(input.Password); err != nil {
 			return err
 		}
-		passwordHash, err := uc.hashService.GenerateFromPassword([]byte(input.Password))
+		var passwordHash []byte
+		passwordHash, err = uc.hashService.GenerateFromPassword([]byte(input.Password))
 		if err != nil {
 			uc.logger.Error().Msgf("error generating password hash: %v", err)
 			return err

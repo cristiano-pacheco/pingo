@@ -69,7 +69,7 @@ func (u *AuthLoginUseCase) Execute(ctx context.Context, input AuthLoginInput) (A
 		return AuthLoginOutput{}, err
 	}
 
-	if err := u.validateUserForLogin(user, input.Password); err != nil {
+	if err = u.validateUserForLogin(user, input.Password); err != nil {
 		return AuthLoginOutput{}, err
 	}
 
