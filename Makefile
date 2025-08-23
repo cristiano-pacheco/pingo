@@ -64,7 +64,7 @@ cover:
 	go tool cover -html=reports/cover.out -o reports/cover.html
 
 .PHONY: mocks
-mocks:
+update-mocks:
 	mockery
 
 .PHONY: cover
