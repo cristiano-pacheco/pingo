@@ -48,6 +48,7 @@ var (
 		http.StatusBadRequest,
 		nil,
 	)
-	ErrUserNotFound     = errs.New("IDENTITY_12", "User not found", http.StatusNotFound, nil)
-	ErrInvalidTokenType = errs.New("IDENTITY_13", "Invalid token type", http.StatusBadRequest, nil)
+	ErrUserNotFound           = errs.New("IDENTITY_12", "User not found", http.StatusNotFound, nil)
+	ErrInvalidTokenType       = errs.New("IDENTITY_13", "Invalid token type", http.StatusBadRequest, nil)
+	ErrUserNotInPendingStatus = errs.New("IDENTITY_14", "User is not in pending status", http.StatusBadRequest, nil)
 )
