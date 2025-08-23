@@ -193,63 +193,6 @@ func (_c *MockUserRepository_FindByID_Call) RunAndReturn(run func(context.Contex
 	return _c
 }
 
-// FindPendingConfirmation provides a mock function with given fields: ctx, confirmationToken
-func (_m *MockUserRepository) FindPendingConfirmation(ctx context.Context, confirmationToken []byte) (model.UserModel, error) {
-	ret := _m.Called(ctx, confirmationToken)
-
-	if len(ret) == 0 {
-		panic("no return value specified for FindPendingConfirmation")
-	}
-
-	var r0 model.UserModel
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, []byte) (model.UserModel, error)); ok {
-		return rf(ctx, confirmationToken)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context, []byte) model.UserModel); ok {
-		r0 = rf(ctx, confirmationToken)
-	} else {
-		r0 = ret.Get(0).(model.UserModel)
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context, []byte) error); ok {
-		r1 = rf(ctx, confirmationToken)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// MockUserRepository_FindPendingConfirmation_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'FindPendingConfirmation'
-type MockUserRepository_FindPendingConfirmation_Call struct {
-	*mock.Call
-}
-
-// FindPendingConfirmation is a helper method to define mock.On call
-//   - ctx context.Context
-//   - confirmationToken []byte
-func (_e *MockUserRepository_Expecter) FindPendingConfirmation(ctx interface{}, confirmationToken interface{}) *MockUserRepository_FindPendingConfirmation_Call {
-	return &MockUserRepository_FindPendingConfirmation_Call{Call: _e.mock.On("FindPendingConfirmation", ctx, confirmationToken)}
-}
-
-func (_c *MockUserRepository_FindPendingConfirmation_Call) Run(run func(ctx context.Context, confirmationToken []byte)) *MockUserRepository_FindPendingConfirmation_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].([]byte))
-	})
-	return _c
-}
-
-func (_c *MockUserRepository_FindPendingConfirmation_Call) Return(_a0 model.UserModel, _a1 error) *MockUserRepository_FindPendingConfirmation_Call {
-	_c.Call.Return(_a0, _a1)
-	return _c
-}
-
-func (_c *MockUserRepository_FindPendingConfirmation_Call) RunAndReturn(run func(context.Context, []byte) (model.UserModel, error)) *MockUserRepository_FindPendingConfirmation_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // IsUserActivated provides a mock function with given fields: ctx, userID
 func (_m *MockUserRepository) IsUserActivated(ctx context.Context, userID uint64) (bool, error) {
 	ret := _m.Called(ctx, userID)
