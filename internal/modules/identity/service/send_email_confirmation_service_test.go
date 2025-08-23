@@ -6,9 +6,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/cristiano-pacheco/pingo/internal/modules/identity/errs"
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/model"
-	"github.com/cristiano-pacheco/pingo/internal/modules/identity/repository/mocks"
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/service"
 	email_template_service_mocks "github.com/cristiano-pacheco/pingo/internal/modules/identity/service/mocks"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/config"
@@ -25,7 +23,6 @@ type SendEmailConfirmationServiceTestSuite struct {
 	sut                  service.SendEmailConfirmationService
 	emailTemplateService *email_template_service_mocks.MockEmailTemplateService
 	mailerSMTP           *mailer_mocks.MockSMTP
-	userRepository       *mocks.MockUserRepository
 	logger               logger.Logger
 	cfg                  config.Config
 }
@@ -33,7 +30,6 @@ type SendEmailConfirmationServiceTestSuite struct {
 func (s *SendEmailConfirmationServiceTestSuite) SetupTest() {
 	s.emailTemplateService = email_template_service_mocks.NewMockEmailTemplateService(s.T())
 	s.mailerSMTP = mailer_mocks.NewMockSMTP(s.T())
-	s.userRepository = mocks.NewMockUserRepository(s.T())
 
 	s.cfg = config.Config{
 		MAIL: config.MAIL{
@@ -61,7 +57,6 @@ func (s *SendEmailConfirmationServiceTestSuite) SetupTest() {
 	s.sut = service.NewSendEmailConfirmationService(
 		s.emailTemplateService,
 		s.mailerSMTP,
-		s.userRepository,
 		s.logger,
 		s.cfg,
 	)
@@ -73,14 +68,17 @@ func TestSendEmailConfirmationServiceSuite(t *testing.T) {
 
 func (s *SendEmailConfirmationServiceTestSuite) TestExecute_ValidUser_SendsEmailSuccessfully() {
 	// Arrange
-	userID := uint64(123)
 	confirmationToken := []byte("test-token")
 	user := model.UserModel{
-		ID:                userID,
-		FirstName:         "John",
-		LastName:          "Doe",
-		Email:             "john.doe@example.com",
-		ConfirmationToken: confirmationToken,
+		ID:        uint64(123),
+		FirstName: "John",
+		LastName:  "Doe",
+		Email:     "john.doe@example.com",
+	}
+
+	input := service.SendEmailConfirmationInput{
+		UserModel:             user,
+		ConfirmationTokenHash: confirmationToken,
 	}
 
 	encodedToken := base64.StdEncoding.EncodeToString(confirmationToken)
@@ -102,64 +100,31 @@ func (s *SendEmailConfirmationServiceTestSuite) TestExecute_ValidUser_SendsEmail
 		Content: expectedContent,
 	}
 
-	s.userRepository.On("FindByID", mock.Anything, userID).Return(user, nil)
 	s.emailTemplateService.
 		On("CompileAccountConfirmationTemplate", emailTemplateInput).
 		Return(expectedContent, nil)
 	s.mailerSMTP.On("Send", mock.Anything, expectedMailData).Return(nil)
 
 	// Act
-	err := s.sut.Execute(context.Background(), userID)
+	err := s.sut.Execute(context.Background(), input)
 
 	// Assert
 	s.Require().NoError(err)
 }
 
-func (s *SendEmailConfirmationServiceTestSuite) TestExecute_UserNotFound_ReturnsError() {
-	// Arrange
-	userID := uint64(123)
-	expectedError := errors.New("user not found")
-
-	s.userRepository.On("FindByID", mock.Anything, userID).Return(model.UserModel{}, expectedError)
-
-	// Act
-	err := s.sut.Execute(context.Background(), userID)
-
-	// Assert
-	s.Require().Error(err)
-	s.Equal(expectedError, err)
-}
-
-func (s *SendEmailConfirmationServiceTestSuite) TestExecute_UserWithNilConfirmationToken_ReturnsError() {
-	// Arrange
-	userID := uint64(123)
-	user := model.UserModel{
-		ID:                userID,
-		FirstName:         "John",
-		LastName:          "Doe",
-		Email:             "john.doe@example.com",
-		ConfirmationToken: nil,
-	}
-
-	s.userRepository.On("FindByID", mock.Anything, userID).Return(user, nil)
-
-	// Act
-	err := s.sut.Execute(context.Background(), userID)
-
-	// Assert
-	s.Require().ErrorIs(err, errs.ErrInvalidAccountConfirmationToken)
-}
-
 func (s *SendEmailConfirmationServiceTestSuite) TestExecute_EmailTemplateCompilationFails_ReturnsError() {
 	// Arrange
-	userID := uint64(123)
 	confirmationToken := []byte("test-token")
 	user := model.UserModel{
-		ID:                userID,
-		FirstName:         "John",
-		LastName:          "Doe",
-		Email:             "john.doe@example.com",
-		ConfirmationToken: confirmationToken,
+		ID:        uint64(123),
+		FirstName: "John",
+		LastName:  "Doe",
+		Email:     "john.doe@example.com",
+	}
+
+	input := service.SendEmailConfirmationInput{
+		UserModel:             user,
+		ConfirmationTokenHash: confirmationToken,
 	}
 
 	encodedToken := base64.StdEncoding.EncodeToString(confirmationToken)
@@ -173,12 +138,11 @@ func (s *SendEmailConfirmationServiceTestSuite) TestExecute_EmailTemplateCompila
 
 	templateError := errors.New("template compilation failed")
 
-	s.userRepository.On("FindByID", mock.Anything, userID).Return(user, nil)
 	s.emailTemplateService.On("CompileAccountConfirmationTemplate", emailTemplateInput).
 		Return("", templateError)
 
 	// Act
-	err := s.sut.Execute(context.Background(), userID)
+	err := s.sut.Execute(context.Background(), input)
 
 	// Assert
 	s.Require().Error(err)
@@ -187,14 +151,17 @@ func (s *SendEmailConfirmationServiceTestSuite) TestExecute_EmailTemplateCompila
 
 func (s *SendEmailConfirmationServiceTestSuite) TestExecute_EmailSendingFails_ReturnsError() {
 	// Arrange
-	userID := uint64(123)
 	confirmationToken := []byte("test-token")
 	user := model.UserModel{
-		ID:                userID,
-		FirstName:         "John",
-		LastName:          "Doe",
-		Email:             "john.doe@example.com",
-		ConfirmationToken: confirmationToken,
+		ID:        uint64(123),
+		FirstName: "John",
+		LastName:  "Doe",
+		Email:     "john.doe@example.com",
+	}
+
+	input := service.SendEmailConfirmationInput{
+		UserModel:             user,
+		ConfirmationTokenHash: confirmationToken,
 	}
 
 	encodedToken := base64.StdEncoding.EncodeToString(confirmationToken)
@@ -218,13 +185,12 @@ func (s *SendEmailConfirmationServiceTestSuite) TestExecute_EmailSendingFails_Re
 
 	sendError := errors.New("failed to send email")
 
-	s.userRepository.On("FindByID", mock.Anything, userID).Return(user, nil)
 	s.emailTemplateService.On("CompileAccountConfirmationTemplate", emailTemplateInput).
 		Return(expectedContent, nil)
 	s.mailerSMTP.On("Send", mock.Anything, expectedMailData).Return(sendError)
 
 	// Act
-	err := s.sut.Execute(context.Background(), userID)
+	err := s.sut.Execute(context.Background(), input)
 
 	// Assert
 	s.Require().Error(err)
