@@ -11,7 +11,6 @@ type OneTimeTokenModel struct {
 	TokenType string `gorm:"type:varchar(50)"`
 	ExpiresAt time.Time
 	CreatedAt time.Time
-	UsedAt    *time.Time
 }
 
 func (*OneTimeTokenModel) TableName() string {

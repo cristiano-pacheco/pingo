@@ -99,7 +99,6 @@ func (s *AuthGenerateTokenUseCaseTestSuite) TestExecute_ValidInput_ReturnsToken(
 		TokenType: enum.TokenTypeLoginVerification,
 		ExpiresAt: time.Now().Add(time.Minute * 5),
 		CreatedAt: time.Now(),
-		UsedAt:    nil,
 	}
 
 	s.validatorMock.On("Struct", input).Return(nil)
@@ -306,7 +305,6 @@ func (s *AuthGenerateTokenUseCaseTestSuite) TestExecute_HashComparisonFails_Retu
 		TokenType: enum.TokenTypeLoginVerification,
 		ExpiresAt: time.Now().Add(time.Minute * 5),
 		CreatedAt: time.Now(),
-		UsedAt:    nil,
 	}
 
 	s.validatorMock.On("Struct", input).Return(nil)
@@ -351,7 +349,6 @@ func (s *AuthGenerateTokenUseCaseTestSuite) TestExecute_TokenGenerationFails_Ret
 		TokenType: enum.TokenTypeLoginVerification,
 		ExpiresAt: time.Now().Add(time.Minute * 5),
 		CreatedAt: time.Now(),
-		UsedAt:    nil,
 	}
 
 	s.validatorMock.On("Struct", input).Return(nil)
