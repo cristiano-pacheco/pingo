@@ -8,6 +8,7 @@ import (
 	"math/big"
 	"time"
 
+	"github.com/cristiano-pacheco/pingo/internal/modules/identity/enum"
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/errs"
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/model"
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/repository"
@@ -33,7 +34,7 @@ type AuthLoginOutput struct {
 }
 
 type AuthLoginUseCase struct {
-	verificationCodeRepository       repository.VerificationCodeRepository
+	oneTimeTokenRepository           repository.OneTimeTokenRepository
 	userRepository                   repository.UserRepository
 	validator                        validator.Validate
 	hashService                      service.HashService
@@ -42,7 +43,7 @@ type AuthLoginUseCase struct {
 }
 
 func NewAuthLoginUseCase(
-	verificationCodeRepository repository.VerificationCodeRepository,
+	oneTimeTokenRepository repository.OneTimeTokenRepository,
 	userRepository repository.UserRepository,
 	validator validator.Validate,
 	hashService service.HashService,
@@ -51,7 +52,7 @@ func NewAuthLoginUseCase(
 ) *AuthLoginUseCase {
 	return &AuthLoginUseCase{
 		userRepository:                   userRepository,
-		verificationCodeRepository:       verificationCodeRepository,
+		oneTimeTokenRepository:           oneTimeTokenRepository,
 		validator:                        validator,
 		hashService:                      hashService,
 		sendEmailVerificationCodeService: sendEmailVerificationCodeService,
@@ -77,7 +78,8 @@ func (u *AuthLoginUseCase) Execute(ctx context.Context, input AuthLoginInput) (A
 		return AuthLoginOutput{}, err
 	}
 
-	err = u.verificationCodeRepository.DeleteByUserID(ctx, user.ID)
+	emailVerificationType, _ := enum.NewTokenTypeEnum(enum.TokenTypeLoginVerification)
+	err = u.oneTimeTokenRepository.Delete(ctx, user.ID, emailVerificationType)
 	if err != nil && !errors.Is(err, shared_errs.ErrRecordNotFound) {
 		u.logger.Error().Msgf("error deleting verification codes for user ID %d: %v", user.ID, err)
 		return AuthLoginOutput{}, err
@@ -89,16 +91,21 @@ func (u *AuthLoginUseCase) Execute(ctx context.Context, input AuthLoginInput) (A
 		return AuthLoginOutput{}, err
 	}
 	code := fmt.Sprintf("%06d", n.Int64())
-	verificationCode := model.VerificationCodeModel{
+	tokenHash, err := u.hashService.GenerateFromPassword([]byte(code))
+	if err != nil {
+		u.logger.Error().Msgf("error hashing verification code for user ID %d: %v", user.ID, err)
+		return AuthLoginOutput{}, err
+	}
+	oneTimeToken := model.OneTimeTokenModel{
 		UserID:    user.ID,
-		Code:      code,
+		TokenHash: tokenHash,
 		ExpiresAt: time.Now().UTC().Add(verificationCodeTTL),
 		CreatedAt: time.Now().UTC(),
 	}
 
-	_, err = u.verificationCodeRepository.Create(ctx, verificationCode)
+	_, err = u.oneTimeTokenRepository.Create(ctx, oneTimeToken)
 	if err != nil {
-		u.logger.Error().Msgf("error creating verification code for user ID %d: %v", user.ID, err)
+		u.logger.Error().Msgf("error creating one-time token for user ID %d: %v", user.ID, err)
 		return AuthLoginOutput{}, err
 	}
 
