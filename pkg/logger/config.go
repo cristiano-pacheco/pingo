@@ -19,15 +19,15 @@ type LogLevel struct {
 	value string
 }
 
-func (l LogLevel) String() string {
-	return l.value
-}
-
 func MustLogLevel(level string) LogLevel {
 	if isValidLogLevel(level) {
 		return LogLevel{value: level}
 	}
 	panic("invalid log level")
+}
+
+func (l LogLevel) String() string {
+	return l.value
 }
 
 func isValidLogLevel(level string) bool {
