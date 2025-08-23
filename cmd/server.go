@@ -1,6 +1,3 @@
-/*
-Copyright © 2025 NAME HERE <EMAIL ADDRESS>
-*/
 package cmd
 
 import (
@@ -13,7 +10,7 @@ import (
 var serverCmd = &cobra.Command{
 	Use:   "server",
 	Short: "REST API server",
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, _ []string) {
 		app := fx.New(
 			shared.Module,
 			identity.Module,

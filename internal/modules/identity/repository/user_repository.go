@@ -29,7 +29,7 @@ func NewUserRepository(db *database.PingoDB) UserRepository {
 }
 
 func (r *userRepository) FindByID(ctx context.Context, userID uint64) (model.UserModel, error) {
-	user, err := gorm.G[model.UserModel](r.DB).Limit(1).First(ctx)
+	user, err := gorm.G[model.UserModel](r.DB).Limit(1).Where("id = ?", userID).First(ctx)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return model.UserModel{}, errs.ErrRecordNotFound

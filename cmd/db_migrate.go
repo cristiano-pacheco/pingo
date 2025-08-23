@@ -8,8 +8,8 @@ import (
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/config"
 	"github.com/cristiano-pacheco/pingo/pkg/database"
 	"github.com/golang-migrate/migrate/v4"
-	_ "github.com/golang-migrate/migrate/v4/database/postgres"
-	_ "github.com/golang-migrate/migrate/v4/source/file"
+	_ "github.com/golang-migrate/migrate/v4/database/postgres" // needed for postgres migrations
+	_ "github.com/golang-migrate/migrate/v4/source/file"       // needed for file source migrations
 	"github.com/spf13/cobra"
 )
 
@@ -17,7 +17,7 @@ var dbMigrateCmd = &cobra.Command{
 	Use:   "db:migrate",
 	Short: "Run database migrations",
 	Long:  `Run database migrations. This command will run all the migrations that have not been run yet.`,
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, _ []string) {
 		config.Init()
 		cfg := config.GetConfig()
 		dbConfig := database.Config{
