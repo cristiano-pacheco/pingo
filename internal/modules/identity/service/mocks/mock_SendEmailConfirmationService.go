@@ -5,6 +5,7 @@ package mocks
 import (
 	context "context"
 
+	service "github.com/cristiano-pacheco/pingo/internal/modules/identity/service"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -21,17 +22,17 @@ func (_m *MockSendEmailConfirmationService) EXPECT() *MockSendEmailConfirmationS
 	return &MockSendEmailConfirmationService_Expecter{mock: &_m.Mock}
 }
 
-// Execute provides a mock function with given fields: ctx, userID
-func (_m *MockSendEmailConfirmationService) Execute(ctx context.Context, userID uint64) error {
-	ret := _m.Called(ctx, userID)
+// Execute provides a mock function with given fields: ctx, input
+func (_m *MockSendEmailConfirmationService) Execute(ctx context.Context, input service.SendEmailConfirmationInput) error {
+	ret := _m.Called(ctx, input)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Execute")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, uint64) error); ok {
-		r0 = rf(ctx, userID)
+	if rf, ok := ret.Get(0).(func(context.Context, service.SendEmailConfirmationInput) error); ok {
+		r0 = rf(ctx, input)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -46,14 +47,14 @@ type MockSendEmailConfirmationService_Execute_Call struct {
 
 // Execute is a helper method to define mock.On call
 //   - ctx context.Context
-//   - userID uint64
-func (_e *MockSendEmailConfirmationService_Expecter) Execute(ctx interface{}, userID interface{}) *MockSendEmailConfirmationService_Execute_Call {
-	return &MockSendEmailConfirmationService_Execute_Call{Call: _e.mock.On("Execute", ctx, userID)}
+//   - input service.SendEmailConfirmationInput
+func (_e *MockSendEmailConfirmationService_Expecter) Execute(ctx interface{}, input interface{}) *MockSendEmailConfirmationService_Execute_Call {
+	return &MockSendEmailConfirmationService_Execute_Call{Call: _e.mock.On("Execute", ctx, input)}
 }
 
-func (_c *MockSendEmailConfirmationService_Execute_Call) Run(run func(ctx context.Context, userID uint64)) *MockSendEmailConfirmationService_Execute_Call {
+func (_c *MockSendEmailConfirmationService_Execute_Call) Run(run func(ctx context.Context, input service.SendEmailConfirmationInput)) *MockSendEmailConfirmationService_Execute_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(uint64))
+		run(args[0].(context.Context), args[1].(service.SendEmailConfirmationInput))
 	})
 	return _c
 }
@@ -63,7 +64,7 @@ func (_c *MockSendEmailConfirmationService_Execute_Call) Return(_a0 error) *Mock
 	return _c
 }
 
-func (_c *MockSendEmailConfirmationService_Execute_Call) RunAndReturn(run func(context.Context, uint64) error) *MockSendEmailConfirmationService_Execute_Call {
+func (_c *MockSendEmailConfirmationService_Execute_Call) RunAndReturn(run func(context.Context, service.SendEmailConfirmationInput) error) *MockSendEmailConfirmationService_Execute_Call {
 	_c.Call.Return(run)
 	return _c
 }
