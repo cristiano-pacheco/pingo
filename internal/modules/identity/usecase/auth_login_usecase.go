@@ -2,9 +2,10 @@ package usecase
 
 import (
 	"context"
+	"crypto/rand"
 	"errors"
 	"fmt"
-	"math/rand"
+	"math/big"
 	"time"
 
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/errs"
@@ -79,7 +80,12 @@ func (u *AuthLoginUseCase) Execute(ctx context.Context, input AuthLoginInput) (A
 		return AuthLoginOutput{}, err
 	}
 
-	code := fmt.Sprintf("%06d", rand.Intn(1000000))
+	n, err := rand.Int(rand.Reader, big.NewInt(1000000))
+	if err != nil {
+		u.logger.Error().Msgf("error generating verification code: %v", err)
+		return AuthLoginOutput{}, err
+	}
+	code := fmt.Sprintf("%06d", n.Int64())
 	verificationCode := model.VerificationCodeModel{
 		UserID:    user.ID,
 		Code:      code,
