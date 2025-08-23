@@ -19,10 +19,6 @@ install-libs:
 # ==============================================================================
 # Administration
 
-.PHONY: ping
-ping:
-	curl -il http://localhost:4000/api/v1/ping
-
 .PHONY: run
 run:
 	go run ./main.go server
@@ -63,14 +59,14 @@ cover:
 	go test -race -coverprofile=reports/cover.out -coverpkg=./... ./... && \
 	go tool cover -html=reports/cover.out -o reports/cover.html
 
-.PHONY: mocks
+.PHONY: update-mocks
 update-mocks:
 	mockery
 
-.PHONY: cover
+.PHONY: update-swagger
 update-swagger:
 	go install github.com/swaggo/swag/cmd/swag@latest
-	swag fmt -d docs
+	swag fmt -d swagger
 	swag i --parseDependency
 
 # ==============================================================================
