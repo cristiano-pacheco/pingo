@@ -92,9 +92,11 @@ func (u *AuthLoginUseCase) Execute(ctx context.Context, input AuthLoginInput) (A
 		return AuthLoginOutput{}, err
 	}
 
+	tokenType, _ := enum.NewTokenTypeEnum(enum.TokenTypeLoginVerification)
 	oneTimeToken := model.OneTimeTokenModel{
 		UserID:    user.ID,
 		TokenHash: tokenHash,
+		TokenType: tokenType.String(),
 		ExpiresAt: time.Now().UTC().Add(verificationCodeTTL),
 		CreatedAt: time.Now().UTC(),
 	}
