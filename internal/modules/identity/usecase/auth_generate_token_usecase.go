@@ -3,7 +3,6 @@ package usecase
 import (
 	"context"
 	"errors"
-	"time"
 
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/enum"
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/errs"
@@ -13,36 +12,37 @@ import (
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/logger"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/otel"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/validator"
-	"github.com/samber/lo"
 )
 
 type AuthGenerateTokenUseCase struct {
-	verificationCodeRepository repository.VerificationCodeRepository
-	userRepository             repository.UserRepository
-	validator                  validator.Validate
-	tokenService               service.TokenService
-	logger                     logger.Logger
+	oneTimeTokenRepository repository.OneTimeTokenRepository
+	userRepository         repository.UserRepository
+	tokenService           service.TokenService
+	hashService            service.HashService
+	validator              validator.Validate
+	logger                 logger.Logger
 }
 
 func NewAuthGenerateTokenUseCase(
-	verificationCodeRepository repository.VerificationCodeRepository,
+	oneTimeTokenRepository repository.OneTimeTokenRepository,
 	userRepository repository.UserRepository,
-	validator validator.Validate,
 	tokenService service.TokenService,
+	hashService service.HashService,
+	validator validator.Validate,
 	logger logger.Logger,
 ) *AuthGenerateTokenUseCase {
 	return &AuthGenerateTokenUseCase{
-		verificationCodeRepository: verificationCodeRepository,
-		userRepository:             userRepository,
-		validator:                  validator,
-		tokenService:               tokenService,
-		logger:                     logger,
+		oneTimeTokenRepository: oneTimeTokenRepository,
+		userRepository:         userRepository,
+		tokenService:           tokenService,
+		validator:              validator,
+		logger:                 logger,
 	}
 }
 
 type GenerateTokenInput struct {
 	UserID uint64 `validate:"required"`
-	Code   string `validate:"required,numeric,len=6"`
+	Code   string `validate:"required"`
 }
 
 type GenerateTokenOutput struct {
@@ -76,19 +76,18 @@ func (uc *AuthGenerateTokenUseCase) Execute(
 		return output, errs.ErrUserIsNotActive
 	}
 
-	verificationCode, err := uc.verificationCodeRepository.FindByUserAndCode(ctx, input.UserID, input.Code)
+	loginVerificationType, _ := enum.NewTokenTypeEnum(enum.TokenTypeLoginVerification)
+	oneTimeToken, err := uc.oneTimeTokenRepository.Find(ctx, input.UserID, loginVerificationType)
 	if err != nil {
 		if errors.Is(err, shared_errs.ErrRecordNotFound) {
 			return output, errs.ErrInvalidCredentials
 		}
-		uc.logger.Error().Msgf("error finding verification for the user %d: %v", input.UserID, err)
+		uc.logger.Error().Msgf("error finding one-time token for the user %d: %v", input.UserID, err)
 		return output, err
 	}
 
-	verificationCode.UsedAt = lo.ToPtr(time.Now().UTC())
-	err = uc.verificationCodeRepository.Update(ctx, verificationCode)
+	err = uc.hashService.CompareHashAndPassword(oneTimeToken.TokenHash, []byte(input.Code))
 	if err != nil {
-		uc.logger.Error().Msgf("error updating verification code %s: %v", input.Code, err)
 		return output, err
 	}
 
