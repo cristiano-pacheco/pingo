@@ -1,0 +1,338 @@
+package usecase_test
+
+import (
+	"context"
+	"errors"
+	"testing"
+
+	"github.com/cristiano-pacheco/pingo/internal/modules/identity/enum"
+	"github.com/cristiano-pacheco/pingo/internal/modules/identity/errs"
+	"github.com/cristiano-pacheco/pingo/internal/modules/identity/model"
+	repository_mocks "github.com/cristiano-pacheco/pingo/internal/modules/identity/repository/mocks"
+	service_mocks "github.com/cristiano-pacheco/pingo/internal/modules/identity/service/mocks"
+	"github.com/cristiano-pacheco/pingo/internal/modules/identity/usecase"
+	validator_mocks "github.com/cristiano-pacheco/pingo/internal/modules/identity/validator/mocks"
+	shared_errs "github.com/cristiano-pacheco/pingo/internal/shared/errs"
+	"github.com/cristiano-pacheco/pingo/internal/shared/modules/config"
+	"github.com/cristiano-pacheco/pingo/internal/shared/modules/logger"
+	"github.com/cristiano-pacheco/pingo/internal/shared/modules/otel"
+	shared_validator_mocks "github.com/cristiano-pacheco/pingo/internal/shared/modules/validator/mocks"
+	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/suite"
+)
+
+type UserCreateUseCaseTestSuite struct {
+	suite.Suite
+	sut                              *usecase.UserCreateUseCase
+	sendEmailConfirmationServiceMock *service_mocks.MockSendEmailConfirmationService
+	hashServiceMock                  *service_mocks.MockHashService
+	userRepositoryMock               *repository_mocks.MockUserRepository
+	validatorMock                    *shared_validator_mocks.MockValidate
+	passwordValidatorMock            *validator_mocks.MockPasswordValidator
+	logger                           logger.Logger
+	cfg                              config.Config
+}
+
+func (s *UserCreateUseCaseTestSuite) SetupTest() {
+	s.sendEmailConfirmationServiceMock = service_mocks.NewMockSendEmailConfirmationService(s.T())
+	s.hashServiceMock = service_mocks.NewMockHashService(s.T())
+	s.userRepositoryMock = repository_mocks.NewMockUserRepository(s.T())
+	s.validatorMock = shared_validator_mocks.NewMockValidate(s.T())
+	s.passwordValidatorMock = validator_mocks.NewMockPasswordValidator(s.T())
+
+	s.cfg = config.Config{
+		MAIL: config.MAIL{
+			Sender: "test@example.com",
+		},
+		App: config.App{
+			BaseURL: "https://example.com",
+			Name:    "Test App",
+			Version: "1.0.0",
+		},
+		Telemetry: config.Telemetry{
+			Enabled: false,
+		},
+		Log: config.Log{
+			LogLevel: "disabled",
+		},
+	}
+
+	otel.Init(s.cfg)
+	s.logger = logger.New(s.cfg)
+
+	s.sut = usecase.NewUserCreateUseCase(
+		s.sendEmailConfirmationServiceMock,
+		s.hashServiceMock,
+		s.userRepositoryMock,
+		s.validatorMock,
+		s.passwordValidatorMock,
+		s.logger,
+	)
+}
+
+func TestUserCreateUseCaseSuite(t *testing.T) {
+	suite.Run(t, new(UserCreateUseCaseTestSuite))
+}
+
+func (s *UserCreateUseCaseTestSuite) TestExecute_ValidInput_CreatesUserSuccessfully() {
+	// Arrange
+	ctx := context.Background()
+	input := usecase.UserCreateInput{
+		FirstName: "John",
+		LastName:  "Doe",
+		Email:     "john.doe@example.com",
+		Password:  "StrongPassword123!",
+	}
+
+	existingUser := model.UserModel{}
+	token := []byte("random-token")
+	passwordHash := []byte("hashed-password")
+
+	createdUser := model.UserModel{
+		ID:                1,
+		FirstName:         input.FirstName,
+		LastName:          input.LastName,
+		Email:             input.Email,
+		PasswordHash:      passwordHash,
+		Status:            enum.UserStatusPending,
+		ConfirmationToken: token,
+	}
+
+	s.validatorMock.On("Struct", input).Return(nil)
+	s.passwordValidatorMock.On("Validate", input.Password).Return(nil)
+	s.userRepositoryMock.On("FindByEmail", mock.Anything, input.Email).Return(existingUser, shared_errs.ErrRecordNotFound)
+	s.hashServiceMock.On("GenerateRandomBytes").Return(token, nil)
+	s.hashServiceMock.On("GenerateFromPassword", []byte(input.Password)).Return(passwordHash, nil)
+	s.userRepositoryMock.On("Create", mock.Anything, mock.AnythingOfType("model.UserModel")).Return(createdUser, nil)
+	s.sendEmailConfirmationServiceMock.On("Execute", mock.Anything, createdUser.ID).Return(nil)
+
+	// Act
+	output, err := s.sut.Execute(ctx, input)
+
+	// Assert
+	s.Require().NoError(err)
+	s.Equal(createdUser.ID, output.UserID)
+	s.Equal(input.FirstName, output.FirstName)
+	s.Equal(input.LastName, output.LastName)
+	s.Equal(input.Email, output.Email)
+}
+
+func (s *UserCreateUseCaseTestSuite) TestExecute_ValidationFails_ReturnsError() {
+	// Arrange
+	ctx := context.Background()
+	input := usecase.UserCreateInput{
+		FirstName: "",
+		LastName:  "",
+		Email:     "invalid-email",
+		Password:  "weak",
+	}
+	validationError := errors.New("validation error")
+
+	s.validatorMock.On("Struct", input).Return(validationError)
+
+	// Act
+	output, err := s.sut.Execute(ctx, input)
+
+	// Assert
+	s.Require().Error(err)
+	s.Equal(validationError, err)
+	s.Equal(uint64(0), output.UserID)
+}
+
+func (s *UserCreateUseCaseTestSuite) TestExecute_PasswordValidationFails_ReturnsError() {
+	// Arrange
+	ctx := context.Background()
+	input := usecase.UserCreateInput{
+		FirstName: "John",
+		LastName:  "Doe",
+		Email:     "john.doe@example.com",
+		Password:  "weakpassword",
+	}
+	passwordValidationError := errs.ErrPasswordNoUppercase
+
+	s.validatorMock.On("Struct", input).Return(nil)
+	s.passwordValidatorMock.On("Validate", input.Password).Return(passwordValidationError)
+
+	// Act
+	output, err := s.sut.Execute(ctx, input)
+
+	// Assert
+	s.Require().ErrorIs(err, errs.ErrPasswordNoUppercase)
+	s.Equal(uint64(0), output.UserID)
+}
+
+func (s *UserCreateUseCaseTestSuite) TestExecute_EmailAlreadyInUse_ReturnsError() {
+	// Arrange
+	ctx := context.Background()
+	input := usecase.UserCreateInput{
+		FirstName: "John",
+		LastName:  "Doe",
+		Email:     "john.doe@example.com",
+		Password:  "StrongPassword123!",
+	}
+
+	existingUser := model.UserModel{
+		ID:    1,
+		Email: input.Email,
+	}
+
+	s.validatorMock.On("Struct", input).Return(nil)
+	s.passwordValidatorMock.On("Validate", input.Password).Return(nil)
+	s.userRepositoryMock.On("FindByEmail", mock.Anything, input.Email).Return(existingUser, nil)
+
+	// Act
+	output, err := s.sut.Execute(ctx, input)
+
+	// Assert
+	s.Require().ErrorIs(err, errs.ErrEmailAlreadyInUse)
+	s.Equal(uint64(0), output.UserID)
+}
+
+func (s *UserCreateUseCaseTestSuite) TestExecute_FindByEmailRepositoryError_ReturnsError() {
+	// Arrange
+	ctx := context.Background()
+	input := usecase.UserCreateInput{
+		FirstName: "John",
+		LastName:  "Doe",
+		Email:     "john.doe@example.com",
+		Password:  "StrongPassword123!",
+	}
+	repositoryError := errors.New("database error")
+
+	s.validatorMock.On("Struct", input).Return(nil)
+	s.passwordValidatorMock.On("Validate", input.Password).Return(nil)
+	s.userRepositoryMock.On("FindByEmail", mock.Anything, input.Email).Return(model.UserModel{}, repositoryError)
+
+	// Act
+	output, err := s.sut.Execute(ctx, input)
+
+	// Assert
+	s.Require().Error(err)
+	s.Equal(repositoryError, err)
+	s.Equal(uint64(0), output.UserID)
+}
+
+func (s *UserCreateUseCaseTestSuite) TestExecute_GenerateRandomBytesFails_ReturnsError() {
+	// Arrange
+	ctx := context.Background()
+	input := usecase.UserCreateInput{
+		FirstName: "John",
+		LastName:  "Doe",
+		Email:     "john.doe@example.com",
+		Password:  "StrongPassword123!",
+	}
+	existingUser := model.UserModel{}
+	tokenGenerationError := errors.New("token generation error")
+
+	s.validatorMock.On("Struct", input).Return(nil)
+	s.passwordValidatorMock.On("Validate", input.Password).Return(nil)
+	s.userRepositoryMock.On("FindByEmail", mock.Anything, input.Email).Return(existingUser, shared_errs.ErrRecordNotFound)
+	s.hashServiceMock.On("GenerateRandomBytes").Return(nil, tokenGenerationError)
+
+	// Act
+	output, err := s.sut.Execute(ctx, input)
+
+	// Assert
+	s.Require().Error(err)
+	s.Equal(tokenGenerationError, err)
+	s.Equal(uint64(0), output.UserID)
+}
+
+func (s *UserCreateUseCaseTestSuite) TestExecute_GenerateFromPasswordFails_ReturnsError() {
+	// Arrange
+	ctx := context.Background()
+	input := usecase.UserCreateInput{
+		FirstName: "John",
+		LastName:  "Doe",
+		Email:     "john.doe@example.com",
+		Password:  "StrongPassword123!",
+	}
+	existingUser := model.UserModel{}
+	token := []byte("random-token")
+	passwordHashError := errors.New("password hash error")
+
+	s.validatorMock.On("Struct", input).Return(nil)
+	s.passwordValidatorMock.On("Validate", input.Password).Return(nil)
+	s.userRepositoryMock.On("FindByEmail", mock.Anything, input.Email).Return(existingUser, shared_errs.ErrRecordNotFound)
+	s.hashServiceMock.On("GenerateRandomBytes").Return(token, nil)
+	s.hashServiceMock.On("GenerateFromPassword", []byte(input.Password)).Return(nil, passwordHashError)
+
+	// Act
+	output, err := s.sut.Execute(ctx, input)
+
+	// Assert
+	s.Require().Error(err)
+	s.Equal(passwordHashError, err)
+	s.Equal(uint64(0), output.UserID)
+}
+
+func (s *UserCreateUseCaseTestSuite) TestExecute_UserRepositoryCreateFails_ReturnsError() {
+	// Arrange
+	ctx := context.Background()
+	input := usecase.UserCreateInput{
+		FirstName: "John",
+		LastName:  "Doe",
+		Email:     "john.doe@example.com",
+		Password:  "StrongPassword123!",
+	}
+	existingUser := model.UserModel{}
+	token := []byte("random-token")
+	passwordHash := []byte("hashed-password")
+	createError := errors.New("create user error")
+
+	s.validatorMock.On("Struct", input).Return(nil)
+	s.passwordValidatorMock.On("Validate", input.Password).Return(nil)
+	s.userRepositoryMock.On("FindByEmail", mock.Anything, input.Email).Return(existingUser, shared_errs.ErrRecordNotFound)
+	s.hashServiceMock.On("GenerateRandomBytes").Return(token, nil)
+	s.hashServiceMock.On("GenerateFromPassword", []byte(input.Password)).Return(passwordHash, nil)
+	s.userRepositoryMock.On("Create", mock.Anything, mock.AnythingOfType("model.UserModel")).Return(model.UserModel{}, createError)
+
+	// Act
+	output, err := s.sut.Execute(ctx, input)
+
+	// Assert
+	s.Require().Error(err)
+	s.Equal(createError, err)
+	s.Equal(uint64(0), output.UserID)
+}
+
+func (s *UserCreateUseCaseTestSuite) TestExecute_SendEmailConfirmationFails_ReturnsError() {
+	// Arrange
+	ctx := context.Background()
+	input := usecase.UserCreateInput{
+		FirstName: "John",
+		LastName:  "Doe",
+		Email:     "john.doe@example.com",
+		Password:  "StrongPassword123!",
+	}
+	existingUser := model.UserModel{}
+	token := []byte("random-token")
+	passwordHash := []byte("hashed-password")
+	emailError := errors.New("email sending error")
+
+	createdUser := model.UserModel{
+		ID:                1,
+		FirstName:         input.FirstName,
+		LastName:          input.LastName,
+		Email:             input.Email,
+		PasswordHash:      passwordHash,
+		Status:            enum.UserStatusPending,
+		ConfirmationToken: token,
+	}
+
+	s.validatorMock.On("Struct", input).Return(nil)
+	s.passwordValidatorMock.On("Validate", input.Password).Return(nil)
+	s.userRepositoryMock.On("FindByEmail", mock.Anything, input.Email).Return(existingUser, shared_errs.ErrRecordNotFound)
+	s.hashServiceMock.On("GenerateRandomBytes").Return(token, nil)
+	s.hashServiceMock.On("GenerateFromPassword", []byte(input.Password)).Return(passwordHash, nil)
+	s.userRepositoryMock.On("Create", mock.Anything, mock.AnythingOfType("model.UserModel")).Return(createdUser, nil)
+	s.sendEmailConfirmationServiceMock.On("Execute", mock.Anything, createdUser.ID).Return(emailError)
+
+	// Act
+	output, err := s.sut.Execute(ctx, input)
+
+	// Assert
+	s.Require().Error(err)
+	s.Equal(emailError, err)
+	s.Equal(uint64(0), output.UserID)
+}
