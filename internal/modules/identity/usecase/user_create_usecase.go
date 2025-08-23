@@ -3,6 +3,7 @@ package usecase
 import (
 	"context"
 	"errors"
+	"time"
 
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/enum"
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/errs"
@@ -16,11 +17,15 @@ import (
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/validator"
 )
 
+const (
+	accountConfirmationTokenExpiration = 24 * time.Hour
+)
+
 type UserCreateInput struct {
 	FirstName string `validate:"required,min=3,max=255"`
 	LastName  string `validate:"required,min=3,max=255"`
 	Password  string `validate:"required,min=8"`
-	Email     string `validate:"required,email"`
+	Email     string `validate:"required,email,max=255"`
 }
 
 type UserCreateOutput struct {
@@ -32,28 +37,31 @@ type UserCreateOutput struct {
 
 type UserCreateUseCase struct {
 	sendEmailConfirmationService service.SendEmailConfirmationService
+	passwordValidator            identity_validator.PasswordValidator
+	oneTimeTokenRepository       repository.OneTimeTokenRepository
 	hashService                  service.HashService
 	userRepository               repository.UserRepository
 	validate                     validator.Validate
-	passwordValidator            identity_validator.PasswordValidator
 	logger                       logger.Logger
 }
 
 func NewUserCreateUseCase(
 	sendEmailConfirmationService service.SendEmailConfirmationService,
-	hashService service.HashService,
-	userRepo repository.UserRepository,
-	validate validator.Validate,
 	passwordValidator identity_validator.PasswordValidator,
+	oneTimeTokenRepository repository.OneTimeTokenRepository,
+	userRepository repository.UserRepository,
+	hashService service.HashService,
+	validate validator.Validate,
 	logger logger.Logger,
 ) *UserCreateUseCase {
 	return &UserCreateUseCase{
-		sendEmailConfirmationService,
-		hashService,
-		userRepo,
-		validate,
-		passwordValidator,
-		logger,
+		sendEmailConfirmationService: sendEmailConfirmationService,
+		passwordValidator:            passwordValidator,
+		oneTimeTokenRepository:       oneTimeTokenRepository,
+		userRepository:               userRepository,
+		hashService:                  hashService,
+		validate:                     validate,
+		logger:                       logger,
 	}
 }
 
@@ -96,12 +104,11 @@ func (uc *UserCreateUseCase) Execute(ctx context.Context, input UserCreateInput)
 
 	pendingUserStatus := enum.UserStatusPending
 	userModel := model.UserModel{
-		FirstName:         input.FirstName,
-		LastName:          input.LastName,
-		Email:             input.Email,
-		PasswordHash:      passwordHash,
-		Status:            pendingUserStatus,
-		ConfirmationToken: token,
+		FirstName:    input.FirstName,
+		LastName:     input.LastName,
+		Email:        input.Email,
+		PasswordHash: passwordHash,
+		Status:       pendingUserStatus,
 	}
 
 	createdUser, err := uc.userRepository.Create(ctx, userModel)
@@ -110,7 +117,24 @@ func (uc *UserCreateUseCase) Execute(ctx context.Context, input UserCreateInput)
 		return output, err
 	}
 
-	err = uc.sendEmailConfirmationService.Execute(ctx, createdUser.ID)
+	oneTimeToken := model.OneTimeTokenModel{
+		UserID:    createdUser.ID,
+		ExpiresAt: time.Now().UTC().Add(accountConfirmationTokenExpiration),
+		TokenType: enum.TokenTypeAccountConfirmation,
+		TokenHash: token,
+	}
+
+	_, err = uc.oneTimeTokenRepository.Create(ctx, oneTimeToken)
+	if err != nil {
+		uc.logger.Error().Msgf("error creating one-time token: %v", err)
+		return output, err
+	}
+
+	sendEmailConfirmationInput := service.SendEmailConfirmationInput{
+		UserModel:             createdUser,
+		ConfirmationTokenHash: token,
+	}
+	err = uc.sendEmailConfirmationService.Execute(ctx, sendEmailConfirmationInput)
 	if err != nil {
 		uc.logger.Error().Msgf("error sending account confirmation email: %v", err)
 		return output, err
