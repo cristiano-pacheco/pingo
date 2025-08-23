@@ -14,7 +14,6 @@ import (
 type UserRepository interface {
 	FindByID(ctx context.Context, userID uint64) (model.UserModel, error)
 	FindByEmail(ctx context.Context, email string) (model.UserModel, error)
-	FindPendingConfirmation(ctx context.Context, confirmationToken []byte) (model.UserModel, error)
 	Create(ctx context.Context, user model.UserModel) (model.UserModel, error)
 	Update(ctx context.Context, user model.UserModel) error
 	IsUserActivated(ctx context.Context, userID uint64) (bool, error)
@@ -41,23 +40,6 @@ func (r *userRepository) FindByID(ctx context.Context, userID uint64) (model.Use
 
 func (r *userRepository) FindByEmail(ctx context.Context, email string) (model.UserModel, error) {
 	user, err := gorm.G[model.UserModel](r.DB).Where("email = ?", email).Limit(1).First(ctx)
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return model.UserModel{}, errs.ErrRecordNotFound
-		}
-		return model.UserModel{}, err
-	}
-	return user, nil
-}
-
-func (r *userRepository) FindPendingConfirmation(
-	ctx context.Context,
-	confirmationToken []byte,
-) (model.UserModel, error) {
-	user, err := gorm.G[model.UserModel](r.DB).
-		Where("confirmation_token = ?", confirmationToken).
-		Where("status = ?", "pending").
-		Limit(1).First(ctx)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return model.UserModel{}, errs.ErrRecordNotFound
