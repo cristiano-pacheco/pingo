@@ -47,7 +47,7 @@ vuln-check:
 
 .PHONY: nilaway
 nilaway:
-	nilaway --include-pkgs="github.com/cristiano-pacheco/goflix" --exclude-pkgs="vendor/" ./...
+	nilaway --include-pkgs="github.com/cristiano-pacheco/pingo" --exclude-pkgs="vendor/" ./...
 
 .PHONY: test
 test:
