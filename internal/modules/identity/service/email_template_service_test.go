@@ -84,7 +84,7 @@ func (s *EmailTemplateServiceTestSuite) TestCompileAccountConfirmationTemplate_V
 	result, err := s.sut.CompileAccountConfirmationTemplate(input)
 
 	// Assert
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.NotEmpty(result)
 	s.Contains(result, "John Doe")
 	s.Contains(result, "https://example.com/confirm?token=abc123")
@@ -109,7 +109,7 @@ func (s *EmailTemplateServiceTestSuite) TestCompileAccountConfirmationTemplate_E
 	result, err := s.sut.CompileAccountConfirmationTemplate(input)
 
 	// Assert
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.NotEmpty(result)
 	s.Contains(result, "https://example.com/confirm?token=abc123")
 	s.Contains(result, "Account Confirmation")
@@ -132,7 +132,7 @@ func (s *EmailTemplateServiceTestSuite) TestCompileAccountConfirmationTemplate_E
 	result, err := s.sut.CompileAccountConfirmationTemplate(input)
 
 	// Assert
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.NotEmpty(result)
 	s.Contains(result, "John Doe")
 	s.Contains(result, "Account Confirmation")
@@ -159,7 +159,7 @@ func (s *EmailTemplateServiceTestSuite) TestCompileAccountConfirmationTemplate_I
 	result, err := s.sut.CompileAccountConfirmationTemplate(input)
 
 	// Assert
-	s.Error(err)
+	s.Require().Error(err)
 	s.Empty(result)
 }
 
@@ -177,7 +177,7 @@ func (s *EmailTemplateServiceTestSuite) TestCompileAuthVerificationCodeTemplate_
 	result, err := s.sut.CompileAuthVerificationCodeTemplate(name, code)
 
 	// Assert
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.NotEmpty(result)
 	s.Contains(result, "Jane Smith")
 	s.Contains(result, "123456")
@@ -200,7 +200,7 @@ func (s *EmailTemplateServiceTestSuite) TestCompileAuthVerificationCodeTemplate_
 	result, err := s.sut.CompileAuthVerificationCodeTemplate(name, code)
 
 	// Assert
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.NotEmpty(result)
 	s.Contains(result, "123456")
 	s.Contains(result, "Auth Verification Code")
@@ -221,7 +221,7 @@ func (s *EmailTemplateServiceTestSuite) TestCompileAuthVerificationCodeTemplate_
 	result, err := s.sut.CompileAuthVerificationCodeTemplate(name, code)
 
 	// Assert
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.NotEmpty(result)
 	s.Contains(result, "Jane Smith")
 	s.Contains(result, "Auth Verification Code")
@@ -242,7 +242,7 @@ func (s *EmailTemplateServiceTestSuite) TestCompileAuthVerificationCodeTemplate_
 	result, err := s.sut.CompileAuthVerificationCodeTemplate(name, code)
 
 	// Assert
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.NotEmpty(result)
 	// HTML templates escape special characters automatically
 	s.True(
@@ -271,7 +271,7 @@ func (s *EmailTemplateServiceTestSuite) TestCompileAuthVerificationCodeTemplate_
 	result, err := s.sut.CompileAuthVerificationCodeTemplate(name, code)
 
 	// Assert
-	s.Error(err)
+	s.Require().Error(err)
 	s.Empty(result)
 }
 
@@ -296,7 +296,7 @@ func (s *EmailTemplateServiceTestSuite) TestCompileAccountConfirmationTemplate_L
 	result, err := s.sut.CompileAccountConfirmationTemplate(input)
 
 	// Assert
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.NotEmpty(result)
 	s.Contains(result, "This is a very long name")
 	s.Contains(result, "verylongtokenvalue")
@@ -328,7 +328,7 @@ func (s *EmailTemplateServiceTestSuite) TestCompileAuthVerificationCodeTemplate_
 			result, err := s.sut.CompileAuthVerificationCodeTemplate(tc.name, tc.code)
 
 			// Assert
-			s.NoError(err)
+			s.Require().NoError(err)
 			s.NotEmpty(result)
 			s.Contains(result, tc.name)
 			s.Contains(result, tc.code)
