@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 
+	"github.com/cristiano-pacheco/pingo/internal/modules/identity/enum"
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/errs"
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/model"
 	repository_mocks "github.com/cristiano-pacheco/pingo/internal/modules/identity/repository/mocks"
@@ -27,7 +28,7 @@ import (
 type AuthLoginUseCaseTestSuite struct {
 	suite.Suite
 	sut                              *usecase.AuthLoginUseCase
-	verificationCodeRepositoryMock   *repository_mocks.MockVerificationCodeRepository
+	oneTimeTokenRepositoryMock       *repository_mocks.MockOneTimeTokenRepository
 	userRepositoryMock               *repository_mocks.MockUserRepository
 	validatorMock                    *validator_mocks.MockValidate
 	hashServiceMock                  *service_mocks.MockHashService
@@ -37,7 +38,7 @@ type AuthLoginUseCaseTestSuite struct {
 }
 
 func (s *AuthLoginUseCaseTestSuite) SetupTest() {
-	s.verificationCodeRepositoryMock = repository_mocks.NewMockVerificationCodeRepository(s.T())
+	s.oneTimeTokenRepositoryMock = repository_mocks.NewMockOneTimeTokenRepository(s.T())
 	s.userRepositoryMock = repository_mocks.NewMockUserRepository(s.T())
 	s.validatorMock = validator_mocks.NewMockValidate(s.T())
 	s.hashServiceMock = service_mocks.NewMockHashService(s.T())
@@ -57,7 +58,7 @@ func (s *AuthLoginUseCaseTestSuite) SetupTest() {
 	otel.Init(s.cfg)
 
 	s.sut = usecase.NewAuthLoginUseCase(
-		s.verificationCodeRepositoryMock,
+		s.oneTimeTokenRepositoryMock,
 		s.userRepositoryMock,
 		s.validatorMock,
 		s.hashServiceMock,
@@ -83,20 +84,22 @@ func (s *AuthLoginUseCaseTestSuite) TestExecute_ValidCredentials_ReturnsUserID()
 		Status:       "active",
 		PasswordHash: []byte("hashedpassword"),
 	}
-	verificationCode := model.VerificationCodeModel{
+	oneTimeToken := model.OneTimeTokenModel{
 		ID:        1,
 		UserID:    user.ID,
-		Code:      "123456",
+		TokenHash: []byte("hashedtoken"),
 		ExpiresAt: time.Now().UTC().Add(10 * time.Minute),
 		CreatedAt: time.Now().UTC(),
 	}
 
+	emailVerificationType, _ := enum.NewTokenTypeEnum(enum.TokenTypeLoginVerification)
 	s.validatorMock.On("Struct", input).Return(nil)
 	s.userRepositoryMock.On("FindByEmail", mock.Anything, input.Email).Return(user, nil)
 	s.hashServiceMock.On("CompareHashAndPassword", user.PasswordHash, []byte(input.Password)).Return(nil)
-	s.verificationCodeRepositoryMock.On("DeleteByUserID", mock.Anything, user.ID).Return(nil)
-	s.verificationCodeRepositoryMock.On("Create", mock.Anything, mock.AnythingOfType("model.VerificationCodeModel")).
-		Return(verificationCode, nil)
+	s.oneTimeTokenRepositoryMock.On("Delete", mock.Anything, user.ID, emailVerificationType).Return(nil)
+	s.hashServiceMock.On("GenerateFromPassword", mock.AnythingOfType("[]uint8")).Return([]byte("hashedtoken"), nil)
+	s.oneTimeTokenRepositoryMock.On("Create", mock.Anything, mock.AnythingOfType("model.OneTimeTokenModel")).
+		Return(oneTimeToken, nil)
 	s.sendEmailVerificationServiceMock.On("Execute", mock.Anything, mock.AnythingOfType("service.SendEmailVerificationCodeInput")).
 		Return(nil)
 
@@ -237,10 +240,11 @@ func (s *AuthLoginUseCaseTestSuite) TestExecute_DeleteVerificationCodeError_Retu
 	}
 	deleteError := fmt.Errorf("delete verification code error")
 
+	emailVerificationType, _ := enum.NewTokenTypeEnum(enum.TokenTypeLoginVerification)
 	s.validatorMock.On("Struct", input).Return(nil)
 	s.userRepositoryMock.On("FindByEmail", mock.Anything, input.Email).Return(user, nil)
 	s.hashServiceMock.On("CompareHashAndPassword", user.PasswordHash, []byte(input.Password)).Return(nil)
-	s.verificationCodeRepositoryMock.On("DeleteByUserID", mock.Anything, user.ID).Return(deleteError)
+	s.oneTimeTokenRepositoryMock.On("Delete", mock.Anything, user.ID, emailVerificationType).Return(deleteError)
 	logger := zerolog.New(os.Stderr)
 	s.loggerMock.On("Error").Return(logger.Error())
 
@@ -268,12 +272,14 @@ func (s *AuthLoginUseCaseTestSuite) TestExecute_CreateVerificationCodeError_Retu
 	}
 	createError := fmt.Errorf("create verification code error")
 
+	emailVerificationType, _ := enum.NewTokenTypeEnum(enum.TokenTypeLoginVerification)
 	s.validatorMock.On("Struct", input).Return(nil)
 	s.userRepositoryMock.On("FindByEmail", mock.Anything, input.Email).Return(user, nil)
 	s.hashServiceMock.On("CompareHashAndPassword", user.PasswordHash, []byte(input.Password)).Return(nil)
-	s.verificationCodeRepositoryMock.On("DeleteByUserID", mock.Anything, user.ID).Return(nil)
-	s.verificationCodeRepositoryMock.On("Create", mock.Anything, mock.AnythingOfType("model.VerificationCodeModel")).
-		Return(model.VerificationCodeModel{}, createError)
+	s.oneTimeTokenRepositoryMock.On("Delete", mock.Anything, user.ID, emailVerificationType).Return(nil)
+	s.hashServiceMock.On("GenerateFromPassword", mock.AnythingOfType("[]uint8")).Return([]byte("hashedtoken"), nil)
+	s.oneTimeTokenRepositoryMock.On("Create", mock.Anything, mock.AnythingOfType("model.OneTimeTokenModel")).
+		Return(model.OneTimeTokenModel{}, createError)
 	logger := zerolog.New(os.Stderr)
 	s.loggerMock.On("Error").Return(logger.Error())
 
@@ -283,6 +289,39 @@ func (s *AuthLoginUseCaseTestSuite) TestExecute_CreateVerificationCodeError_Retu
 	// Assert
 	s.Require().Error(err)
 	s.Equal(createError, err)
+	s.Equal(uint64(0), output.UserID)
+}
+
+func (s *AuthLoginUseCaseTestSuite) TestExecute_HashServiceError_ReturnsError() {
+	// Arrange
+	ctx := context.Background()
+	input := usecase.AuthLoginInput{
+		Email:    "test@example.com",
+		Password: "validpassword",
+	}
+	user := model.UserModel{
+		ID:           1,
+		Email:        "test@example.com",
+		Status:       "active",
+		PasswordHash: []byte("hashedpassword"),
+	}
+	hashError := fmt.Errorf("hash service error")
+
+	emailVerificationType, _ := enum.NewTokenTypeEnum(enum.TokenTypeLoginVerification)
+	s.validatorMock.On("Struct", input).Return(nil)
+	s.userRepositoryMock.On("FindByEmail", mock.Anything, input.Email).Return(user, nil)
+	s.hashServiceMock.On("CompareHashAndPassword", user.PasswordHash, []byte(input.Password)).Return(nil)
+	s.oneTimeTokenRepositoryMock.On("Delete", mock.Anything, user.ID, emailVerificationType).Return(nil)
+	s.hashServiceMock.On("GenerateFromPassword", mock.AnythingOfType("[]uint8")).Return(nil, hashError)
+	logger := zerolog.New(os.Stderr)
+	s.loggerMock.On("Error").Return(logger.Error())
+
+	// Act
+	output, err := s.sut.Execute(ctx, input)
+
+	// Assert
+	s.Require().Error(err)
+	s.Equal(hashError, err)
 	s.Equal(uint64(0), output.UserID)
 }
 
@@ -299,21 +338,23 @@ func (s *AuthLoginUseCaseTestSuite) TestExecute_SendEmailError_ReturnsError() {
 		Status:       "active",
 		PasswordHash: []byte("hashedpassword"),
 	}
-	verificationCode := model.VerificationCodeModel{
+	oneTimeToken := model.OneTimeTokenModel{
 		ID:        1,
 		UserID:    user.ID,
-		Code:      "123456",
+		TokenHash: []byte("hashedtoken"),
 		ExpiresAt: time.Now().UTC().Add(10 * time.Minute),
 		CreatedAt: time.Now().UTC(),
 	}
 	emailError := fmt.Errorf("send email error")
 
+	emailVerificationType, _ := enum.NewTokenTypeEnum(enum.TokenTypeLoginVerification)
 	s.validatorMock.On("Struct", input).Return(nil)
 	s.userRepositoryMock.On("FindByEmail", mock.Anything, input.Email).Return(user, nil)
 	s.hashServiceMock.On("CompareHashAndPassword", user.PasswordHash, []byte(input.Password)).Return(nil)
-	s.verificationCodeRepositoryMock.On("DeleteByUserID", mock.Anything, user.ID).Return(nil)
-	s.verificationCodeRepositoryMock.On("Create", mock.Anything, mock.AnythingOfType("model.VerificationCodeModel")).
-		Return(verificationCode, nil)
+	s.oneTimeTokenRepositoryMock.On("Delete", mock.Anything, user.ID, emailVerificationType).Return(nil)
+	s.hashServiceMock.On("GenerateFromPassword", mock.AnythingOfType("[]uint8")).Return([]byte("hashedtoken"), nil)
+	s.oneTimeTokenRepositoryMock.On("Create", mock.Anything, mock.AnythingOfType("model.OneTimeTokenModel")).
+		Return(oneTimeToken, nil)
 	s.sendEmailVerificationServiceMock.On("Execute", mock.Anything, mock.AnythingOfType("service.SendEmailVerificationCodeInput")).
 		Return(emailError)
 	logger := zerolog.New(os.Stderr)
@@ -341,20 +382,22 @@ func (s *AuthLoginUseCaseTestSuite) TestExecute_DeleteVerificationCodeNotFound_C
 		Status:       "active",
 		PasswordHash: []byte("hashedpassword"),
 	}
-	verificationCode := model.VerificationCodeModel{
+	oneTimeToken := model.OneTimeTokenModel{
 		ID:        1,
 		UserID:    user.ID,
-		Code:      "123456",
+		TokenHash: []byte("hashedtoken"),
 		ExpiresAt: time.Now().UTC().Add(10 * time.Minute),
 		CreatedAt: time.Now().UTC(),
 	}
 
+	emailVerificationType, _ := enum.NewTokenTypeEnum(enum.TokenTypeLoginVerification)
 	s.validatorMock.On("Struct", input).Return(nil)
 	s.userRepositoryMock.On("FindByEmail", mock.Anything, input.Email).Return(user, nil)
 	s.hashServiceMock.On("CompareHashAndPassword", user.PasswordHash, []byte(input.Password)).Return(nil)
-	s.verificationCodeRepositoryMock.On("DeleteByUserID", mock.Anything, user.ID).Return(shared_errs.ErrRecordNotFound)
-	s.verificationCodeRepositoryMock.On("Create", mock.Anything, mock.AnythingOfType("model.VerificationCodeModel")).
-		Return(verificationCode, nil)
+	s.oneTimeTokenRepositoryMock.On("Delete", mock.Anything, user.ID, emailVerificationType).Return(shared_errs.ErrRecordNotFound)
+	s.hashServiceMock.On("GenerateFromPassword", mock.AnythingOfType("[]uint8")).Return([]byte("hashedtoken"), nil)
+	s.oneTimeTokenRepositoryMock.On("Create", mock.Anything, mock.AnythingOfType("model.OneTimeTokenModel")).
+		Return(oneTimeToken, nil)
 	s.sendEmailVerificationServiceMock.On("Execute", mock.Anything, mock.AnythingOfType("service.SendEmailVerificationCodeInput")).
 		Return(nil)
 
@@ -400,16 +443,18 @@ func (s *AuthLoginUseCaseTestSuite) TestExecute_ValidCredentialsGeneratesVerific
 		PasswordHash: []byte("hashedpassword"),
 	}
 
+	emailVerificationType, _ := enum.NewTokenTypeEnum(enum.TokenTypeLoginVerification)
 	s.validatorMock.On("Struct", input).Return(nil)
 	s.userRepositoryMock.On("FindByEmail", mock.Anything, input.Email).Return(user, nil)
 	s.hashServiceMock.On("CompareHashAndPassword", user.PasswordHash, []byte(input.Password)).Return(nil)
-	s.verificationCodeRepositoryMock.On("DeleteByUserID", mock.Anything, user.ID).Return(nil)
-	s.verificationCodeRepositoryMock.On("Create", mock.Anything, mock.MatchedBy(func(vc model.VerificationCodeModel) bool {
-		return vc.UserID == user.ID && vc.Code != "" && len(vc.Code) == 6
-	})).Return(model.VerificationCodeModel{
+	s.oneTimeTokenRepositoryMock.On("Delete", mock.Anything, user.ID, emailVerificationType).Return(nil)
+	s.hashServiceMock.On("GenerateFromPassword", mock.AnythingOfType("[]uint8")).Return([]byte("hashedtoken"), nil)
+	s.oneTimeTokenRepositoryMock.On("Create", mock.Anything, mock.MatchedBy(func(ott model.OneTimeTokenModel) bool {
+		return ott.UserID == user.ID && len(ott.TokenHash) > 0
+	})).Return(model.OneTimeTokenModel{
 		ID:        1,
 		UserID:    user.ID,
-		Code:      "123456",
+		TokenHash: []byte("hashedtoken"),
 		ExpiresAt: time.Now().UTC().Add(10 * time.Minute),
 		CreatedAt: time.Now().UTC(),
 	}, nil)
@@ -442,26 +487,28 @@ func (s *AuthLoginUseCaseTestSuite) TestExecute_VerificationCodeFormat_SixDigitC
 		PasswordHash: []byte("hashedpassword"),
 	}
 
+	emailVerificationType, _ := enum.NewTokenTypeEnum(enum.TokenTypeLoginVerification)
 	s.validatorMock.On("Struct", input).Return(nil)
 	s.userRepositoryMock.On("FindByEmail", mock.Anything, input.Email).Return(user, nil)
 	s.hashServiceMock.On("CompareHashAndPassword", user.PasswordHash, []byte(input.Password)).Return(nil)
-	s.verificationCodeRepositoryMock.On("DeleteByUserID", mock.Anything, user.ID).Return(nil)
+	s.oneTimeTokenRepositoryMock.On("Delete", mock.Anything, user.ID, emailVerificationType).Return(nil)
+	s.hashServiceMock.On("GenerateFromPassword", mock.AnythingOfType("[]uint8")).Return([]byte("hashedtoken"), nil)
 
-	// Capture the created verification code to verify its format
+	// Capture the created one-time token to verify its properties
 	var capturedCode string
-	s.verificationCodeRepositoryMock.On("Create", mock.Anything, mock.MatchedBy(func(vc model.VerificationCodeModel) bool {
-		capturedCode = vc.Code
-		return vc.UserID == user.ID && len(vc.Code) == 6
-	})).Return(model.VerificationCodeModel{
+	s.oneTimeTokenRepositoryMock.On("Create", mock.Anything, mock.MatchedBy(func(ott model.OneTimeTokenModel) bool {
+		return ott.UserID == user.ID && len(ott.TokenHash) > 0
+	})).Return(model.OneTimeTokenModel{
 		ID:        1,
 		UserID:    user.ID,
-		Code:      "123456",
+		TokenHash: []byte("hashedtoken"),
 		ExpiresAt: time.Now().UTC().Add(10 * time.Minute),
 		CreatedAt: time.Now().UTC(),
 	}, nil)
 
 	s.sendEmailVerificationServiceMock.On("Execute", mock.Anything, mock.MatchedBy(func(input interface{}) bool {
 		if sei, ok := input.(service.SendEmailVerificationCodeInput); ok {
+			capturedCode = sei.Code
 			return sei.UserID == user.ID && len(sei.Code) == 6
 		}
 		return false
