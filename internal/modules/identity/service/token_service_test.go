@@ -83,7 +83,7 @@ func (s *TokenServiceTestSuite) TestGenerateJWT_ValidUser_ReturnsValidToken() {
 	s.Require().NoError(err)
 	s.NotEmpty(token)
 
-	parsedToken, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
+	parsedToken, err := jwt.Parse(token, func(_ *jwt.Token) (interface{}, error) {
 		return &s.privateKey.PublicKey, nil
 	})
 	s.Require().NoError(err)
@@ -118,7 +118,7 @@ func (s *TokenServiceTestSuite) TestGenerateJWT_UserWithZeroID_ReturnsValidToken
 	s.Require().NoError(err)
 	s.NotEmpty(token)
 
-	parsedToken, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
+	parsedToken, err := jwt.Parse(token, func(_ *jwt.Token) (interface{}, error) {
 		return &s.privateKey.PublicKey, nil
 	})
 	s.Require().NoError(err)
@@ -175,7 +175,7 @@ func (s *TokenServiceTestSuite) TestGenerateJWT_TokenExpirationIsSetCorrectly_Re
 
 	afterGeneration := time.Now()
 
-	parsedToken, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
+	parsedToken, err := jwt.Parse(token, func(_ *jwt.Token) (interface{}, error) {
 		return &s.privateKey.PublicKey, nil
 	})
 	s.Require().NoError(err)
@@ -219,7 +219,7 @@ func (s *TokenServiceTestSuite) TestGenerateJWT_AllClaimsAreSetCorrectly_Returns
 
 	afterGeneration := time.Now()
 
-	parsedToken, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
+	parsedToken, err := jwt.Parse(token, func(_ *jwt.Token) (interface{}, error) {
 		return &s.privateKey.PublicKey, nil
 	})
 	s.Require().NoError(err)

@@ -86,7 +86,7 @@ func (u *AuthLoginUseCase) findAndValidateUser(ctx context.Context, input AuthLo
 		return model.UserModel{}, err
 	}
 
-	if err := u.validateUserForLogin(user, input.Password); err != nil {
+	if err = u.validateUserForLogin(user, input.Password); err != nil {
 		return model.UserModel{}, err
 	}
 
@@ -137,13 +137,13 @@ func (u *AuthLoginUseCase) createAndSendVerification(ctx context.Context, user m
 		CreatedAt: time.Now().UTC(),
 	}
 
-	if _, err := u.oneTimeTokenRepository.Create(ctx, oneTimeToken); err != nil {
+	if _, err = u.oneTimeTokenRepository.Create(ctx, oneTimeToken); err != nil {
 		u.logger.Error().Msgf("error creating one-time token for user ID %d: %v", user.ID, err)
 		return err
 	}
 
 	sendEmailVerificationCodeInput := service.SendEmailVerificationCodeInput{UserID: user.ID, Code: code}
-	if err := u.sendEmailVerificationCodeService.Execute(ctx, sendEmailVerificationCodeInput); err != nil {
+	if err = u.sendEmailVerificationCodeService.Execute(ctx, sendEmailVerificationCodeInput); err != nil {
 		u.logger.Error().Msgf("error sending verification code email for user ID %d: %v", user.ID, err)
 		return err
 	}
