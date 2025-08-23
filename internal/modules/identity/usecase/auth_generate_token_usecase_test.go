@@ -106,6 +106,8 @@ func (s *AuthGenerateTokenUseCaseTestSuite) TestExecute_ValidInput_ReturnsToken(
 	s.oneTimeTokenRepositoryMock.On("Find", mock.Anything, userID, loginVerificationType).
 		Return(oneTimeToken, nil)
 	s.hashServiceMock.On("CompareHashAndPassword", hashedCode, []byte(code)).Return(nil)
+	s.oneTimeTokenRepositoryMock.On("Delete", mock.Anything, userID, loginVerificationType).
+		Return(nil)
 	s.tokenServiceMock.On("GenerateJWT", mock.Anything, user).Return(token, nil)
 
 	// Act
@@ -356,6 +358,8 @@ func (s *AuthGenerateTokenUseCaseTestSuite) TestExecute_TokenGenerationFails_Ret
 	s.oneTimeTokenRepositoryMock.On("Find", mock.Anything, userID, loginVerificationType).
 		Return(oneTimeToken, nil)
 	s.hashServiceMock.On("CompareHashAndPassword", hashedCode, []byte(code)).Return(nil)
+	s.oneTimeTokenRepositoryMock.On("Delete", mock.Anything, userID, loginVerificationType).
+		Return(nil)
 	s.tokenServiceMock.On("GenerateJWT", mock.Anything, user).Return("", tokenError)
 
 	// Act
