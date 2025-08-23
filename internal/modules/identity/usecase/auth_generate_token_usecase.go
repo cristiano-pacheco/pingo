@@ -92,6 +92,12 @@ func (uc *AuthGenerateTokenUseCase) Execute(
 		return output, err
 	}
 
+	err = uc.oneTimeTokenRepository.Delete(ctx, input.UserID, loginVerificationType)
+	if err != nil {
+		uc.logger.Error().Msgf("error deleting one-time token for the user %d: %v", input.UserID, err)
+		return output, err
+	}
+
 	token, err := uc.tokenService.GenerateJWT(ctx, user)
 	if err != nil {
 		return output, err
