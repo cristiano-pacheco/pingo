@@ -20,6 +20,12 @@ import (
 	_ "github.com/cristiano-pacheco/pingo/docs" // imports swagger docs for API documentation
 )
 
+const (
+	ReadTimeout  = 10 * time.Second
+	WriteTimeout = 10 * time.Second
+	BodyLimit    = 1 * 1024 * 1024 // 1MB limit for REST API
+)
+
 type FiberHTTPServer struct {
 	app      *fiber.App
 	httpPort uint
@@ -34,10 +40,10 @@ func NewFiberHTTPServer(
 	config := fiber.Config{
 		EnablePrintRoutes:     true,
 		DisableStartupMessage: false,
-		Prefork:               false,           // set to true for multi-core, false for Docker/local dev
-		BodyLimit:             1 * 1024 * 1024, // 1MB limit for REST API
-		ReadTimeout:           10 * time.Second,
-		WriteTimeout:          10 * time.Second,
+		Prefork:               false, // set to true for multi-core, false for Docker/local dev
+		BodyLimit:             BodyLimit,
+		ReadTimeout:           ReadTimeout,
+		WriteTimeout:          WriteTimeout,
 		CaseSensitive:         true,
 		StrictRouting:         true,
 		AppName:               appName,
