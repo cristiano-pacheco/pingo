@@ -18,7 +18,10 @@ import (
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/validator"
 )
 
-const verificationCodeTTL = 10 * time.Minute
+const (
+	verificationCodeTTL = 10 * time.Minute
+	maxRandomNumber     = 1000000
+)
 
 type AuthLoginInput struct {
 	Email    string `validate:"required,email"`
@@ -80,7 +83,7 @@ func (u *AuthLoginUseCase) Execute(ctx context.Context, input AuthLoginInput) (A
 		return AuthLoginOutput{}, err
 	}
 
-	n, err := rand.Int(rand.Reader, big.NewInt(1000000))
+	n, err := rand.Int(rand.Reader, big.NewInt(maxRandomNumber))
 	if err != nil {
 		u.logger.Error().Msgf("error generating verification code: %v", err)
 		return AuthLoginOutput{}, err
