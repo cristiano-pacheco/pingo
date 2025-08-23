@@ -20,18 +20,18 @@ import (
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/logger"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/otel"
 	validator_mocks "github.com/cristiano-pacheco/pingo/internal/shared/modules/validator/mocks"
-	"github.com/samber/lo"
 )
 
 type AuthGenerateTokenUseCaseTestSuite struct {
 	suite.Suite
-	sut                            *usecase.AuthGenerateTokenUseCase
-	verificationCodeRepositoryMock *repository_mocks.MockVerificationCodeRepository
-	userRepositoryMock             *repository_mocks.MockUserRepository
-	validatorMock                  *validator_mocks.MockValidate
-	tokenServiceMock               *service_mocks.MockTokenService
-	logger                         logger.Logger
-	cfg                            config.Config
+	sut                        *usecase.AuthGenerateTokenUseCase
+	oneTimeTokenRepositoryMock *repository_mocks.MockOneTimeTokenRepository
+	userRepositoryMock         *repository_mocks.MockUserRepository
+	validatorMock              *validator_mocks.MockValidate
+	tokenServiceMock           *service_mocks.MockTokenService
+	hashServiceMock            *service_mocks.MockHashService
+	logger                     logger.Logger
+	cfg                        config.Config
 }
 
 func (s *AuthGenerateTokenUseCaseTestSuite) SetupTest() {
@@ -52,16 +52,18 @@ func (s *AuthGenerateTokenUseCaseTestSuite) SetupTest() {
 	otel.Init(s.cfg)
 	s.logger = logger.New(s.cfg)
 
-	s.verificationCodeRepositoryMock = repository_mocks.NewMockVerificationCodeRepository(s.T())
+	s.oneTimeTokenRepositoryMock = repository_mocks.NewMockOneTimeTokenRepository(s.T())
 	s.userRepositoryMock = repository_mocks.NewMockUserRepository(s.T())
 	s.validatorMock = validator_mocks.NewMockValidate(s.T())
 	s.tokenServiceMock = service_mocks.NewMockTokenService(s.T())
+	s.hashServiceMock = service_mocks.NewMockHashService(s.T())
 
 	s.sut = usecase.NewAuthGenerateTokenUseCase(
-		s.verificationCodeRepositoryMock,
+		s.oneTimeTokenRepositoryMock,
 		s.userRepositoryMock,
-		s.validatorMock,
 		s.tokenServiceMock,
+		s.hashServiceMock,
+		s.validatorMock,
 		s.logger,
 	)
 }
@@ -76,6 +78,7 @@ func (s *AuthGenerateTokenUseCaseTestSuite) TestExecute_ValidInput_ReturnsToken(
 	userID := uint64(123)
 	code := "123456"
 	token := "jwt-token"
+	hashedCode := []byte("hashed-code")
 
 	input := usecase.GenerateTokenInput{
 		UserID: userID,
@@ -88,24 +91,22 @@ func (s *AuthGenerateTokenUseCaseTestSuite) TestExecute_ValidInput_ReturnsToken(
 		Email:  "test@example.com",
 	}
 
-	verificationCode := model.VerificationCodeModel{
+	loginVerificationType, _ := enum.NewTokenTypeEnum(enum.TokenTypeLoginVerification)
+	oneTimeToken := model.OneTimeTokenModel{
 		ID:        1,
 		UserID:    userID,
-		Code:      code,
+		TokenHash: hashedCode,
+		TokenType: enum.TokenTypeLoginVerification,
 		ExpiresAt: time.Now().Add(time.Minute * 5),
 		CreatedAt: time.Now(),
 		UsedAt:    nil,
 	}
 
-	verificationCodeUpdated := verificationCode
-	verificationCodeUpdated.UsedAt = lo.ToPtr(time.Now().UTC())
-
 	s.validatorMock.On("Struct", input).Return(nil)
 	s.userRepositoryMock.On("FindByID", mock.Anything, userID).Return(user, nil)
-	s.verificationCodeRepositoryMock.On("FindByUserAndCode", mock.Anything, userID, code).
-		Return(verificationCode, nil)
-	s.verificationCodeRepositoryMock.On("Update", mock.Anything, mock.AnythingOfType("model.VerificationCodeModel")).
-		Return(nil)
+	s.oneTimeTokenRepositoryMock.On("Find", mock.Anything, userID, loginVerificationType).
+		Return(oneTimeToken, nil)
+	s.hashServiceMock.On("CompareHashAndPassword", hashedCode, []byte(code)).Return(nil)
 	s.tokenServiceMock.On("GenerateJWT", mock.Anything, user).Return(token, nil)
 
 	// Act
@@ -212,7 +213,7 @@ func (s *AuthGenerateTokenUseCaseTestSuite) TestExecute_UserNotActive_ReturnsUse
 	s.Empty(result.Token)
 }
 
-func (s *AuthGenerateTokenUseCaseTestSuite) TestExecute_VerificationCodeNotFound_ReturnsInvalidCredentialsError() {
+func (s *AuthGenerateTokenUseCaseTestSuite) TestExecute_OneTimeTokenNotFound_ReturnsInvalidCredentialsError() {
 	// Arrange
 	ctx := context.Background()
 	userID := uint64(123)
@@ -229,10 +230,12 @@ func (s *AuthGenerateTokenUseCaseTestSuite) TestExecute_VerificationCodeNotFound
 		Email:  "test@example.com",
 	}
 
+	loginVerificationType, _ := enum.NewTokenTypeEnum(enum.TokenTypeLoginVerification)
+
 	s.validatorMock.On("Struct", input).Return(nil)
 	s.userRepositoryMock.On("FindByID", mock.Anything, userID).Return(user, nil)
-	s.verificationCodeRepositoryMock.On("FindByUserAndCode", mock.Anything, userID, code).
-		Return(model.VerificationCodeModel{}, shared_errs.ErrRecordNotFound)
+	s.oneTimeTokenRepositoryMock.On("Find", mock.Anything, userID, loginVerificationType).
+		Return(model.OneTimeTokenModel{}, shared_errs.ErrRecordNotFound)
 
 	// Act
 	result, err := s.sut.Execute(ctx, input)
@@ -242,7 +245,7 @@ func (s *AuthGenerateTokenUseCaseTestSuite) TestExecute_VerificationCodeNotFound
 	s.Empty(result.Token)
 }
 
-func (s *AuthGenerateTokenUseCaseTestSuite) TestExecute_VerificationCodeRepositoryError_ReturnsError() {
+func (s *AuthGenerateTokenUseCaseTestSuite) TestExecute_OneTimeTokenRepositoryError_ReturnsError() {
 	// Arrange
 	ctx := context.Background()
 	userID := uint64(123)
@@ -260,10 +263,12 @@ func (s *AuthGenerateTokenUseCaseTestSuite) TestExecute_VerificationCodeReposito
 		Email:  "test@example.com",
 	}
 
+	loginVerificationType, _ := enum.NewTokenTypeEnum(enum.TokenTypeLoginVerification)
+
 	s.validatorMock.On("Struct", input).Return(nil)
 	s.userRepositoryMock.On("FindByID", mock.Anything, userID).Return(user, nil)
-	s.verificationCodeRepositoryMock.On("FindByUserAndCode", mock.Anything, userID, code).
-		Return(model.VerificationCodeModel{}, repositoryError)
+	s.oneTimeTokenRepositoryMock.On("Find", mock.Anything, userID, loginVerificationType).
+		Return(model.OneTimeTokenModel{}, repositoryError)
 
 	// Act
 	result, err := s.sut.Execute(ctx, input)
@@ -274,12 +279,13 @@ func (s *AuthGenerateTokenUseCaseTestSuite) TestExecute_VerificationCodeReposito
 	s.Empty(result.Token)
 }
 
-func (s *AuthGenerateTokenUseCaseTestSuite) TestExecute_VerificationCodeUpdateFails_ReturnsError() {
+func (s *AuthGenerateTokenUseCaseTestSuite) TestExecute_HashComparisonFails_ReturnsError() {
 	// Arrange
 	ctx := context.Background()
 	userID := uint64(123)
 	code := "123456"
-	updateError := errors.New("update error")
+	hashedCode := []byte("hashed-code")
+	hashError := errors.New("hash comparison failed")
 
 	input := usecase.GenerateTokenInput{
 		UserID: userID,
@@ -292,10 +298,12 @@ func (s *AuthGenerateTokenUseCaseTestSuite) TestExecute_VerificationCodeUpdateFa
 		Email:  "test@example.com",
 	}
 
-	verificationCode := model.VerificationCodeModel{
+	loginVerificationType, _ := enum.NewTokenTypeEnum(enum.TokenTypeLoginVerification)
+	oneTimeToken := model.OneTimeTokenModel{
 		ID:        1,
 		UserID:    userID,
-		Code:      code,
+		TokenHash: hashedCode,
+		TokenType: enum.TokenTypeLoginVerification,
 		ExpiresAt: time.Now().Add(time.Minute * 5),
 		CreatedAt: time.Now(),
 		UsedAt:    nil,
@@ -303,17 +311,16 @@ func (s *AuthGenerateTokenUseCaseTestSuite) TestExecute_VerificationCodeUpdateFa
 
 	s.validatorMock.On("Struct", input).Return(nil)
 	s.userRepositoryMock.On("FindByID", mock.Anything, userID).Return(user, nil)
-	s.verificationCodeRepositoryMock.On("FindByUserAndCode", mock.Anything, userID, code).
-		Return(verificationCode, nil)
-	s.verificationCodeRepositoryMock.On("Update", mock.Anything, mock.AnythingOfType("model.VerificationCodeModel")).
-		Return(updateError)
+	s.oneTimeTokenRepositoryMock.On("Find", mock.Anything, userID, loginVerificationType).
+		Return(oneTimeToken, nil)
+	s.hashServiceMock.On("CompareHashAndPassword", hashedCode, []byte(code)).Return(hashError)
 
 	// Act
 	result, err := s.sut.Execute(ctx, input)
 
 	// Assert
 	s.Require().Error(err)
-	s.Equal(updateError, err)
+	s.Equal(hashError, err)
 	s.Empty(result.Token)
 }
 
@@ -322,6 +329,7 @@ func (s *AuthGenerateTokenUseCaseTestSuite) TestExecute_TokenGenerationFails_Ret
 	ctx := context.Background()
 	userID := uint64(123)
 	code := "123456"
+	hashedCode := []byte("hashed-code")
 	tokenError := errors.New("token generation error")
 
 	input := usecase.GenerateTokenInput{
@@ -335,10 +343,12 @@ func (s *AuthGenerateTokenUseCaseTestSuite) TestExecute_TokenGenerationFails_Ret
 		Email:  "test@example.com",
 	}
 
-	verificationCode := model.VerificationCodeModel{
+	loginVerificationType, _ := enum.NewTokenTypeEnum(enum.TokenTypeLoginVerification)
+	oneTimeToken := model.OneTimeTokenModel{
 		ID:        1,
 		UserID:    userID,
-		Code:      code,
+		TokenHash: hashedCode,
+		TokenType: enum.TokenTypeLoginVerification,
 		ExpiresAt: time.Now().Add(time.Minute * 5),
 		CreatedAt: time.Now(),
 		UsedAt:    nil,
@@ -346,10 +356,9 @@ func (s *AuthGenerateTokenUseCaseTestSuite) TestExecute_TokenGenerationFails_Ret
 
 	s.validatorMock.On("Struct", input).Return(nil)
 	s.userRepositoryMock.On("FindByID", mock.Anything, userID).Return(user, nil)
-	s.verificationCodeRepositoryMock.On("FindByUserAndCode", mock.Anything, userID, code).
-		Return(verificationCode, nil)
-	s.verificationCodeRepositoryMock.On("Update", mock.Anything, mock.AnythingOfType("model.VerificationCodeModel")).
-		Return(nil)
+	s.oneTimeTokenRepositoryMock.On("Find", mock.Anything, userID, loginVerificationType).
+		Return(oneTimeToken, nil)
+	s.hashServiceMock.On("CompareHashAndPassword", hashedCode, []byte(code)).Return(nil)
 	s.tokenServiceMock.On("GenerateJWT", mock.Anything, user).Return("", tokenError)
 
 	// Act

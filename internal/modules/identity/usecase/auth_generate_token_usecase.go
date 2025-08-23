@@ -35,6 +35,7 @@ func NewAuthGenerateTokenUseCase(
 		oneTimeTokenRepository: oneTimeTokenRepository,
 		userRepository:         userRepository,
 		tokenService:           tokenService,
+		hashService:            hashService,
 		validator:              validator,
 		logger:                 logger,
 	}
