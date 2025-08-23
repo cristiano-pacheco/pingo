@@ -55,6 +55,30 @@ type MyStructTestSuite struct {
 
 func (s *MyStructTestSuite) SetupTest() {
 	// Initialize sut and dependencies
+  // example of config initialization
+  s.cfg = config.Config{
+		MAIL: config.MAIL{
+			Sender: "test@example.com",
+		},
+		App: config.App{
+			BaseURL: "https://example.com",
+			Name:    "Test App",
+			Version: "1.0.0",
+		},
+		Telemetry: config.Telemetry{
+			Enabled: false,
+		},
+		Log: config.Log{
+			LogLevel: "disabled",
+		},
+	}
+
+	// Initialize otel for testing
+	otel.Init(s.cfg)
+
+	// Use real logger but with disabled level
+	s.logger = logger.New(s.cfg)
+
 	s.sut = mypackage.New()
 }
 
