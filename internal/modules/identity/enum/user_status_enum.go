@@ -15,10 +15,6 @@ type UserStatusEnum struct {
 	value string
 }
 
-func (e UserStatusEnum) String() string {
-	return e.value
-}
-
 func NewUserStatusEnum(value string) (UserStatusEnum, error) {
 	if value != UserStatusPending &&
 		value != UserStatusActive &&
@@ -27,4 +23,8 @@ func NewUserStatusEnum(value string) (UserStatusEnum, error) {
 		return UserStatusEnum{}, errs.ErrInvalidUserStatus
 	}
 	return UserStatusEnum{value: value}, nil
+}
+
+func (e UserStatusEnum) String() string {
+	return e.value
 }
