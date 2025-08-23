@@ -17,6 +17,8 @@ import (
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/validator"
 )
 
+const verificationCodeTTL = 10 * time.Minute
+
 type AuthLoginInput struct {
 	Email    string `validate:"required,email"`
 	Password string `validate:"required"`
@@ -81,7 +83,7 @@ func (u *AuthLoginUseCase) Execute(ctx context.Context, input AuthLoginInput) (A
 	verificationCode := model.VerificationCodeModel{
 		UserID:    user.ID,
 		Code:      code,
-		ExpiresAt: time.Now().UTC().Add(10 * time.Minute),
+		ExpiresAt: time.Now().UTC().Add(verificationCodeTTL),
 		CreatedAt: time.Now().UTC(),
 	}
 
