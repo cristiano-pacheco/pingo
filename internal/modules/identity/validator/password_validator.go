@@ -7,6 +7,10 @@ import (
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/errs"
 )
 
+const (
+	minimumPasswordLength = 8
+)
+
 type PasswordValidator interface {
 	Validate(password string) error
 }
@@ -45,7 +49,7 @@ func (s *passwordValidator) checkRequirements(password string) passwordRequireme
 }
 
 func (s *passwordValidator) Validate(password string) error {
-	if utf8.RuneCountInString(password) < 8 {
+	if utf8.RuneCountInString(password) < minimumPasswordLength {
 		return errs.ErrPasswordTooShort
 	}
 
