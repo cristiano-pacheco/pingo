@@ -72,7 +72,41 @@ func (u *AuthLoginUseCase) Execute(ctx context.Context, input AuthLoginInput) (A
 		return AuthLoginOutput{}, err
 	}
 
-	if err = u.createAndSendVerification(ctx, user); err != nil {
+	emailVerificationType, _ := enum.NewTokenTypeEnum(enum.TokenTypeLoginVerification)
+	if err = u.oneTimeTokenRepository.Delete(ctx, user.ID, emailVerificationType); err != nil &&
+		!errors.Is(err, shared_errs.ErrRecordNotFound) {
+		u.logger.Error().Msgf("error deleting verification codes for user ID %d: %v", user.ID, err)
+		return AuthLoginOutput{}, err
+	}
+
+	n, err := rand.Int(rand.Reader, big.NewInt(maxRandomNumber))
+	if err != nil {
+		u.logger.Error().Msgf("error generating verification code: %v", err)
+		return AuthLoginOutput{}, err
+	}
+
+	code := fmt.Sprintf("%06d", n.Int64())
+	tokenHash, err := u.hashService.GenerateFromPassword([]byte(code))
+	if err != nil {
+		u.logger.Error().Msgf("error hashing verification code for user ID %d: %v", user.ID, err)
+		return AuthLoginOutput{}, err
+	}
+
+	oneTimeToken := model.OneTimeTokenModel{
+		UserID:    user.ID,
+		TokenHash: tokenHash,
+		ExpiresAt: time.Now().UTC().Add(verificationCodeTTL),
+		CreatedAt: time.Now().UTC(),
+	}
+
+	if _, err = u.oneTimeTokenRepository.Create(ctx, oneTimeToken); err != nil {
+		u.logger.Error().Msgf("error creating one-time token for user ID %d: %v", user.ID, err)
+		return AuthLoginOutput{}, err
+	}
+
+	sendEmailVerificationCodeInput := service.SendEmailVerificationCodeInput{UserID: user.ID, Code: code}
+	if err = u.sendEmailVerificationCodeService.Execute(ctx, sendEmailVerificationCodeInput); err != nil {
+		u.logger.Error().Msgf("error sending verification code email for user ID %d: %v", user.ID, err)
 		return AuthLoginOutput{}, err
 	}
 
@@ -86,67 +120,17 @@ func (u *AuthLoginUseCase) findAndValidateUser(ctx context.Context, input AuthLo
 		return model.UserModel{}, err
 	}
 
-	if err = u.validateUserForLogin(user, input.Password); err != nil {
-		return model.UserModel{}, err
+	if user.ID == 0 {
+		return model.UserModel{}, errs.ErrInvalidCredentials
+	}
+
+	if user.Status != enum.UserStatusActive {
+		return model.UserModel{}, errs.ErrUserIsNotActive
+	}
+
+	if err = u.hashService.CompareHashAndPassword(user.PasswordHash, []byte(input.Password)); err != nil {
+		return model.UserModel{}, errs.ErrInvalidCredentials
 	}
 
 	return user, nil
-}
-
-func (u *AuthLoginUseCase) validateUserForLogin(user model.UserModel, password string) error {
-	if user.ID == 0 {
-		return errs.ErrInvalidCredentials
-	}
-
-	if user.Status != "active" {
-		return errs.ErrUserIsNotActive
-	}
-
-	if err := u.hashService.CompareHashAndPassword(user.PasswordHash, []byte(password)); err != nil {
-		return errs.ErrInvalidCredentials
-	}
-
-	return nil
-}
-
-func (u *AuthLoginUseCase) createAndSendVerification(ctx context.Context, user model.UserModel) error {
-	emailVerificationType, _ := enum.NewTokenTypeEnum(enum.TokenTypeLoginVerification)
-	if err := u.oneTimeTokenRepository.Delete(ctx, user.ID, emailVerificationType); err != nil &&
-		!errors.Is(err, shared_errs.ErrRecordNotFound) {
-		u.logger.Error().Msgf("error deleting verification codes for user ID %d: %v", user.ID, err)
-		return err
-	}
-
-	n, err := rand.Int(rand.Reader, big.NewInt(maxRandomNumber))
-	if err != nil {
-		u.logger.Error().Msgf("error generating verification code: %v", err)
-		return err
-	}
-
-	code := fmt.Sprintf("%06d", n.Int64())
-	tokenHash, err := u.hashService.GenerateFromPassword([]byte(code))
-	if err != nil {
-		u.logger.Error().Msgf("error hashing verification code for user ID %d: %v", user.ID, err)
-		return err
-	}
-
-	oneTimeToken := model.OneTimeTokenModel{
-		UserID:    user.ID,
-		TokenHash: tokenHash,
-		ExpiresAt: time.Now().UTC().Add(verificationCodeTTL),
-		CreatedAt: time.Now().UTC(),
-	}
-
-	if _, err = u.oneTimeTokenRepository.Create(ctx, oneTimeToken); err != nil {
-		u.logger.Error().Msgf("error creating one-time token for user ID %d: %v", user.ID, err)
-		return err
-	}
-
-	sendEmailVerificationCodeInput := service.SendEmailVerificationCodeInput{UserID: user.ID, Code: code}
-	if err = u.sendEmailVerificationCodeService.Execute(ctx, sendEmailVerificationCodeInput); err != nil {
-		u.logger.Error().Msgf("error sending verification code email for user ID %d: %v", user.ID, err)
-		return err
-	}
-
-	return nil
 }
