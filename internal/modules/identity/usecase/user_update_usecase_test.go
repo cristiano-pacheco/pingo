@@ -162,7 +162,8 @@ func (s *UserUpdateUseCaseTestSuite) TestExecute_UserNotFound_ReturnsUserNotFoun
 	}
 
 	s.validatorMock.On("Struct", input).Return(nil)
-	s.userRepositoryMock.On("FindByID", mock.Anything, uint64(999)).Return(model.UserModel{}, shared_errs.ErrRecordNotFound)
+	s.userRepositoryMock.On("FindByID", mock.Anything, uint64(999)).
+		Return(model.UserModel{}, shared_errs.ErrRecordNotFound)
 
 	// Act
 	err := s.sut.Execute(ctx, input)

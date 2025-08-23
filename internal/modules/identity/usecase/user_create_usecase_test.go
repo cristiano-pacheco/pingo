@@ -100,7 +100,8 @@ func (s *UserCreateUseCaseTestSuite) TestExecute_ValidInput_CreatesUserSuccessfu
 
 	s.validatorMock.On("Struct", input).Return(nil)
 	s.passwordValidatorMock.On("Validate", input.Password).Return(nil)
-	s.userRepositoryMock.On("FindByEmail", mock.Anything, input.Email).Return(existingUser, shared_errs.ErrRecordNotFound)
+	s.userRepositoryMock.On("FindByEmail", mock.Anything, input.Email).
+		Return(existingUser, shared_errs.ErrRecordNotFound)
 	s.hashServiceMock.On("GenerateRandomBytes").Return(token, nil)
 	s.hashServiceMock.On("GenerateFromPassword", []byte(input.Password)).Return(passwordHash, nil)
 	s.userRepositoryMock.On("Create", mock.Anything, mock.AnythingOfType("model.UserModel")).Return(createdUser, nil)
@@ -226,7 +227,8 @@ func (s *UserCreateUseCaseTestSuite) TestExecute_GenerateRandomBytesFails_Return
 
 	s.validatorMock.On("Struct", input).Return(nil)
 	s.passwordValidatorMock.On("Validate", input.Password).Return(nil)
-	s.userRepositoryMock.On("FindByEmail", mock.Anything, input.Email).Return(existingUser, shared_errs.ErrRecordNotFound)
+	s.userRepositoryMock.On("FindByEmail", mock.Anything, input.Email).
+		Return(existingUser, shared_errs.ErrRecordNotFound)
 	s.hashServiceMock.On("GenerateRandomBytes").Return(nil, tokenGenerationError)
 
 	// Act
@@ -253,7 +255,8 @@ func (s *UserCreateUseCaseTestSuite) TestExecute_GenerateFromPasswordFails_Retur
 
 	s.validatorMock.On("Struct", input).Return(nil)
 	s.passwordValidatorMock.On("Validate", input.Password).Return(nil)
-	s.userRepositoryMock.On("FindByEmail", mock.Anything, input.Email).Return(existingUser, shared_errs.ErrRecordNotFound)
+	s.userRepositoryMock.On("FindByEmail", mock.Anything, input.Email).
+		Return(existingUser, shared_errs.ErrRecordNotFound)
 	s.hashServiceMock.On("GenerateRandomBytes").Return(token, nil)
 	s.hashServiceMock.On("GenerateFromPassword", []byte(input.Password)).Return(nil, passwordHashError)
 
@@ -282,10 +285,12 @@ func (s *UserCreateUseCaseTestSuite) TestExecute_UserRepositoryCreateFails_Retur
 
 	s.validatorMock.On("Struct", input).Return(nil)
 	s.passwordValidatorMock.On("Validate", input.Password).Return(nil)
-	s.userRepositoryMock.On("FindByEmail", mock.Anything, input.Email).Return(existingUser, shared_errs.ErrRecordNotFound)
+	s.userRepositoryMock.On("FindByEmail", mock.Anything, input.Email).
+		Return(existingUser, shared_errs.ErrRecordNotFound)
 	s.hashServiceMock.On("GenerateRandomBytes").Return(token, nil)
 	s.hashServiceMock.On("GenerateFromPassword", []byte(input.Password)).Return(passwordHash, nil)
-	s.userRepositoryMock.On("Create", mock.Anything, mock.AnythingOfType("model.UserModel")).Return(model.UserModel{}, createError)
+	s.userRepositoryMock.On("Create", mock.Anything, mock.AnythingOfType("model.UserModel")).
+		Return(model.UserModel{}, createError)
 
 	// Act
 	output, err := s.sut.Execute(ctx, input)
@@ -322,7 +327,8 @@ func (s *UserCreateUseCaseTestSuite) TestExecute_SendEmailConfirmationFails_Retu
 
 	s.validatorMock.On("Struct", input).Return(nil)
 	s.passwordValidatorMock.On("Validate", input.Password).Return(nil)
-	s.userRepositoryMock.On("FindByEmail", mock.Anything, input.Email).Return(existingUser, shared_errs.ErrRecordNotFound)
+	s.userRepositoryMock.On("FindByEmail", mock.Anything, input.Email).
+		Return(existingUser, shared_errs.ErrRecordNotFound)
 	s.hashServiceMock.On("GenerateRandomBytes").Return(token, nil)
 	s.hashServiceMock.On("GenerateFromPassword", []byte(input.Password)).Return(passwordHash, nil)
 	s.userRepositoryMock.On("Create", mock.Anything, mock.AnythingOfType("model.UserModel")).Return(createdUser, nil)

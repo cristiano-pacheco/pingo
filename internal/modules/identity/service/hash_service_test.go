@@ -32,7 +32,7 @@ func (s *HashServiceTestSuite) TestGenerateFromPassword_ValidPassword_ReturnsHas
 	s.NoError(err)
 	s.NotNil(hashedPassword)
 	s.NotEqual(password, hashedPassword)
-	s.Greater(len(hashedPassword), 0)
+	s.NotEmpty(hashedPassword)
 }
 
 func (s *HashServiceTestSuite) TestGenerateFromPassword_EmptyPassword_ReturnsHashedPassword() {
@@ -45,7 +45,7 @@ func (s *HashServiceTestSuite) TestGenerateFromPassword_EmptyPassword_ReturnsHas
 	// Assert
 	s.NoError(err)
 	s.NotNil(hashedPassword)
-	s.Greater(len(hashedPassword), 0)
+	s.NotEmpty(hashedPassword)
 }
 
 func (s *HashServiceTestSuite) TestCompareHashAndPassword_ValidPasswordAndHash_ReturnsNoError() {
@@ -98,7 +98,7 @@ func (s *HashServiceTestSuite) TestGenerateRandomBytes_DefaultSize_ReturnsRandom
 	// Assert
 	s.NoError(err)
 	s.NotNil(randomBytes)
-	s.Equal(expectedSize, len(randomBytes))
+	s.Len(randomBytes, expectedSize)
 }
 
 func (s *HashServiceTestSuite) TestGenerateRandomBytes_MultipleCalls_ReturnsDifferentBytes() {

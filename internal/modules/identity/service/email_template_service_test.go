@@ -245,7 +245,9 @@ func (s *EmailTemplateServiceTestSuite) TestCompileAuthVerificationCodeTemplate_
 	s.NoError(err)
 	s.NotEmpty(result)
 	// HTML templates escape special characters automatically
-	s.True(strings.Contains(result, "José García") && (strings.Contains(result, "&amp;") || strings.Contains(result, "&")))
+	s.True(
+		strings.Contains(result, "José García") && (strings.Contains(result, "&amp;") || strings.Contains(result, "&")),
+	)
 	s.Contains(result, "A1B2C3")
 	s.Contains(result, "Auth Verification Code")
 	s.Contains(result, "<!DOCTYPE html>")

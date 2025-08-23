@@ -2,7 +2,7 @@ package usecase_test
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"os"
 	"testing"
 	"time"
@@ -118,7 +118,7 @@ func (s *AuthLoginUseCaseTestSuite) TestExecute_InvalidInput_ReturnsValidationEr
 		Email:    "",
 		Password: "",
 	}
-	validationError := fmt.Errorf("validation error")
+	validationError := errors.New("validation error")
 
 	s.validatorMock.On("Struct", input).Return(validationError)
 
@@ -140,7 +140,8 @@ func (s *AuthLoginUseCaseTestSuite) TestExecute_UserNotFound_ReturnsInvalidCrede
 	}
 
 	s.validatorMock.On("Struct", input).Return(nil)
-	s.userRepositoryMock.On("FindByEmail", mock.Anything, input.Email).Return(model.UserModel{}, shared_errs.ErrRecordNotFound)
+	s.userRepositoryMock.On("FindByEmail", mock.Anything, input.Email).
+		Return(model.UserModel{}, shared_errs.ErrRecordNotFound)
 
 	// Act
 	output, err := s.sut.Execute(ctx, input)
@@ -188,7 +189,7 @@ func (s *AuthLoginUseCaseTestSuite) TestExecute_InvalidPassword_ReturnsInvalidCr
 		Status:       "active",
 		PasswordHash: []byte("hashedpassword"),
 	}
-	passwordError := fmt.Errorf("password mismatch")
+	passwordError := errors.New("password mismatch")
 
 	s.validatorMock.On("Struct", input).Return(nil)
 	s.userRepositoryMock.On("FindByEmail", mock.Anything, input.Email).Return(user, nil)
@@ -209,7 +210,7 @@ func (s *AuthLoginUseCaseTestSuite) TestExecute_FindByEmailDatabaseError_Returns
 		Email:    "test@example.com",
 		Password: "validpassword",
 	}
-	dbError := fmt.Errorf("database connection error")
+	dbError := errors.New("database connection error")
 
 	s.validatorMock.On("Struct", input).Return(nil)
 	s.userRepositoryMock.On("FindByEmail", mock.Anything, input.Email).Return(model.UserModel{}, dbError)
@@ -238,7 +239,7 @@ func (s *AuthLoginUseCaseTestSuite) TestExecute_DeleteVerificationCodeError_Retu
 		Status:       "active",
 		PasswordHash: []byte("hashedpassword"),
 	}
-	deleteError := fmt.Errorf("delete verification code error")
+	deleteError := errors.New("delete verification code error")
 
 	emailVerificationType, _ := enum.NewTokenTypeEnum(enum.TokenTypeLoginVerification)
 	s.validatorMock.On("Struct", input).Return(nil)
@@ -270,7 +271,7 @@ func (s *AuthLoginUseCaseTestSuite) TestExecute_CreateVerificationCodeError_Retu
 		Status:       "active",
 		PasswordHash: []byte("hashedpassword"),
 	}
-	createError := fmt.Errorf("create verification code error")
+	createError := errors.New("create verification code error")
 
 	emailVerificationType, _ := enum.NewTokenTypeEnum(enum.TokenTypeLoginVerification)
 	s.validatorMock.On("Struct", input).Return(nil)
@@ -305,7 +306,7 @@ func (s *AuthLoginUseCaseTestSuite) TestExecute_HashServiceError_ReturnsError() 
 		Status:       "active",
 		PasswordHash: []byte("hashedpassword"),
 	}
-	hashError := fmt.Errorf("hash service error")
+	hashError := errors.New("hash service error")
 
 	emailVerificationType, _ := enum.NewTokenTypeEnum(enum.TokenTypeLoginVerification)
 	s.validatorMock.On("Struct", input).Return(nil)
@@ -345,7 +346,7 @@ func (s *AuthLoginUseCaseTestSuite) TestExecute_SendEmailError_ReturnsError() {
 		ExpiresAt: time.Now().UTC().Add(10 * time.Minute),
 		CreatedAt: time.Now().UTC(),
 	}
-	emailError := fmt.Errorf("send email error")
+	emailError := errors.New("send email error")
 
 	emailVerificationType, _ := enum.NewTokenTypeEnum(enum.TokenTypeLoginVerification)
 	s.validatorMock.On("Struct", input).Return(nil)
@@ -394,7 +395,8 @@ func (s *AuthLoginUseCaseTestSuite) TestExecute_DeleteVerificationCodeNotFound_C
 	s.validatorMock.On("Struct", input).Return(nil)
 	s.userRepositoryMock.On("FindByEmail", mock.Anything, input.Email).Return(user, nil)
 	s.hashServiceMock.On("CompareHashAndPassword", user.PasswordHash, []byte(input.Password)).Return(nil)
-	s.oneTimeTokenRepositoryMock.On("Delete", mock.Anything, user.ID, emailVerificationType).Return(shared_errs.ErrRecordNotFound)
+	s.oneTimeTokenRepositoryMock.On("Delete", mock.Anything, user.ID, emailVerificationType).
+		Return(shared_errs.ErrRecordNotFound)
 	s.hashServiceMock.On("GenerateFromPassword", mock.AnythingOfType("[]uint8")).Return([]byte("hashedtoken"), nil)
 	s.oneTimeTokenRepositoryMock.On("Create", mock.Anything, mock.AnythingOfType("model.OneTimeTokenModel")).
 		Return(oneTimeToken, nil)
