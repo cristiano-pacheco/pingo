@@ -1,18 +1,12 @@
--- Create user status enum
-DROP TYPE IF EXISTS user_status;
-CREATE TYPE user_status AS ENUM ('pending', 'active', 'inactive', 'suspended');
-
 -- Create users table
 CREATE TABLE users (
     id BIGSERIAL PRIMARY KEY,
-    email TEXT NOT NULL UNIQUE,
-    first_name TEXT NOT NULL,
-    last_name TEXT NOT NULL,
-    status user_status NOT NULL DEFAULT 'pending',
+    email VARCHAR(255) NOT NULL UNIQUE,
+    first_name VARCHAR(50) NOT NULL,
+    last_name VARCHAR(50) NOT NULL,
+    status VARCHAR(50) NOT NULL,
     password_hash BYTEA NOT NULL,
-    confirmation_token BYTEA,
     confirmed_at TIMESTAMPTZ,
-    reset_password_token BYTEA,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -20,4 +14,3 @@ CREATE TABLE users (
 -- Create indexes for performance
 CREATE INDEX idx_users_email ON users(email);
 CREATE INDEX idx_users_status ON users(status);
-CREATE INDEX idx_users_confirmation_token ON users(confirmation_token);
