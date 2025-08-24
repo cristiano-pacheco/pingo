@@ -1,7 +1,7 @@
 package trace
 
 import (
-	"fmt"
+	"errors"
 	"time"
 )
 
@@ -18,15 +18,15 @@ type TracerConfig struct {
 }
 
 // Validate checks if the configuration is valid
-func (c TracerConfig) Validate() error {
+func (c *TracerConfig) Validate() error {
 	if c.AppName == "" {
-		return fmt.Errorf("AppName is required")
+		return errors.New("AppName is required")
 	}
 	if c.TraceEnabled && c.TraceURL == "" {
-		return fmt.Errorf("TraceURL is required when tracing is enabled")
+		return errors.New("TraceURL is required when tracing is enabled")
 	}
 	if c.SampleRate < 0.0 || c.SampleRate > 1.0 {
-		return fmt.Errorf("SampleRate must be between 0.0 and 1.0")
+		return errors.New("SampleRate must be between 0.0 and 1.0")
 	}
 	return nil
 }
@@ -34,7 +34,7 @@ func (c TracerConfig) Validate() error {
 // setDefaults sets default values for optional configuration fields
 func (c *TracerConfig) setDefaults() {
 	if c.BatchTimeout == 0 {
-		c.BatchTimeout = 5 * time.Second
+		c.BatchTimeout = defaultBatchTimeout
 	}
 	if c.MaxBatchSize == 0 {
 		c.MaxBatchSize = 512
