@@ -25,6 +25,7 @@ type UserActivateUseCase struct {
 	userRepository         repository.UserRepository
 	validate               validator.Validate
 	logger                 logger.Logger
+	otel                   otel.Otel
 }
 
 func NewUserActivateUseCase(
@@ -32,17 +33,19 @@ func NewUserActivateUseCase(
 	userRepository repository.UserRepository,
 	validate validator.Validate,
 	logger logger.Logger,
+	otel otel.Otel,
 ) *UserActivateUseCase {
 	return &UserActivateUseCase{
 		oneTimeTokenRepository: oneTimeTokenRepository,
 		userRepository:         userRepository,
 		validate:               validate,
 		logger:                 logger,
+		otel:                   otel,
 	}
 }
 
 func (uc *UserActivateUseCase) Execute(ctx context.Context, input UserActivateInput) error {
-	ctx, span := otel.Trace().StartSpan(ctx, "UserActivateUseCase.Execute")
+	ctx, span := uc.otel.StartSpan(ctx, "UserActivateUseCase.Execute")
 	defer span.End()
 
 	err := uc.validate.Struct(input)

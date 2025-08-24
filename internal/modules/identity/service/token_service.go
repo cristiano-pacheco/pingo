@@ -21,18 +21,20 @@ type tokenService struct {
 	privateKeyRegistry registry.PrivateKeyRegistry
 	conf               config.Config
 	logger             logger.Logger
+	otel               otel.Otel
 }
 
 func NewTokenService(
 	conf config.Config,
 	privateKeyRegistry registry.PrivateKeyRegistry,
 	logger logger.Logger,
+	otel otel.Otel,
 ) TokenService {
-	return &tokenService{privateKeyRegistry, conf, logger}
+	return &tokenService{privateKeyRegistry, conf, logger, otel}
 }
 
 func (s *tokenService) GenerateJWT(ctx context.Context, user model.UserModel) (string, error) {
-	_, span := otel.Trace().StartSpan(ctx, "TokenService.GenerateJWT")
+	_, span := s.otel.StartSpan(ctx, "TokenService.GenerateJWT")
 	defer span.End()
 
 	now := time.Now()

@@ -40,6 +40,7 @@ type AuthLoginUseCase struct {
 	hashService                      service.HashService
 	sendEmailVerificationCodeService service.SendEmailVerificationCodeService
 	logger                           logger.Logger
+	otel                             otel.Otel
 }
 
 func NewAuthLoginUseCase(
@@ -49,6 +50,7 @@ func NewAuthLoginUseCase(
 	hashService service.HashService,
 	sendEmailVerificationCodeService service.SendEmailVerificationCodeService,
 	logger logger.Logger,
+	otel otel.Otel,
 ) *AuthLoginUseCase {
 	return &AuthLoginUseCase{
 		userRepository:                   userRepository,
@@ -57,11 +59,12 @@ func NewAuthLoginUseCase(
 		hashService:                      hashService,
 		sendEmailVerificationCodeService: sendEmailVerificationCodeService,
 		logger:                           logger,
+		otel:                             otel,
 	}
 }
 
 func (u *AuthLoginUseCase) Execute(ctx context.Context, input AuthLoginInput) (AuthLoginOutput, error) {
-	ctx, span := otel.Trace().StartSpan(ctx, "AuthLoginUseCase.Execute")
+	ctx, span := u.otel.StartSpan(ctx, "AuthLoginUseCase.Execute")
 	defer span.End()
 	if err := u.validator.Struct(input); err != nil {
 		return AuthLoginOutput{}, err

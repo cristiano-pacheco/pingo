@@ -28,6 +28,7 @@ type sendEmailConfirmationService struct {
 	mailerSMTP           mailer.SMTP
 	logger               logger.Logger
 	cfg                  config.Config
+	otel                 otel.Otel
 }
 
 func NewSendEmailConfirmationService(
@@ -35,17 +36,19 @@ func NewSendEmailConfirmationService(
 	mailerSMTP mailer.SMTP,
 	logger logger.Logger,
 	cfg config.Config,
+	otel otel.Otel,
 ) SendEmailConfirmationService {
 	return &sendEmailConfirmationService{
 		emailTemplateService,
 		mailerSMTP,
 		logger,
 		cfg,
+		otel,
 	}
 }
 
 func (s *sendEmailConfirmationService) Execute(ctx context.Context, input SendEmailConfirmationInput) error {
-	ctx, span := otel.Trace().StartSpan(ctx, "sendEmailConfirmationService.Execute")
+	ctx, span := s.otel.StartSpan(ctx, "SendEmailConfirmationService.Execute")
 	defer span.End()
 
 	confirmationToken := base64.StdEncoding.EncodeToString(input.ConfirmationTokenHash)
