@@ -15,6 +15,11 @@ import (
 	oteltrace "go.opentelemetry.io/otel/trace"
 )
 
+const (
+	defaultBatchTimeout = 5 * time.Second
+	defaultSampleRate   = 1.0
+)
+
 type Trace interface {
 	StartSpan(ctx context.Context, name string) (context.Context, oteltrace.Span)
 }
@@ -68,29 +73,31 @@ func new(config TracerConfig) (Trace, func(context.Context) error, error) {
 		exporter:       exp,
 	}
 
+	logger := slog.Default()
+
 	shutdown := func(ctx context.Context) error {
 		var shutdownErr error
 
 		if traceInstance.tracerProvider != nil {
-			if err := traceInstance.tracerProvider.Shutdown(ctx); err != nil {
-				slog.Error("Failed to shutdown tracer provider", "error", err)
+			if err = traceInstance.tracerProvider.Shutdown(ctx); err != nil {
+				logger.Error("Failed to shutdown tracer provider", "error", err)
 				shutdownErr = fmt.Errorf("tracer provider shutdown failed: %w", err)
 			}
 			if err == nil {
-				slog.Info("Tracer provider shutdown successfully...")
+				logger.Info("Tracer provider shutdown successfully...")
 			}
 		}
 
 		if traceInstance.exporter != nil {
-			if err := traceInstance.exporter.Shutdown(ctx); err != nil {
-				slog.Error("Failed to shutdown exporter", "error", err)
+			if err = traceInstance.exporter.Shutdown(ctx); err != nil {
+				logger.Error("Failed to shutdown exporter", "error", err)
 				if shutdownErr != nil {
-					return fmt.Errorf("multiple shutdown failures - tracer: %v, exporter: %w", shutdownErr, err)
+					return fmt.Errorf("multiple shutdown failures - tracer: %w, exporter: %w", shutdownErr, err)
 				}
 				return fmt.Errorf("exporter shutdown failed: %w", err)
 			}
 			if err == nil {
-				slog.Info("Exporter shutdown successfully...")
+				logger.Info("Exporter shutdown successfully...")
 			}
 		}
 
@@ -109,7 +116,10 @@ func newPropagator() propagation.TextMapPropagator {
 }
 
 // newTracerProvider creates a new tracer provider with the given configuration
-func newTracerProvider(config TracerConfig, res *resource.Resource) (*sdktrace.TracerProvider, sdktrace.SpanExporter, error) {
+func newTracerProvider(
+	config TracerConfig,
+	res *resource.Resource,
+) (*sdktrace.TracerProvider, sdktrace.SpanExporter, error) {
 	if !config.TraceEnabled {
 		tp := sdktrace.NewTracerProvider(
 			sdktrace.WithResource(res),
@@ -131,7 +141,7 @@ func newTracerProvider(config TracerConfig, res *resource.Resource) (*sdktrace.T
 
 	// Configure sampling
 	sampler := sdktrace.TraceIDRatioBased(config.SampleRate)
-	if config.SampleRate >= 1.0 {
+	if config.SampleRate >= defaultSampleRate {
 		sampler = sdktrace.AlwaysSample()
 	}
 
@@ -146,7 +156,7 @@ func newTracerProvider(config TracerConfig, res *resource.Resource) (*sdktrace.T
 
 // newExporter creates a new OTLP HTTP exporter
 func newExporter(config TracerConfig) (sdktrace.SpanExporter, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), defaultBatchTimeout)
 	defer cancel()
 
 	options := []otlptracehttp.Option{
