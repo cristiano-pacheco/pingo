@@ -23,6 +23,7 @@ type sendEmailVerificationCodeService struct {
 	userRepository       repository.UserRepository
 	logger               logger.Logger
 	cfg                  config.Config
+	otel                 otel.Otel
 }
 
 func NewSendEmailVerificationCodeService(
@@ -31,6 +32,7 @@ func NewSendEmailVerificationCodeService(
 	userRepository repository.UserRepository,
 	logger logger.Logger,
 	cfg config.Config,
+	otel otel.Otel,
 ) SendEmailVerificationCodeService {
 	return &sendEmailVerificationCodeService{
 		emailTemplateService,
@@ -38,6 +40,7 @@ func NewSendEmailVerificationCodeService(
 		userRepository,
 		logger,
 		cfg,
+		otel,
 	}
 }
 
@@ -50,7 +53,7 @@ func (s *sendEmailVerificationCodeService) Execute(
 	ctx context.Context,
 	input SendEmailVerificationCodeInput,
 ) error {
-	ctx, span := otel.Trace().StartSpan(ctx, "SendEmailVerificationCodeService.Execute")
+	ctx, span := s.otel.StartSpan(ctx, "SendEmailVerificationCodeService.Execute")
 	defer span.End()
 
 	user, err := s.userRepository.FindByID(ctx, input.UserID)

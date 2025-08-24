@@ -3,6 +3,7 @@ package httpserver
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/ansrivas/fiberprometheus/v2"
@@ -88,5 +89,7 @@ func (s *FiberHTTPServer) Run() {
 }
 
 func (s *FiberHTTPServer) Shutdown(ctx context.Context) error {
+	logger := slog.Default()
+	logger.InfoContext(ctx, "Shutting down HTTP server...")
 	return s.app.ShutdownWithContext(ctx)
 }

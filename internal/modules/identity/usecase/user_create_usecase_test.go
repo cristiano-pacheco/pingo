@@ -33,6 +33,7 @@ type UserCreateUseCaseTestSuite struct {
 	validatorMock                    *shared_validator_mocks.MockValidate
 	logger                           logger.Logger
 	cfg                              config.Config
+	otel                             otel.Otel
 }
 
 func (s *UserCreateUseCaseTestSuite) SetupTest() {
@@ -52,7 +53,7 @@ func (s *UserCreateUseCaseTestSuite) SetupTest() {
 			Name:    "Test App",
 			Version: "1.0.0",
 		},
-		Telemetry: config.Telemetry{
+		OpenTelemetry: config.OpenTelemetry{
 			Enabled: false,
 		},
 		Log: config.Log{
@@ -60,7 +61,8 @@ func (s *UserCreateUseCaseTestSuite) SetupTest() {
 		},
 	}
 
-	otel.Init(s.cfg)
+	// Create a simple no-op otel implementation for testing
+	s.otel = otel.NewNoopOtel()
 	s.logger = logger.New(s.cfg)
 
 	s.sut = usecase.NewUserCreateUseCase(
@@ -71,6 +73,7 @@ func (s *UserCreateUseCaseTestSuite) SetupTest() {
 		s.hashServiceMock,
 		s.validatorMock,
 		s.logger,
+		s.otel,
 	)
 }
 

@@ -8,17 +8,17 @@ import (
 )
 
 type Config struct {
-	Environment string    `mapstructure:"ENVIRONMENT"`
-	HTTPPort    uint      `mapstructure:"HTTP_PORT"`
-	CORS        CORS      `mapstructure:",squash"`
-	JWT         JWT       `mapstructure:",squash"`
-	DB          DB        `mapstructure:",squash"`
-	MAIL        MAIL      `mapstructure:",squash"`
-	Telemetry   Telemetry `mapstructure:",squash"`
-	App         App       `mapstructure:",squash"`
-	Log         Log       `mapstructure:",squash"`
-	RabbitMQ    RabbitMQ  `mapstructure:",squash"`
-	Redis       Redis     `mapstructure:",squash"`
+	Environment   string        `mapstructure:"ENVIRONMENT"`
+	HTTPPort      uint          `mapstructure:"HTTP_PORT"`
+	CORS          CORS          `mapstructure:",squash"`
+	JWT           JWT           `mapstructure:",squash"`
+	DB            DB            `mapstructure:",squash"`
+	MAIL          MAIL          `mapstructure:",squash"`
+	OpenTelemetry OpenTelemetry `mapstructure:",squash"`
+	App           App           `mapstructure:",squash"`
+	Log           Log           `mapstructure:",squash"`
+	RabbitMQ      RabbitMQ      `mapstructure:",squash"`
+	Redis         Redis         `mapstructure:",squash"`
 }
 
 const EnvProduction = "production"

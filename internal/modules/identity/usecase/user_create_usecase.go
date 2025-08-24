@@ -43,6 +43,7 @@ type UserCreateUseCase struct {
 	userRepository               repository.UserRepository
 	validate                     validator.Validate
 	logger                       logger.Logger
+	otel                         otel.Otel
 }
 
 func NewUserCreateUseCase(
@@ -53,6 +54,7 @@ func NewUserCreateUseCase(
 	hashService service.HashService,
 	validate validator.Validate,
 	logger logger.Logger,
+	otel otel.Otel,
 ) *UserCreateUseCase {
 	return &UserCreateUseCase{
 		sendEmailConfirmationService: sendEmailConfirmationService,
@@ -62,11 +64,12 @@ func NewUserCreateUseCase(
 		hashService:                  hashService,
 		validate:                     validate,
 		logger:                       logger,
+		otel:                         otel,
 	}
 }
 
 func (uc *UserCreateUseCase) Execute(ctx context.Context, input UserCreateInput) (UserCreateOutput, error) {
-	ctx, span := otel.Trace().StartSpan(ctx, "UserCreateUseCase.Execute")
+	ctx, span := uc.otel.StartSpan(ctx, "UserCreateUseCase.Execute")
 	defer span.End()
 
 	output := UserCreateOutput{}

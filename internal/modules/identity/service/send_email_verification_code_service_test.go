@@ -26,6 +26,7 @@ type SendEmailVerificationCodeServiceTestSuite struct {
 	userRepository       *mocks.MockUserRepository
 	logger               logger.Logger
 	cfg                  config.Config
+	otel                 otel.Otel
 }
 
 func (s *SendEmailVerificationCodeServiceTestSuite) SetupTest() {
@@ -42,7 +43,7 @@ func (s *SendEmailVerificationCodeServiceTestSuite) SetupTest() {
 			Name:    "Test App",
 			Version: "1.0.0",
 		},
-		Telemetry: config.Telemetry{
+		OpenTelemetry: config.OpenTelemetry{
 			Enabled: false,
 		},
 		Log: config.Log{
@@ -50,8 +51,8 @@ func (s *SendEmailVerificationCodeServiceTestSuite) SetupTest() {
 		},
 	}
 
-	// Initialize otel for testing
-	otel.Init(s.cfg)
+	// Create a simple no-op otel implementation for testing
+	s.otel = otel.NewNoopOtel()
 
 	// Use real logger but with disabled level
 	s.logger = logger.New(s.cfg)
@@ -62,6 +63,7 @@ func (s *SendEmailVerificationCodeServiceTestSuite) SetupTest() {
 		s.userRepository,
 		s.logger,
 		s.cfg,
+		s.otel,
 	)
 }
 

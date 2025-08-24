@@ -34,6 +34,7 @@ type UserUpdateUseCase struct {
 	validate          validator.Validate
 	passwordValidator identity_validator.PasswordValidator
 	logger            logger.Logger
+	otel              otel.Otel
 }
 
 func NewUserUpdateUseCase(
@@ -42,6 +43,7 @@ func NewUserUpdateUseCase(
 	validate validator.Validate,
 	passwordValidator identity_validator.PasswordValidator,
 	logger logger.Logger,
+	otel otel.Otel,
 ) *UserUpdateUseCase {
 	return &UserUpdateUseCase{
 		hashService,
@@ -49,11 +51,12 @@ func NewUserUpdateUseCase(
 		validate,
 		passwordValidator,
 		logger,
+		otel,
 	}
 }
 
 func (uc *UserUpdateUseCase) Execute(ctx context.Context, input UserUpdateInput) error {
-	ctx, span := otel.Trace().StartSpan(ctx, "UserUpdateUseCase.Execute")
+	ctx, span := uc.otel.StartSpan(ctx, "UserUpdateUseCase.Execute")
 	defer span.End()
 
 	err := uc.validate.Struct(input)

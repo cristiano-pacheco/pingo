@@ -35,6 +35,7 @@ type AuthLoginUseCaseTestSuite struct {
 	sendEmailVerificationServiceMock *service_mocks.MockSendEmailVerificationCodeService
 	loggerMock                       *logger_mocks.MockLogger
 	cfg                              config.Config
+	otel                             otel.Otel
 }
 
 func (s *AuthLoginUseCaseTestSuite) SetupTest() {
@@ -50,12 +51,13 @@ func (s *AuthLoginUseCaseTestSuite) SetupTest() {
 			Name:    "Test App",
 			Version: "1.0.0",
 		},
-		Telemetry: config.Telemetry{
+		OpenTelemetry: config.OpenTelemetry{
 			Enabled: false,
 		},
 	}
 
-	otel.Init(s.cfg)
+	// Create a simple no-op otel implementation for testing
+	s.otel = otel.NewNoopOtel()
 
 	s.sut = usecase.NewAuthLoginUseCase(
 		s.oneTimeTokenRepositoryMock,
@@ -64,6 +66,7 @@ func (s *AuthLoginUseCaseTestSuite) SetupTest() {
 		s.hashServiceMock,
 		s.sendEmailVerificationServiceMock,
 		s.loggerMock,
+		s.otel,
 	)
 }
 

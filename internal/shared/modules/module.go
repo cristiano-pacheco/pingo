@@ -10,6 +10,7 @@ import (
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/jwt"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/logger"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/mailer"
+	"github.com/cristiano-pacheco/pingo/internal/shared/modules/otel"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/redis"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/registry"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/translator"
@@ -27,6 +28,7 @@ var Module = fx.Module(
 	jwt.Module,
 	mailer.Module,
 	redis.Module,
+	otel.Module,
 	http.Module,
 	httpserver.Module,
 )

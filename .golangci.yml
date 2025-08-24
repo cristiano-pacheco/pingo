@@ -389,3 +389,4 @@ linters:
           - gosec
           - noctx
           - wrapcheck
+          - testifylint
