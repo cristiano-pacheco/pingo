@@ -32,28 +32,21 @@ type trace struct {
 
 // MustNew returns a Trace and a shutdown function.
 func MustNew(config TracerConfig) (Trace, func(context.Context) error) {
-	trace, shutdown, err := new(config)
+	trace, shutdown, err := newTrace(config)
 	if err != nil {
 		panic(fmt.Sprintf("failed to initialize tracer: %v", err))
 	}
 	return trace, shutdown
 }
 
-func new(config TracerConfig) (Trace, func(context.Context) error, error) {
+func newTrace(config TracerConfig) (Trace, func(context.Context) error, error) {
 	if err := config.Validate(); err != nil {
 		return nil, nil, fmt.Errorf("invalid configuration: %w", err)
 	}
 
 	config.setDefaults()
 
-	res, err := resource.Merge(
-		resource.Default(),
-		resource.NewWithAttributes(
-			semconv.SchemaURL,
-			semconv.ServiceName(config.AppName),
-			semconv.ServiceVersion(config.AppVersion),
-		),
-	)
+	res, err := createResource(config)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to create resource: %w", err)
 	}
@@ -63,48 +56,75 @@ func new(config TracerConfig) (Trace, func(context.Context) error, error) {
 		return nil, nil, fmt.Errorf("failed to create tracer provider: %w", err)
 	}
 
+	setupGlobalTracing(tp)
+
+	traceInstance := createTraceInstance(tp, exp, config.AppName)
+	shutdown := createShutdownFunc(traceInstance)
+
+	return traceInstance, shutdown, nil
+}
+
+// createResource creates and configures the OpenTelemetry resource
+func createResource(config TracerConfig) (*resource.Resource, error) {
+	res, err := resource.Merge(
+		resource.Default(),
+		resource.NewWithAttributes(
+			semconv.SchemaURL,
+			semconv.ServiceName(config.AppName),
+			semconv.ServiceVersion(config.AppVersion),
+		),
+	)
+	if err != nil {
+		return nil, err
+	}
+	return res, nil
+}
+
+// setupGlobalTracing configures global OpenTelemetry settings
+func setupGlobalTracing(tp *sdktrace.TracerProvider) {
 	otel.SetTracerProvider(tp)
 	otel.SetTextMapPropagator(newPropagator())
+}
 
-	t := tp.Tracer(config.AppName)
-	traceInstance := &trace{
+// createTraceInstance creates a new trace instance
+func createTraceInstance(tp *sdktrace.TracerProvider, exp sdktrace.SpanExporter, appName string) *trace {
+	t := tp.Tracer(appName)
+	return &trace{
 		tracer:         t,
 		tracerProvider: tp,
 		exporter:       exp,
 	}
+}
 
+// createShutdownFunc creates the shutdown function for the trace instance
+func createShutdownFunc(traceInstance *trace) func(context.Context) error {
 	logger := slog.Default()
 
-	shutdown := func(ctx context.Context) error {
+	return func(ctx context.Context) error {
 		var shutdownErr error
 
 		if traceInstance.tracerProvider != nil {
-			if err = traceInstance.tracerProvider.Shutdown(ctx); err != nil {
+			if err := traceInstance.tracerProvider.Shutdown(ctx); err != nil {
 				logger.Error("Failed to shutdown tracer provider", "error", err)
 				shutdownErr = fmt.Errorf("tracer provider shutdown failed: %w", err)
-			}
-			if err == nil {
+			} else {
 				logger.Info("Tracer provider shutdown successfully...")
 			}
 		}
 
 		if traceInstance.exporter != nil {
-			if err = traceInstance.exporter.Shutdown(ctx); err != nil {
+			if err := traceInstance.exporter.Shutdown(ctx); err != nil {
 				logger.Error("Failed to shutdown exporter", "error", err)
 				if shutdownErr != nil {
 					return fmt.Errorf("multiple shutdown failures - tracer: %w, exporter: %w", shutdownErr, err)
 				}
 				return fmt.Errorf("exporter shutdown failed: %w", err)
 			}
-			if err == nil {
-				logger.Info("Exporter shutdown successfully...")
-			}
+			logger.Info("Exporter shutdown successfully...")
 		}
 
 		return shutdownErr
 	}
-
-	return traceInstance, shutdown, nil
 }
 
 // newPropagator creates a composite text map propagator
