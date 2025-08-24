@@ -9,7 +9,11 @@ import (
 	"go.uber.org/fx"
 )
 
-func New(lc fx.Lifecycle, config config.Config) trace.Trace {
+type Otel interface {
+	trace.Trace
+}
+
+func New(lc fx.Lifecycle, config config.Config) Otel {
 	batchTimeout := time.Duration(config.OpenTelemetry.BatchTimeoutSeconds) * time.Second
 	tc := trace.TracerConfig{
 		AppName:      config.App.Name,

@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/cristiano-pacheco/pingo/cmd"
+	"github.com/cristiano-pacheco/pingo/internal/shared/modules/config"
 )
 
 // @title           Pingo API
@@ -15,5 +16,6 @@ import (
 
 // @BasePath  /
 func main() {
+	config.Init()
 	cmd.Execute()
 }
