@@ -164,29 +164,3 @@ func (t *trace) StartSpan(ctx context.Context, name string) (context.Context, ot
 	//nolint:spancheck // span is returned to caller who is responsible for ending it
 	return t.tracer.Start(ctx, name)
 }
-
-// Shutdown gracefully shuts down the tracer provider and exporter
-func (t *trace) Shutdown(ctx context.Context) error {
-	var shutdownErr error
-
-	// Shutdown tracer provider first to flush remaining spans
-	if t.tracerProvider != nil {
-		if err := t.tracerProvider.Shutdown(ctx); err != nil {
-			slog.Error("Failed to shutdown tracer provider", "error", err)
-			shutdownErr = fmt.Errorf("tracer provider shutdown failed: %w", err)
-		}
-	}
-
-	// Then shutdown exporter
-	if t.exporter != nil {
-		if err := t.exporter.Shutdown(ctx); err != nil {
-			slog.Error("Failed to shutdown exporter", "error", err)
-			if shutdownErr != nil {
-				return fmt.Errorf("multiple shutdown failures - tracer: %v, exporter: %w", shutdownErr, err)
-			}
-			return fmt.Errorf("exporter shutdown failed: %w", err)
-		}
-	}
-
-	return shutdownErr
-}
