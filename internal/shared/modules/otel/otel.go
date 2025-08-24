@@ -1,49 +1,35 @@
 package otel
 
 import (
-	"log/slog"
+	"context"
+	"time"
 
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/config"
 	"github.com/cristiano-pacheco/pingo/pkg/otel/trace"
+	"go.uber.org/fx"
 )
 
-var (
-	_global      Otel
-	_initialized bool
-)
-
-type Otel struct {
-	trace.Trace
-}
-
-func Init(cfg config.Config) {
-	_global = newOtel(cfg)
-	_initialized = true
-}
-
-func get() Otel {
-	if !_initialized {
-		//nolint:sloglint // this is a module
-		slog.Error("otel not initialized")
-		panic("otel not initialized")
-	}
-	return _global
-}
-
-func Trace() trace.Trace {
-	return get().Trace
-}
-
-func newOtel(config config.Config) Otel {
+func New(lc fx.Lifecycle, config config.Config) trace.Trace {
+	batchTimeout := time.Duration(config.OpenTelemetry.BatchTimeoutSeconds) * time.Second
 	tc := trace.TracerConfig{
 		AppName:      config.App.Name,
 		AppVersion:   config.App.Version,
-		TraceEnabled: config.Telemetry.Enabled,
-		TracerVendor: config.Telemetry.TracerVendor,
-		TraceURL:     config.Telemetry.TracerURL,
+		TraceEnabled: config.OpenTelemetry.Enabled,
+		TracerVendor: config.OpenTelemetry.TracerVendor,
+		TraceURL:     config.OpenTelemetry.TracerURL,
+		BatchTimeout: batchTimeout,
+		MaxBatchSize: config.OpenTelemetry.MaxBatchSize,
+		Insecure:     config.OpenTelemetry.Insecure,
+		SampleRate:   config.OpenTelemetry.SampleRate,
 	}
 
-	return Otel{
-		Trace: trace.New(tc),
-	}
+	tracer, shutdown := trace.MustNew(tc)
+
+	lc.Append(fx.Hook{
+		OnStop: func(ctx context.Context) error {
+			return shutdown(ctx)
+		},
+	})
+
+	return tracer
 }
