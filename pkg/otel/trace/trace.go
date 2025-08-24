@@ -76,6 +76,9 @@ func new(config TracerConfig) (Trace, func(context.Context) error, error) {
 				slog.Error("Failed to shutdown tracer provider", "error", err)
 				shutdownErr = fmt.Errorf("tracer provider shutdown failed: %w", err)
 			}
+			if err == nil {
+				slog.Info("Tracer provider shutdown successfully...")
+			}
 		}
 
 		if traceInstance.exporter != nil {
@@ -85,6 +88,9 @@ func new(config TracerConfig) (Trace, func(context.Context) error, error) {
 					return fmt.Errorf("multiple shutdown failures - tracer: %v, exporter: %w", shutdownErr, err)
 				}
 				return fmt.Errorf("exporter shutdown failed: %w", err)
+			}
+			if err == nil {
+				slog.Info("Exporter shutdown successfully...")
 			}
 		}
 
