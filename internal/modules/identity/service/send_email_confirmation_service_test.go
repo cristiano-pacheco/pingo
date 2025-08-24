@@ -16,7 +16,15 @@ import (
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/otel"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
+	"go.opentelemetry.io/otel/trace"
 )
+
+// noopOtel implements otel.Otel interface for testing
+type noopOtel struct{}
+
+func (n *noopOtel) StartSpan(_ context.Context, name string) (context.Context, trace.Span) {
+	return nil, trace.SpanFromContext(nil)
+}
 
 type SendEmailConfirmationServiceTestSuite struct {
 	suite.Suite
@@ -25,6 +33,7 @@ type SendEmailConfirmationServiceTestSuite struct {
 	mailerSMTP           *mailer_mocks.MockSMTP
 	logger               logger.Logger
 	cfg                  config.Config
+	otel                 otel.Otel
 }
 
 func (s *SendEmailConfirmationServiceTestSuite) SetupTest() {
@@ -40,7 +49,7 @@ func (s *SendEmailConfirmationServiceTestSuite) SetupTest() {
 			Name:    "Test App",
 			Version: "1.0.0",
 		},
-		Telemetry: config.Telemetry{
+		OpenTelemetry: config.OpenTelemetry{
 			Enabled: false,
 		},
 		Log: config.Log{
@@ -48,8 +57,8 @@ func (s *SendEmailConfirmationServiceTestSuite) SetupTest() {
 		},
 	}
 
-	// Initialize otel for testing
-	otel.Init(s.cfg)
+	// Create a simple no-op otel implementation for testing
+	s.otel = &noopOtel{}
 
 	// Use real logger but with disabled level
 	s.logger = logger.New(s.cfg)
@@ -59,6 +68,7 @@ func (s *SendEmailConfirmationServiceTestSuite) SetupTest() {
 		s.mailerSMTP,
 		s.logger,
 		s.cfg,
+		s.otel,
 	)
 }
 
