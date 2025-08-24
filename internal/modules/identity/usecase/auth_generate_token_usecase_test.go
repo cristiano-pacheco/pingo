@@ -32,6 +32,7 @@ type AuthGenerateTokenUseCaseTestSuite struct {
 	hashServiceMock            *service_mocks.MockHashService
 	logger                     logger.Logger
 	cfg                        config.Config
+	otel                       otel.Otel
 }
 
 func (s *AuthGenerateTokenUseCaseTestSuite) SetupTest() {
@@ -41,7 +42,7 @@ func (s *AuthGenerateTokenUseCaseTestSuite) SetupTest() {
 			Name:    "Test App",
 			Version: "1.0.0",
 		},
-		Telemetry: config.Telemetry{
+		OpenTelemetry: config.OpenTelemetry{
 			Enabled: false,
 		},
 		Log: config.Log{
@@ -49,7 +50,8 @@ func (s *AuthGenerateTokenUseCaseTestSuite) SetupTest() {
 		},
 	}
 
-	otel.Init(s.cfg)
+	// Create a simple no-op otel implementation for testing
+	s.otel = otel.NewNoopOtel()
 	s.logger = logger.New(s.cfg)
 
 	s.oneTimeTokenRepositoryMock = repository_mocks.NewMockOneTimeTokenRepository(s.T())
@@ -65,6 +67,7 @@ func (s *AuthGenerateTokenUseCaseTestSuite) SetupTest() {
 		s.hashServiceMock,
 		s.validatorMock,
 		s.logger,
+		s.otel,
 	)
 }
 

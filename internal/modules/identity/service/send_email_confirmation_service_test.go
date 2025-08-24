@@ -16,15 +16,7 @@ import (
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/otel"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
-	"go.opentelemetry.io/otel/trace"
 )
-
-// noopOtel implements otel.Otel interface for testing
-type noopOtel struct{}
-
-func (n *noopOtel) StartSpan(_ context.Context, name string) (context.Context, trace.Span) {
-	return nil, trace.SpanFromContext(nil)
-}
 
 type SendEmailConfirmationServiceTestSuite struct {
 	suite.Suite
@@ -58,7 +50,7 @@ func (s *SendEmailConfirmationServiceTestSuite) SetupTest() {
 	}
 
 	// Create a simple no-op otel implementation for testing
-	s.otel = &noopOtel{}
+	s.otel = otel.NewNoopOtel()
 
 	// Use real logger but with disabled level
 	s.logger = logger.New(s.cfg)

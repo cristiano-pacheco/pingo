@@ -25,6 +25,7 @@ type TokenServiceTestSuite struct {
 	privateKeyRegistryMock *registry_mocks.MockPrivateKeyRegistry
 	logger                 logger.Logger
 	cfg                    config.Config
+	otel                   otel.Otel
 	privateKey             *rsa.PrivateKey
 }
 
@@ -38,7 +39,7 @@ func (s *TokenServiceTestSuite) SetupTest() {
 			Name:    "Test App",
 			Version: "1.0.0",
 		},
-		Telemetry: config.Telemetry{
+		OpenTelemetry: config.OpenTelemetry{
 			Enabled: false,
 		},
 		Log: config.Log{
@@ -46,7 +47,8 @@ func (s *TokenServiceTestSuite) SetupTest() {
 		},
 	}
 
-	otel.Init(s.cfg)
+	// Create a simple no-op otel implementation for testing
+	s.otel = otel.NewNoopOtel()
 
 	s.logger = logger.New(s.cfg)
 
@@ -56,7 +58,7 @@ func (s *TokenServiceTestSuite) SetupTest() {
 	s.privateKey, err = rsa.GenerateKey(rand.Reader, 2048)
 	s.Require().NoError(err)
 
-	s.sut = service.NewTokenService(s.cfg, s.privateKeyRegistryMock, s.logger)
+	s.sut = service.NewTokenService(s.cfg, s.privateKeyRegistryMock, s.logger, s.otel)
 }
 
 func TestTokenServiceSuite(t *testing.T) {

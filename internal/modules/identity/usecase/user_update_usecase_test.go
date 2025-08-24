@@ -29,6 +29,7 @@ type UserUpdateUseCaseTestSuite struct {
 	passwordValidatorMock *validator_mocks.MockPasswordValidator
 	logger                logger.Logger
 	cfg                   config.Config
+	otel                  otel.Otel
 }
 
 func (s *UserUpdateUseCaseTestSuite) SetupTest() {
@@ -42,7 +43,7 @@ func (s *UserUpdateUseCaseTestSuite) SetupTest() {
 			Name:    "Test App",
 			Version: "1.0.0",
 		},
-		Telemetry: config.Telemetry{
+		OpenTelemetry: config.OpenTelemetry{
 			Enabled: false,
 		},
 		Log: config.Log{
@@ -50,7 +51,8 @@ func (s *UserUpdateUseCaseTestSuite) SetupTest() {
 		},
 	}
 
-	otel.Init(s.cfg)
+	// Create a simple no-op otel implementation for testing
+	s.otel = otel.NewNoopOtel()
 	s.logger = logger.New(s.cfg)
 
 	s.sut = usecase.NewUserUpdateUseCase(
@@ -59,6 +61,7 @@ func (s *UserUpdateUseCaseTestSuite) SetupTest() {
 		s.validatorMock,
 		s.passwordValidatorMock,
 		s.logger,
+		s.otel,
 	)
 }
 

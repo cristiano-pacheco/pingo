@@ -30,6 +30,7 @@ type UserActivateUseCaseTestSuite struct {
 	validateMock               *validator_mocks.MockValidate
 	logger                     logger.Logger
 	cfg                        config.Config
+	otel                       otel.Otel
 }
 
 func (s *UserActivateUseCaseTestSuite) SetupTest() {
@@ -42,7 +43,7 @@ func (s *UserActivateUseCaseTestSuite) SetupTest() {
 			Name:    "Test App",
 			Version: "1.0.0",
 		},
-		Telemetry: config.Telemetry{
+		OpenTelemetry: config.OpenTelemetry{
 			Enabled: false,
 		},
 		Log: config.Log{
@@ -50,7 +51,8 @@ func (s *UserActivateUseCaseTestSuite) SetupTest() {
 		},
 	}
 
-	otel.Init(s.cfg)
+	// Create a simple no-op otel implementation for testing
+	s.otel = otel.NewNoopOtel()
 
 	s.oneTimeTokenRepositoryMock = repository_mocks.NewMockOneTimeTokenRepository(s.T())
 	s.userRepositoryMock = repository_mocks.NewMockUserRepository(s.T())
@@ -62,6 +64,7 @@ func (s *UserActivateUseCaseTestSuite) SetupTest() {
 		s.userRepositoryMock,
 		s.validateMock,
 		s.logger,
+		s.otel,
 	)
 }
 
