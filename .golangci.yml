@@ -390,7 +390,3 @@ linters:
           - noctx
           - wrapcheck
           - testifylint
-
-run:
-  skip-files:
-    - ".*_test.go$"
