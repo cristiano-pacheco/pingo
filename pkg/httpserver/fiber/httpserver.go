@@ -88,5 +88,6 @@ func (s *FiberHTTPServer) Run() {
 }
 
 func (s *FiberHTTPServer) Shutdown(ctx context.Context) error {
+	fmt.Println("Shutting down HTTP server...")
 	return s.app.ShutdownWithContext(ctx)
 }
