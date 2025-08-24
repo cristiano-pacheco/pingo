@@ -15,7 +15,7 @@ func NewNoopOtel() Otel {
 }
 
 // StartSpan implements the Otel interface with a no-op span.
-func (n *NoopOtel) StartSpan(_ context.Context, name string) (context.Context, oteltrace.Span) {
+func (n *NoopOtel) StartSpan(_ context.Context, _ string) (context.Context, oteltrace.Span) {
 	ctx := context.TODO()
 	return ctx, oteltrace.SpanFromContext(ctx)
 }

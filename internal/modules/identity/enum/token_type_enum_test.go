@@ -55,7 +55,7 @@ func TestNewTokenTypeEnum(t *testing.T) {
 
 		// Assert
 		require.ErrorIs(t, err, errs.ErrInvalidTokenType)
-		require.Equal(t, "", result.String())
+		require.Empty(t, result.String())
 	})
 
 	t.Run("EmptyString_ReturnsError", func(t *testing.T) {
@@ -67,7 +67,7 @@ func TestNewTokenTypeEnum(t *testing.T) {
 
 		// Assert
 		require.ErrorIs(t, err, errs.ErrInvalidTokenType)
-		require.Equal(t, "", result.String())
+		require.Empty(t, result.String())
 	})
 
 	t.Run("WhitespaceString_ReturnsError", func(t *testing.T) {
@@ -79,7 +79,7 @@ func TestNewTokenTypeEnum(t *testing.T) {
 
 		// Assert
 		require.ErrorIs(t, err, errs.ErrInvalidTokenType)
-		require.Equal(t, "", result.String())
+		require.Empty(t, result.String())
 	})
 }
 

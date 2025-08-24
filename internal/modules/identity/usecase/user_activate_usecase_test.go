@@ -221,7 +221,8 @@ func (s *UserActivateUseCaseTestSuite) TestExecute_OneTimeTokenNotFound_ReturnsE
 
 	s.validateMock.On("Struct", input).Return(nil)
 	s.userRepositoryMock.On("FindByID", mock.Anything, userID).Return(user, nil)
-	s.oneTimeTokenRepositoryMock.On("Find", mock.Anything, userID, confirmationTokenType).Return(model.OneTimeTokenModel{}, tokenError)
+	s.oneTimeTokenRepositoryMock.On("Find", mock.Anything, userID, confirmationTokenType).
+		Return(model.OneTimeTokenModel{}, tokenError)
 
 	// Act
 	err := s.sut.Execute(ctx, input)
