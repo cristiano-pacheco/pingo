@@ -1,48 +1,35 @@
 package kafka
 
-import (
-	"time"
-
-	"github.com/segmentio/kafka-go"
-)
-
-type Facade interface {
-	Producer(topic string) (*kafka.Writer, error)
-	Consumer(topic, groupID string) (*kafka.Reader, error)
+type Message struct {
+	Topic   string
+	Key     []byte
+	Value   []byte
+	Headers []Header
 }
 
-type facade struct {
+type Header struct {
+	Key   string
+	Value []byte
+}
+
+type Builder interface {
+	BuildProducer() Producer
+	BuildConsumer() Consumer
+}
+
+type builder struct {
 	config Config
 }
 
-func NewKafkaFacade(config Config) Facade {
-	return &facade{
+func NewKafkaBuilder(config Config) Builder {
+	return &builder{
 		config: config,
 	}
 }
-
-func (k *facade) Producer(topic string) (*kafka.Writer, error) {
-	w := kafka.Writer{
-		Addr:  kafka.TCP(k.config.Address...),
-		Topic: topic,
-	}
-
-	return &w, nil
+func (b *builder) BuildProducer() Producer {
+	return NewProducer(b.config)
 }
 
-func (k *facade) Consumer(topic, groupID string) (*kafka.Reader, error) {
-	dialer := &kafka.Dialer{
-		Timeout: 10 * time.Second,
-	}
-
-	readerConfig := kafka.ReaderConfig{
-		Brokers: k.config.Address,
-		GroupID: groupID,
-		Topic:   topic,
-		Dialer:  dialer,
-	}
-
-	r := kafka.NewReader(readerConfig)
-
-	return r, nil
+func (b *builder) BuildConsumer() Consumer {
+	return NewConsumer(b.config)
 }
