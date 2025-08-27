@@ -8,6 +8,7 @@ import (
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/http"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/http/httpserver"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/jwt"
+	"github.com/cristiano-pacheco/pingo/internal/shared/modules/kafka"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/logger"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/mailer"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/otel"
@@ -31,4 +32,5 @@ var Module = fx.Module(
 	otel.Module,
 	http.Module,
 	httpserver.Module,
+	kafka.Module,
 )

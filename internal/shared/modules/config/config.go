@@ -19,6 +19,7 @@ type Config struct {
 	Log           Log           `mapstructure:",squash"`
 	RabbitMQ      RabbitMQ      `mapstructure:",squash"`
 	Redis         Redis         `mapstructure:",squash"`
+	Kafka         Kafka         `mapstructure:",squash"`
 }
 
 const EnvProduction = "production"
