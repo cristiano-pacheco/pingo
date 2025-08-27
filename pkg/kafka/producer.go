@@ -6,9 +6,8 @@ import (
 	"github.com/segmentio/kafka-go"
 )
 
-// Producer interface for producing messages
 type Producer interface {
-	ProduceMessage(ctx context.Context, topic string, message Message) error
+	ProduceMessage(ctx context.Context, message Message) error
 	Close() error
 }
 
@@ -17,14 +16,11 @@ type producer struct {
 	writer *kafka.Writer
 }
 
-func NewProducer(config Config) Producer {
+func newProducer(config Config, topic string) Producer {
 	writer := &kafka.Writer{
-		Addr:     kafka.TCP(config.Address...),
-		Balancer: &kafka.LeastBytes{},
-		// Producer-specific optimizations
-		BatchSize:    100,
-		BatchTimeout: 10e6, // 10ms
+		Addr:         kafka.TCP(config.Address...),
 		RequiredAcks: kafka.RequireOne,
+		Topic:        topic,
 	}
 
 	return &producer{
@@ -32,7 +28,7 @@ func NewProducer(config Config) Producer {
 	}
 }
 
-func (p *producer) ProduceMessage(ctx context.Context, topic string, message Message) error {
+func (p *producer) ProduceMessage(ctx context.Context, message Message) error {
 	kafkaHeaders := make([]kafka.Header, len(message.Headers))
 	for i, h := range message.Headers {
 		kafkaHeaders[i] = kafka.Header{
@@ -42,7 +38,6 @@ func (p *producer) ProduceMessage(ctx context.Context, topic string, message Mes
 	}
 
 	return p.writer.WriteMessages(ctx, kafka.Message{
-		Topic:   topic,
 		Key:     message.Key,
 		Value:   message.Value,
 		Headers: kafkaHeaders,

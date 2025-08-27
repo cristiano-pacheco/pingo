@@ -13,8 +13,8 @@ type Header struct {
 }
 
 type Builder interface {
-	BuildProducer() Producer
-	BuildConsumer() Consumer
+	BuildProducer(topic string) Producer
+	BuildConsumer(topic string, groupID string) Consumer
 }
 
 type builder struct {
@@ -26,8 +26,8 @@ func NewKafkaBuilder(config Config) Builder {
 		config: config,
 	}
 }
-func (b *builder) BuildProducer() Producer {
-	return NewProducer(b.config)
+func (b *builder) BuildProducer(topic string) Producer {
+	return newProducer(b.config, topic)
 }
 
 func (b *builder) BuildConsumer() Consumer {
