@@ -2,6 +2,7 @@ package kafka
 
 import (
 	"context"
+	"log/slog"
 	"time"
 
 	"github.com/segmentio/kafka-go"
@@ -38,12 +39,17 @@ func (b *builder) BuildConsumer(topic, groupID string) Consumer {
 }
 
 func mustConnection(ctx context.Context, config Config) {
+	logger := slog.Default()
 	dialer := &kafka.Dialer{
 		Timeout: 10 * time.Second,
 	}
+
+	logger.Info("KAFKA: checking connection to Kafka...", slog.Any("address", config.Address))
 	conn, err := dialer.DialContext(ctx, "tcp", config.Address[0])
 	if err != nil {
+		logger.Error("KAFKA: failed to connect to Kafka", slog.Any("error", err))
 		panic(err)
 	}
+	logger.Info("KAFKA: connected to Kafka successfully")
 	defer conn.Close()
 }

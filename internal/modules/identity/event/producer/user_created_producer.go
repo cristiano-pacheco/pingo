@@ -3,35 +3,41 @@ package producer
 import (
 	"context"
 	"encoding/json"
-	"log/slog"
 
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/event"
+	"github.com/cristiano-pacheco/pingo/internal/shared/modules/logger"
+	"github.com/cristiano-pacheco/pingo/internal/shared/modules/otel"
 	"github.com/cristiano-pacheco/pingo/pkg/kafka"
 	"go.uber.org/fx"
 )
 
 type UserCreatedProducer interface {
-	Produce(ctx context.Context, userID string) error
+	Produce(ctx context.Context, message event.UserCreatedMessage) error
 }
 
 type userCreatedProducer struct {
 	producer kafka.Producer
+	otel     otel.Otel
 }
 
-func NewUserCreatedProducer(lc fx.Lifecycle, kafkaFacade kafka.Builder) UserCreatedProducer {
-	logger := slog.Default()
-
+func NewUserCreatedProducer(
+	lc fx.Lifecycle,
+	logger logger.Logger,
+	otel otel.Otel,
+	kafkaBuilder kafka.Builder,
+) UserCreatedProducer {
 	p := userCreatedProducer{
-		producer: kafkaFacade.BuildProducer(event.IdentityUserCreatedTopic),
+		producer: kafkaBuilder.BuildProducer(event.IdentityUserCreatedTopic),
+		otel:     otel,
 	}
 
 	lc.Append(fx.Hook{
 		OnStop: func(_ context.Context) error {
 			err := p.producer.Close()
 			if err != nil {
-				logger.Error("failed to close producer", slog.Any("error", err))
+				logger.Error().Msgf("failed to close producer: %v", err)
 			}
-			logger.Info("UserUpdatedProducer closed successfully...")
+			logger.Info().Msg("UserCreatedProducer closed successfully...")
 			return err
 		},
 	})
@@ -39,15 +45,15 @@ func NewUserCreatedProducer(lc fx.Lifecycle, kafkaFacade kafka.Builder) UserCrea
 	return &p
 }
 
-func (p *userCreatedProducer) Produce(ctx context.Context, userID string) error {
-	userCreated := event.UserCreatedMessage{
-		UserID: userID,
-	}
-	message, err := json.Marshal(userCreated)
+func (p *userCreatedProducer) Produce(ctx context.Context, message event.UserCreatedMessage) error {
+	ctx, span := p.otel.StartSpan(ctx, "UserCreatedProducer.Produce")
+	defer span.End()
+
+	msg, err := json.Marshal(message)
 	if err != nil {
 		return err
 	}
-	m := kafka.Message{Value: message}
+	m := kafka.Message{Value: msg}
 	err = p.producer.Produce(ctx, m)
 	if err != nil {
 		return err

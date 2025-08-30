@@ -7,6 +7,8 @@ import (
 
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/enum"
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/errs"
+	"github.com/cristiano-pacheco/pingo/internal/modules/identity/event"
+	"github.com/cristiano-pacheco/pingo/internal/modules/identity/event/producer"
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/model"
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/repository"
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/service"
@@ -39,8 +41,9 @@ type UserCreateUseCase struct {
 	sendEmailConfirmationService service.SendEmailConfirmationService
 	passwordValidator            identity_validator.PasswordValidator
 	oneTimeTokenRepository       repository.OneTimeTokenRepository
-	hashService                  service.HashService
+	userCreatedProducer          producer.UserCreatedProducer
 	userRepository               repository.UserRepository
+	hashService                  service.HashService
 	validate                     validator.Validate
 	logger                       logger.Logger
 	otel                         otel.Otel
@@ -50,16 +53,18 @@ func NewUserCreateUseCase(
 	sendEmailConfirmationService service.SendEmailConfirmationService,
 	passwordValidator identity_validator.PasswordValidator,
 	oneTimeTokenRepository repository.OneTimeTokenRepository,
-	userRepository repository.UserRepository,
 	hashService service.HashService,
+	userRepository repository.UserRepository,
+	userCreatedProducer producer.UserCreatedProducer,
 	validate validator.Validate,
 	logger logger.Logger,
 	otel otel.Otel,
 ) *UserCreateUseCase {
 	return &UserCreateUseCase{
 		sendEmailConfirmationService: sendEmailConfirmationService,
-		passwordValidator:            passwordValidator,
 		oneTimeTokenRepository:       oneTimeTokenRepository,
+		userCreatedProducer:          userCreatedProducer,
+		passwordValidator:            passwordValidator,
 		userRepository:               userRepository,
 		hashService:                  hashService,
 		validate:                     validate,
@@ -117,6 +122,13 @@ func (uc *UserCreateUseCase) Execute(ctx context.Context, input UserCreateInput)
 	createdUser, err := uc.userRepository.Create(ctx, userModel)
 	if err != nil {
 		uc.logger.Error().Msgf("error creating user: %v", err)
+		return output, err
+	}
+
+	message := event.UserCreatedMessage{UserID: createdUser.ID}
+	err = uc.userCreatedProducer.Produce(ctx, message)
+	if err != nil {
+		uc.logger.Error().Msgf("error producing user created event: %v", err)
 		return output, err
 	}
 
