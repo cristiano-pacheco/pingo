@@ -6,21 +6,29 @@ import (
 
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/event"
 	"github.com/cristiano-pacheco/pingo/pkg/kafka"
+	"go.uber.org/fx"
 )
 
 type UserAuthenticatedProducer interface {
 	Produce(ctx context.Context, userID string) error
-	Close()
 }
 
 type userAuthenticatedProducer struct {
 	producer kafka.Producer
 }
 
-func NewUserAuthenticatedProducer(kafkaFacade kafka.Builder) UserAuthenticatedProducer {
-	return &userAuthenticatedProducer{
+func NewUserAuthenticatedProducer(lc fx.Lifecycle, kafkaFacade kafka.Builder) UserAuthenticatedProducer {
+	p := userAuthenticatedProducer{
 		producer: kafkaFacade.BuildProducer(event.IdentityUserAuthenticatedTopic),
 	}
+
+	lc.Append(fx.Hook{
+		OnStop: func(_ context.Context) error {
+			return p.Close()
+		},
+	})
+
+	return &p
 }
 
 func (p *userAuthenticatedProducer) Produce(ctx context.Context, userID string) error {
@@ -39,6 +47,6 @@ func (p *userAuthenticatedProducer) Produce(ctx context.Context, userID string) 
 	return nil
 }
 
-func (p *userAuthenticatedProducer) Close() {
-	p.producer.Close()
+func (p *userAuthenticatedProducer) Close() error {
+	return p.producer.Close()
 }
