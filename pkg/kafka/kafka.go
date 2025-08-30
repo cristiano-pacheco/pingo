@@ -7,18 +7,6 @@ import (
 	"github.com/segmentio/kafka-go"
 )
 
-type Message struct {
-	Topic   string
-	Key     []byte
-	Value   []byte
-	Headers []Header
-}
-
-type Header struct {
-	Key   string
-	Value []byte
-}
-
 type Builder interface {
 	BuildProducer(topic string) Producer
 	BuildConsumer(topic, groupID string) Consumer
