@@ -3,6 +3,7 @@ package producer
 import (
 	"context"
 	"encoding/json"
+	"log/slog"
 
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/event"
 	"github.com/cristiano-pacheco/pingo/pkg/kafka"
@@ -18,13 +19,20 @@ type userAuthenticatedProducer struct {
 }
 
 func NewUserAuthenticatedProducer(lc fx.Lifecycle, kafkaFacade kafka.Builder) UserAuthenticatedProducer {
+	logger := slog.Default()
+
 	p := userAuthenticatedProducer{
 		producer: kafkaFacade.BuildProducer(event.IdentityUserAuthenticatedTopic),
 	}
 
 	lc.Append(fx.Hook{
 		OnStop: func(_ context.Context) error {
-			return p.Close()
+			err := p.producer.Close()
+			if err != nil {
+				logger.Error("failed to close producer", slog.Any("error", err))
+			}
+			logger.Info("UserAuthenticatedProducer closed successfully...")
+			return err
 		},
 	})
 
@@ -45,8 +53,4 @@ func (p *userAuthenticatedProducer) Produce(ctx context.Context, userID string) 
 		return err
 	}
 	return nil
-}
-
-func (p *userAuthenticatedProducer) Close() error {
-	return p.producer.Close()
 }

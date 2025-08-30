@@ -91,5 +91,10 @@ func (s *FiberHTTPServer) Run() {
 func (s *FiberHTTPServer) Shutdown(ctx context.Context) error {
 	logger := slog.Default()
 	logger.InfoContext(ctx, "Shutting down HTTP server...")
-	return s.app.ShutdownWithContext(ctx)
+	err := s.app.ShutdownWithContext(ctx)
+	if err != nil {
+		logger.Error("failed to shutdown HTTP server", slog.Any("error", err))
+	}
+	logger.InfoContext(ctx, "HTTP server shut down successfully.")
+	return nil
 }
