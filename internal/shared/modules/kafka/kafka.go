@@ -5,9 +5,9 @@ import (
 	"github.com/cristiano-pacheco/pingo/pkg/kafka"
 )
 
-func NewKafkaFacade(config config.Config) kafka.Facade {
+func NewKafkaFacade(config config.Config) kafka.Builder {
 	kafkaConfig := kafka.Config{
 		Address: config.Kafka.Address,
 	}
-	return kafka.NewKafkaFacade(kafkaConfig)
+	return kafka.MustNewKafkaBuilder(kafkaConfig)
 }
