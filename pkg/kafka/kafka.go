@@ -1,5 +1,12 @@
 package kafka
 
+import (
+	"context"
+	"time"
+
+	"github.com/segmentio/kafka-go"
+)
+
 type Message struct {
 	Topic   string
 	Key     []byte
@@ -14,7 +21,7 @@ type Header struct {
 
 type Builder interface {
 	BuildProducer(topic string) Producer
-	BuildConsumer(topic string, groupID string) Consumer
+	BuildConsumer(topic, groupID string) Consumer
 }
 
 type builder struct {
@@ -26,10 +33,29 @@ func NewKafkaBuilder(config Config) Builder {
 		config: config,
 	}
 }
+
+func MustNewKafkaBuilder(config Config) Builder {
+	mustConnection(context.Background(), config)
+	return &builder{
+		config: config,
+	}
+}
+
 func (b *builder) BuildProducer(topic string) Producer {
 	return newProducer(b.config, topic)
 }
 
-func (b *builder) BuildConsumer() Consumer {
-	return NewConsumer(b.config)
+func (b *builder) BuildConsumer(topic, groupID string) Consumer {
+	return newConsumer(b.config, topic, groupID)
+}
+
+func mustConnection(ctx context.Context, config Config) {
+	dialer := &kafka.Dialer{
+		Timeout: 10 * time.Second,
+	}
+	conn, err := dialer.DialContext(ctx, "tcp", config.Address[0])
+	if err != nil {
+		panic(err)
+	}
+	defer conn.Close()
 }

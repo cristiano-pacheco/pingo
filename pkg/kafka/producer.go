@@ -7,7 +7,7 @@ import (
 )
 
 type Producer interface {
-	ProduceMessage(ctx context.Context, message Message) error
+	Produce(ctx context.Context, message Message) error
 	Close() error
 }
 
@@ -28,7 +28,7 @@ func newProducer(config Config, topic string) Producer {
 	}
 }
 
-func (p *producer) ProduceMessage(ctx context.Context, message Message) error {
+func (p *producer) Produce(ctx context.Context, message Message) error {
 	kafkaHeaders := make([]kafka.Header, len(message.Headers))
 	for i, h := range message.Headers {
 		kafkaHeaders[i] = kafka.Header{
