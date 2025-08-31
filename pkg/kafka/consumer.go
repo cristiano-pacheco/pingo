@@ -6,8 +6,10 @@ import (
 	"github.com/segmentio/kafka-go"
 )
 
+type MessageHandler func(ctx context.Context, message Message) error
+
 type Consumer interface {
-	Consume(ctx context.Context, handler func(message Message) error) error
+	Consume(ctx context.Context, handler MessageHandler) error
 	Close() error
 }
 
@@ -29,7 +31,7 @@ func newConsumer(config Config, topic, groupID string) Consumer {
 	}
 }
 
-func (c *consumer) Consume(ctx context.Context, handler func(message Message) error) error {
+func (c *consumer) Consume(ctx context.Context, handler MessageHandler) error {
 	for {
 		select {
 		case <-ctx.Done():
@@ -62,7 +64,7 @@ func (c *consumer) Consume(ctx context.Context, handler func(message Message) er
 			Time:          rawMessage.Time,
 		}
 
-		if err := handler(message); err != nil {
+		if err := handler(ctx, message); err != nil {
 			// TODO: implement DLQ
 			return err
 		}
