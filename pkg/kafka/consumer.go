@@ -7,8 +7,7 @@ import (
 )
 
 type Consumer interface {
-	Consume(ctx context.Context, handler func(key, value []byte) error) error
-	ReadMessage(ctx context.Context) (Message, error)
+	Consume(ctx context.Context, handler func(message Message) error) error
 	Close() error
 }
 
@@ -30,40 +29,41 @@ func newConsumer(config Config, topic, groupID string) Consumer {
 	}
 }
 
-func (c *consumer) ReadMessage(ctx context.Context) (Message, error) {
-	m, err := c.reader.ReadMessage(ctx)
-	if err != nil {
-		return Message{}, err
-	}
-
-	headers := make([]Header, len(m.Headers))
-	for i := range m.Headers {
-		headers[i] = Header{
-			Key:   m.Headers[i].Key,
-			Value: m.Headers[i].Value,
-		}
-	}
-
-	return Message{
-		Topic:         m.Topic,
-		Partition:     m.Partition,
-		Offset:        m.Offset,
-		HighWaterMark: m.HighWaterMark,
-		Key:           m.Key,
-		Value:         m.Value,
-		Headers:       headers,
-		WriterData:    m.WriterData,
-		Time:          m.Time,
-	}, nil
-}
-
-func (c *consumer) Consume(ctx context.Context, handler func(key, value []byte) error) error {
+func (c *consumer) Consume(ctx context.Context, handler func(message Message) error) error {
 	for {
-		m, err := c.reader.ReadMessage(ctx)
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+		}
+
+		rawMessage, err := c.reader.ReadMessage(ctx)
 		if err != nil {
 			return err
 		}
-		if err := handler(m.Key, m.Value); err != nil {
+
+		headers := make([]Header, len(rawMessage.Headers))
+		for i := range rawMessage.Headers {
+			headers[i] = Header{
+				Key:   rawMessage.Headers[i].Key,
+				Value: rawMessage.Headers[i].Value,
+			}
+		}
+
+		message := Message{
+			Topic:         rawMessage.Topic,
+			Partition:     rawMessage.Partition,
+			Offset:        rawMessage.Offset,
+			HighWaterMark: rawMessage.HighWaterMark,
+			Key:           rawMessage.Key,
+			Value:         rawMessage.Value,
+			Headers:       headers,
+			WriterData:    rawMessage.WriterData,
+			Time:          rawMessage.Time,
+		}
+
+		if err := handler(message); err != nil {
+			// TODO: implement DLQ
 			return err
 		}
 	}
