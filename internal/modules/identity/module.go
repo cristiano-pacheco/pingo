@@ -1,6 +1,7 @@
 package identity
 
 import (
+	"github.com/cristiano-pacheco/pingo/internal/modules/identity/event/consumer"
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/event/producer"
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/http/fiber/handler"
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/http/fiber/middleware"
@@ -40,9 +41,12 @@ var Module = fx.Module(
 		producer.NewUserAuthenticatedProducer,
 		producer.NewUserCreatedProducer,
 		producer.NewUserUpdatedProducer,
+
+		consumer.NewUserCreatedConsumer,
 	),
 	fx.Invoke(
 		router.SetupUserRoutes,
 		router.SetupAuthRoutes,
+		func(*consumer.UserCreatedConsumer) {}, // Invoke to ensure consumer is started
 	),
 )

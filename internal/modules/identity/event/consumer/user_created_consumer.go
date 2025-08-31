@@ -34,12 +34,13 @@ func NewUserCreatedConsumer(
 	oneTimeTokenRepository repository.OneTimeTokenRepository,
 	userRepository repository.UserRepository,
 	hashService service.HashService,
-	consumer kafka.Consumer,
 	kafkaBuilder kafka.Builder,
 	logger logger.Logger,
 	lc fx.Lifecycle,
 	otel otel.Otel,
 ) *UserCreatedConsumer {
+	ctx, cancel := context.WithCancel(context.Background())
+
 	c := UserCreatedConsumer{
 		sendEmailConfirmationService: sendEmailConfirmationService,
 		oneTimeTokenRepository:       oneTimeTokenRepository,
@@ -51,12 +52,32 @@ func NewUserCreatedConsumer(
 	}
 
 	lc.Append(fx.Hook{
-		OnStop: func(_ context.Context) error {
+		OnStart: func(_ context.Context) error {
+			go func() {
+				logger.Info().Msg("Starting UserCreatedConsumer...")
+				if err := c.Consume(ctx); err != nil {
+					if err == context.Canceled {
+						logger.Info().Msg("UserCreatedConsumer stopped gracefully")
+					} else {
+						logger.Error().Msgf("UserCreatedConsumer stopped with error: %v", err)
+					}
+				}
+			}()
+			return nil
+		},
+		OnStop: func(ctx context.Context) error {
+			logger.Info().Msg("Initiating graceful shutdown of UserCreatedConsumer...")
+
+			// Cancel the consumer context to stop consuming new messages
+			cancel()
+
+			// Close the kafka consumer
 			err := c.consumer.Close()
 			if err != nil {
 				logger.Error().Msgf("failed to close the consumer: %v", err)
+			} else {
+				logger.Info().Msg("UserCreatedConsumer closed successfully...")
 			}
-			logger.Info().Msg("UserCreatedConsumer closed successfully...")
 			return err
 		},
 	})
@@ -64,27 +85,33 @@ func NewUserCreatedConsumer(
 	return &c
 }
 
-func (c *UserCreatedConsumer) Consume() error {
-	ctx, span := c.otel.StartSpan(context.Background(), "UserCreatedConsumer.Consume")
+func (c *UserCreatedConsumer) Consume(ctx context.Context) error {
+	ctx, span := c.otel.StartSpan(ctx, "UserCreatedConsumer.Consume")
 	defer span.End()
 
-	rawMessage, err := c.consumer.ReadMessage(ctx)
-	if err != nil {
+	c.logger.Info().Msg("UserCreatedConsumer started consuming messages...")
+
+	return c.consumer.Consume(ctx, c.handleMessage)
+}
+
+func (c *UserCreatedConsumer) handleMessage(ctx context.Context, message kafka.Message) error {
+	ctx, span := c.otel.StartSpan(ctx, "UserCreatedConsumer.handleMessage")
+	defer span.End()
+
+	var userCreatedMessage event.UserCreatedMessage
+	if err := json.Unmarshal(message.Value, &userCreatedMessage); err != nil {
+		c.logger.Error().Msgf("error unmarshaling message: %v", err)
 		return err
 	}
 
-	var message event.UserCreatedMessage
-	if err := json.Unmarshal(rawMessage.Value, &message); err != nil {
-		return err
-	}
-
-	if message.UserID == 0 {
+	if userCreatedMessage.UserID == 0 {
 		c.logger.Error().Msg("invalid user ID")
 		return errors.New("invalid user ID")
 	}
 
-	user, err := c.userRepository.FindByID(ctx, message.UserID)
+	user, err := c.userRepository.FindByID(ctx, userCreatedMessage.UserID)
 	if err != nil {
+		c.logger.Error().Msgf("error finding user by ID: %v", err)
 		return err
 	}
 
@@ -117,5 +144,6 @@ func (c *UserCreatedConsumer) Consume() error {
 		return err
 	}
 
+	c.logger.Info().Msgf("Successfully processed user created event for user ID: %d", userCreatedMessage.UserID)
 	return nil
 }
