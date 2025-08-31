@@ -7,7 +7,8 @@ import (
 )
 
 type Consumer interface {
-	Consume(ctx context.Context, topic, groupID string, handler func(key, value []byte) error) error
+	Consume(ctx context.Context, handler func(key, value []byte) error) error
+	ReadMessage(ctx context.Context) (Message, error)
 	Close() error
 }
 
@@ -29,7 +30,34 @@ func newConsumer(config Config, topic, groupID string) Consumer {
 	}
 }
 
-func (c *consumer) Consume(ctx context.Context, topic, groupID string, handler func(key, value []byte) error) error {
+func (c *consumer) ReadMessage(ctx context.Context) (Message, error) {
+	m, err := c.reader.ReadMessage(ctx)
+	if err != nil {
+		return Message{}, err
+	}
+
+	headers := make([]Header, len(m.Headers))
+	for i := range m.Headers {
+		headers[i] = Header{
+			Key:   m.Headers[i].Key,
+			Value: m.Headers[i].Value,
+		}
+	}
+
+	return Message{
+		Topic:         m.Topic,
+		Partition:     m.Partition,
+		Offset:        m.Offset,
+		HighWaterMark: m.HighWaterMark,
+		Key:           m.Key,
+		Value:         m.Value,
+		Headers:       headers,
+		WriterData:    m.WriterData,
+		Time:          m.Time,
+	}, nil
+}
+
+func (c *consumer) Consume(ctx context.Context, handler func(key, value []byte) error) error {
 	for {
 		m, err := c.reader.ReadMessage(ctx)
 		if err != nil {

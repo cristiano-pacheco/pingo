@@ -3,7 +3,6 @@ package usecase
 import (
 	"context"
 	"errors"
-	"time"
 
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/enum"
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/errs"
@@ -17,10 +16,6 @@ import (
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/logger"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/otel"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/validator"
-)
-
-const (
-	accountConfirmationTokenExpiration = 24 * time.Hour
 )
 
 type UserCreateInput struct {
@@ -38,21 +33,17 @@ type UserCreateOutput struct {
 }
 
 type UserCreateUseCase struct {
-	sendEmailConfirmationService service.SendEmailConfirmationService
-	passwordValidator            identity_validator.PasswordValidator
-	oneTimeTokenRepository       repository.OneTimeTokenRepository
-	userCreatedProducer          producer.UserCreatedProducer
-	userRepository               repository.UserRepository
-	hashService                  service.HashService
-	validate                     validator.Validate
-	logger                       logger.Logger
-	otel                         otel.Otel
+	passwordValidator   identity_validator.PasswordValidator
+	userCreatedProducer producer.UserCreatedProducer
+	userRepository      repository.UserRepository
+	hashService         service.HashService
+	validate            validator.Validate
+	logger              logger.Logger
+	otel                otel.Otel
 }
 
 func NewUserCreateUseCase(
-	sendEmailConfirmationService service.SendEmailConfirmationService,
 	passwordValidator identity_validator.PasswordValidator,
-	oneTimeTokenRepository repository.OneTimeTokenRepository,
 	hashService service.HashService,
 	userRepository repository.UserRepository,
 	userCreatedProducer producer.UserCreatedProducer,
@@ -61,15 +52,13 @@ func NewUserCreateUseCase(
 	otel otel.Otel,
 ) *UserCreateUseCase {
 	return &UserCreateUseCase{
-		sendEmailConfirmationService: sendEmailConfirmationService,
-		oneTimeTokenRepository:       oneTimeTokenRepository,
-		userCreatedProducer:          userCreatedProducer,
-		passwordValidator:            passwordValidator,
-		userRepository:               userRepository,
-		hashService:                  hashService,
-		validate:                     validate,
-		logger:                       logger,
-		otel:                         otel,
+		userCreatedProducer: userCreatedProducer,
+		passwordValidator:   passwordValidator,
+		userRepository:      userRepository,
+		hashService:         hashService,
+		validate:            validate,
+		logger:              logger,
+		otel:                otel,
 	}
 }
 
@@ -98,12 +87,6 @@ func (uc *UserCreateUseCase) Execute(ctx context.Context, input UserCreateInput)
 		return output, errs.ErrEmailAlreadyInUse
 	}
 
-	token, err := uc.hashService.GenerateRandomBytes()
-	if err != nil {
-		uc.logger.Error().Msgf("error generating random bytes: %v", err)
-		return output, err
-	}
-
 	passwordHash, err := uc.hashService.GenerateFromPassword([]byte(input.Password))
 	if err != nil {
 		uc.logger.Error().Msgf("error generating password hash: %v", err)
@@ -129,29 +112,6 @@ func (uc *UserCreateUseCase) Execute(ctx context.Context, input UserCreateInput)
 	err = uc.userCreatedProducer.Produce(ctx, message)
 	if err != nil {
 		uc.logger.Error().Msgf("error producing user created event: %v", err)
-		return output, err
-	}
-
-	oneTimeToken := model.OneTimeTokenModel{
-		UserID:    createdUser.ID,
-		ExpiresAt: time.Now().UTC().Add(accountConfirmationTokenExpiration),
-		TokenType: enum.TokenTypeAccountConfirmation,
-		TokenHash: token,
-	}
-
-	_, err = uc.oneTimeTokenRepository.Create(ctx, oneTimeToken)
-	if err != nil {
-		uc.logger.Error().Msgf("error creating one-time token: %v", err)
-		return output, err
-	}
-
-	sendEmailConfirmationInput := service.SendEmailConfirmationInput{
-		UserModel:             createdUser,
-		ConfirmationTokenHash: token,
-	}
-	err = uc.sendEmailConfirmationService.Execute(ctx, sendEmailConfirmationInput)
-	if err != nil {
-		uc.logger.Error().Msgf("error sending account confirmation email: %v", err)
 		return output, err
 	}
 

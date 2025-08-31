@@ -11,4 +11,5 @@ type SASL struct {
 	Username  string `mapstructure:"KAFKA_USERNAME"`
 	Password  string `mapstructure:"KAFKA_PASSWORD"`
 	UseTLS    bool   `mapstructure:"KAFKA_USE_TLS"` // enforce TLS if broker requires it
+
 }
