@@ -3,108 +3,95 @@ package usecase_test
 import (
 	"context"
 	"errors"
-	"os"
 	"testing"
-	"time"
-
-	"github.com/rs/zerolog"
-	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/suite"
 
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/enum"
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/errs"
+	"github.com/cristiano-pacheco/pingo/internal/modules/identity/event"
+	producer_mocks "github.com/cristiano-pacheco/pingo/internal/modules/identity/event/producer/mocks"
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/model"
 	repository_mocks "github.com/cristiano-pacheco/pingo/internal/modules/identity/repository/mocks"
-	"github.com/cristiano-pacheco/pingo/internal/modules/identity/service"
 	service_mocks "github.com/cristiano-pacheco/pingo/internal/modules/identity/service/mocks"
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/usecase"
 	shared_errs "github.com/cristiano-pacheco/pingo/internal/shared/errs"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/config"
-	logger_mocks "github.com/cristiano-pacheco/pingo/internal/shared/modules/logger/mocks"
+	"github.com/cristiano-pacheco/pingo/internal/shared/modules/logger"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/otel"
-	validator_mocks "github.com/cristiano-pacheco/pingo/internal/shared/modules/validator/mocks"
+	shared_validator_mocks "github.com/cristiano-pacheco/pingo/internal/shared/modules/validator/mocks"
+	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/suite"
 )
 
 type AuthLoginUseCaseTestSuite struct {
 	suite.Suite
-	sut                              *usecase.AuthLoginUseCase
-	oneTimeTokenRepositoryMock       *repository_mocks.MockOneTimeTokenRepository
-	userRepositoryMock               *repository_mocks.MockUserRepository
-	validatorMock                    *validator_mocks.MockValidate
-	hashServiceMock                  *service_mocks.MockHashService
-	sendEmailVerificationServiceMock *service_mocks.MockSendEmailVerificationCodeService
-	loggerMock                       *logger_mocks.MockLogger
-	cfg                              config.Config
-	otel                             otel.Otel
+	sut                           *usecase.AuthLoginUseCase
+	userAuthenticatedProducerMock *producer_mocks.MockUserAuthenticatedProducer
+	userRepositoryMock            *repository_mocks.MockUserRepository
+	hashServiceMock               *service_mocks.MockHashService
+	validatorMock                 *shared_validator_mocks.MockValidate
+	logger                        logger.Logger
+	cfg                           config.Config
+	otel                          otel.Otel
 }
 
 func (s *AuthLoginUseCaseTestSuite) SetupTest() {
-	s.oneTimeTokenRepositoryMock = repository_mocks.NewMockOneTimeTokenRepository(s.T())
-	s.userRepositoryMock = repository_mocks.NewMockUserRepository(s.T())
-	s.validatorMock = validator_mocks.NewMockValidate(s.T())
-	s.hashServiceMock = service_mocks.NewMockHashService(s.T())
-	s.sendEmailVerificationServiceMock = service_mocks.NewMockSendEmailVerificationCodeService(s.T())
-	s.loggerMock = logger_mocks.NewMockLogger(s.T())
-
 	s.cfg = config.Config{
 		App: config.App{
+			BaseURL: "https://example.com",
 			Name:    "Test App",
 			Version: "1.0.0",
 		},
 		OpenTelemetry: config.OpenTelemetry{
 			Enabled: false,
 		},
+		Log: config.Log{
+			LogLevel: "disabled",
+		},
 	}
 
-	// Create a simple no-op otel implementation for testing
 	s.otel = otel.NewNoopOtel()
+	s.logger = logger.New(s.cfg)
+
+	s.userAuthenticatedProducerMock = producer_mocks.NewMockUserAuthenticatedProducer(s.T())
+	s.userRepositoryMock = repository_mocks.NewMockUserRepository(s.T())
+	s.hashServiceMock = service_mocks.NewMockHashService(s.T())
+	s.validatorMock = shared_validator_mocks.NewMockValidate(s.T())
 
 	s.sut = usecase.NewAuthLoginUseCase(
-		s.oneTimeTokenRepositoryMock,
+		s.userAuthenticatedProducerMock,
 		s.userRepositoryMock,
 		s.validatorMock,
 		s.hashServiceMock,
-		s.sendEmailVerificationServiceMock,
-		s.loggerMock,
+		s.logger,
 		s.otel,
 	)
 }
 
-func TestAuthLoginUseCaseSuite(t *testing.T) {
+func TestAuthLoginUseCaseTestSuite(t *testing.T) {
 	suite.Run(t, new(AuthLoginUseCaseTestSuite))
 }
 
-func (s *AuthLoginUseCaseTestSuite) TestExecute_ValidCredentials_ReturnsUserID() {
+func (s *AuthLoginUseCaseTestSuite) TestExecute_ValidCredentials_ReturnsSuccess() {
 	// Arrange
 	ctx := context.Background()
 	input := usecase.AuthLoginInput{
 		Email:    "test@example.com",
-		Password: "validpassword",
-	}
-	user := model.UserModel{
-		ID:           1,
-		Email:        "test@example.com",
-		Status:       "active",
-		PasswordHash: []byte("hashedpassword"),
-	}
-	oneTimeToken := model.OneTimeTokenModel{
-		ID:        1,
-		UserID:    user.ID,
-		TokenHash: []byte("hashedtoken"),
-		ExpiresAt: time.Now().UTC().Add(10 * time.Minute),
-		CreatedAt: time.Now().UTC(),
+		Password: "password123",
 	}
 
-	emailVerificationType, _ := enum.NewTokenTypeEnum(enum.TokenTypeLoginVerification)
+	user := model.UserModel{
+		ID:           uint64(123),
+		Email:        input.Email,
+		PasswordHash: []byte("hashed-password"),
+		Status:       enum.UserStatusActive,
+	}
+
+	message := event.UserAuthenticatedMessage{UserID: user.ID}
+
 	s.validatorMock.On("Struct", input).Return(nil)
 	s.userRepositoryMock.On("FindByEmail", mock.Anything, input.Email).Return(user, nil)
 	s.hashServiceMock.On("CompareHashAndPassword", user.PasswordHash, []byte(input.Password)).Return(nil)
-	s.oneTimeTokenRepositoryMock.On("Delete", mock.Anything, user.ID, emailVerificationType).Return(nil)
-	s.hashServiceMock.On("GenerateFromPassword", mock.AnythingOfType("[]uint8")).Return([]byte("hashedtoken"), nil)
-	s.oneTimeTokenRepositoryMock.On("Create", mock.Anything, mock.AnythingOfType("model.OneTimeTokenModel")).
-		Return(oneTimeToken, nil)
-	s.sendEmailVerificationServiceMock.On("Execute", mock.Anything, mock.AnythingOfType("service.SendEmailVerificationCodeInput")).
-		Return(nil)
+	s.userAuthenticatedProducerMock.On("Produce", mock.Anything, message).Return(nil)
 
 	// Act
 	output, err := s.sut.Execute(ctx, input)
@@ -114,7 +101,7 @@ func (s *AuthLoginUseCaseTestSuite) TestExecute_ValidCredentials_ReturnsUserID()
 	s.Equal(user.ID, output.UserID)
 }
 
-func (s *AuthLoginUseCaseTestSuite) TestExecute_InvalidInput_ReturnsValidationError() {
+func (s *AuthLoginUseCaseTestSuite) TestExecute_ValidationFails_ReturnsError() {
 	// Arrange
 	ctx := context.Background()
 	input := usecase.AuthLoginInput{
@@ -134,38 +121,62 @@ func (s *AuthLoginUseCaseTestSuite) TestExecute_InvalidInput_ReturnsValidationEr
 	s.Equal(uint64(0), output.UserID)
 }
 
-func (s *AuthLoginUseCaseTestSuite) TestExecute_UserNotFound_ReturnsInvalidCredentials() {
+func (s *AuthLoginUseCaseTestSuite) TestExecute_UserRepositoryError_ReturnsError() {
 	// Arrange
 	ctx := context.Background()
 	input := usecase.AuthLoginInput{
-		Email:    "notfound@example.com",
-		Password: "password",
+		Email:    "test@example.com",
+		Password: "password123",
 	}
+	repositoryError := errors.New("database error")
 
 	s.validatorMock.On("Struct", input).Return(nil)
-	s.userRepositoryMock.On("FindByEmail", mock.Anything, input.Email).
-		Return(model.UserModel{}, shared_errs.ErrRecordNotFound)
+	s.userRepositoryMock.On("FindByEmail", mock.Anything, input.Email).Return(model.UserModel{}, repositoryError)
 
 	// Act
 	output, err := s.sut.Execute(ctx, input)
 
 	// Assert
-	s.Require().ErrorIs(err, errs.ErrInvalidCredentials)
+	s.Require().Error(err)
+	s.Equal(repositoryError, err)
 	s.Equal(uint64(0), output.UserID)
 }
 
-func (s *AuthLoginUseCaseTestSuite) TestExecute_UserNotActive_ReturnsUserNotActiveError() {
+func (s *AuthLoginUseCaseTestSuite) TestExecute_UserNotFound_ReturnsError() {
 	// Arrange
 	ctx := context.Background()
 	input := usecase.AuthLoginInput{
 		Email:    "test@example.com",
-		Password: "validpassword",
+		Password: "password123",
 	}
+
+	user := model.UserModel{}
+
+	s.validatorMock.On("Struct", input).Return(nil)
+	s.userRepositoryMock.On("FindByEmail", mock.Anything, input.Email).Return(user, shared_errs.ErrRecordNotFound)
+
+	// Act
+	output, err := s.sut.Execute(ctx, input)
+
+	// Assert
+	s.Require().Error(err)
+	s.Equal(errs.ErrInvalidCredentials, err)
+	s.Equal(uint64(0), output.UserID)
+}
+
+func (s *AuthLoginUseCaseTestSuite) TestExecute_UserNotActive_ReturnsError() {
+	// Arrange
+	ctx := context.Background()
+	input := usecase.AuthLoginInput{
+		Email:    "test@example.com",
+		Password: "password123",
+	}
+
 	user := model.UserModel{
-		ID:           1,
-		Email:        "test@example.com",
-		Status:       "inactive",
-		PasswordHash: []byte("hashedpassword"),
+		ID:           uint64(123),
+		Email:        input.Email,
+		PasswordHash: []byte("hashed-password"),
+		Status:       enum.UserStatusInactive,
 	}
 
 	s.validatorMock.On("Struct", input).Return(nil)
@@ -175,356 +186,70 @@ func (s *AuthLoginUseCaseTestSuite) TestExecute_UserNotActive_ReturnsUserNotActi
 	output, err := s.sut.Execute(ctx, input)
 
 	// Assert
-	s.Require().ErrorIs(err, errs.ErrUserIsNotActive)
+	s.Require().Error(err)
+	s.Equal(errs.ErrUserIsNotActive, err)
 	s.Equal(uint64(0), output.UserID)
 }
 
-func (s *AuthLoginUseCaseTestSuite) TestExecute_InvalidPassword_ReturnsInvalidCredentials() {
+func (s *AuthLoginUseCaseTestSuite) TestExecute_InvalidPassword_ReturnsError() {
 	// Arrange
 	ctx := context.Background()
 	input := usecase.AuthLoginInput{
 		Email:    "test@example.com",
 		Password: "wrongpassword",
 	}
+
 	user := model.UserModel{
-		ID:           1,
-		Email:        "test@example.com",
-		Status:       "active",
-		PasswordHash: []byte("hashedpassword"),
+		ID:           uint64(123),
+		Email:        input.Email,
+		PasswordHash: []byte("hashed-password"),
+		Status:       enum.UserStatusActive,
 	}
-	passwordError := errors.New("password mismatch")
+
+	hashCompareError := errors.New("hash comparison failed")
 
 	s.validatorMock.On("Struct", input).Return(nil)
 	s.userRepositoryMock.On("FindByEmail", mock.Anything, input.Email).Return(user, nil)
-	s.hashServiceMock.On("CompareHashAndPassword", user.PasswordHash, []byte(input.Password)).Return(passwordError)
-
-	// Act
-	output, err := s.sut.Execute(ctx, input)
-
-	// Assert
-	s.Require().ErrorIs(err, errs.ErrInvalidCredentials)
-	s.Equal(uint64(0), output.UserID)
-}
-
-func (s *AuthLoginUseCaseTestSuite) TestExecute_FindByEmailDatabaseError_ReturnsError() {
-	// Arrange
-	ctx := context.Background()
-	input := usecase.AuthLoginInput{
-		Email:    "test@example.com",
-		Password: "validpassword",
-	}
-	dbError := errors.New("database connection error")
-
-	s.validatorMock.On("Struct", input).Return(nil)
-	s.userRepositoryMock.On("FindByEmail", mock.Anything, input.Email).Return(model.UserModel{}, dbError)
-	logger := zerolog.New(os.Stderr)
-	s.loggerMock.On("Error").Return(logger.Error())
+	s.hashServiceMock.On("CompareHashAndPassword", user.PasswordHash, []byte(input.Password)).
+		Return(hashCompareError)
 
 	// Act
 	output, err := s.sut.Execute(ctx, input)
 
 	// Assert
 	s.Require().Error(err)
-	s.Equal(dbError, err)
+	s.Equal(errs.ErrInvalidCredentials, err)
 	s.Equal(uint64(0), output.UserID)
 }
 
-func (s *AuthLoginUseCaseTestSuite) TestExecute_DeleteVerificationCodeError_ReturnsError() {
+func (s *AuthLoginUseCaseTestSuite) TestExecute_ProducerFails_ReturnsError() {
 	// Arrange
 	ctx := context.Background()
 	input := usecase.AuthLoginInput{
 		Email:    "test@example.com",
-		Password: "validpassword",
+		Password: "password123",
 	}
-	user := model.UserModel{
-		ID:           1,
-		Email:        "test@example.com",
-		Status:       "active",
-		PasswordHash: []byte("hashedpassword"),
-	}
-	deleteError := errors.New("delete verification code error")
 
-	emailVerificationType, _ := enum.NewTokenTypeEnum(enum.TokenTypeLoginVerification)
+	user := model.UserModel{
+		ID:           uint64(123),
+		Email:        input.Email,
+		PasswordHash: []byte("hashed-password"),
+		Status:       enum.UserStatusActive,
+	}
+
+	message := event.UserAuthenticatedMessage{UserID: user.ID}
+	producerError := errors.New("producer error")
+
 	s.validatorMock.On("Struct", input).Return(nil)
 	s.userRepositoryMock.On("FindByEmail", mock.Anything, input.Email).Return(user, nil)
 	s.hashServiceMock.On("CompareHashAndPassword", user.PasswordHash, []byte(input.Password)).Return(nil)
-	s.oneTimeTokenRepositoryMock.On("Delete", mock.Anything, user.ID, emailVerificationType).Return(deleteError)
-	logger := zerolog.New(os.Stderr)
-	s.loggerMock.On("Error").Return(logger.Error())
+	s.userAuthenticatedProducerMock.On("Produce", mock.Anything, message).Return(producerError)
 
 	// Act
 	output, err := s.sut.Execute(ctx, input)
 
 	// Assert
 	s.Require().Error(err)
-	s.Equal(deleteError, err)
+	s.Equal(producerError, err)
 	s.Equal(uint64(0), output.UserID)
-}
-
-func (s *AuthLoginUseCaseTestSuite) TestExecute_CreateVerificationCodeError_ReturnsError() {
-	// Arrange
-	ctx := context.Background()
-	input := usecase.AuthLoginInput{
-		Email:    "test@example.com",
-		Password: "validpassword",
-	}
-	user := model.UserModel{
-		ID:           1,
-		Email:        "test@example.com",
-		Status:       "active",
-		PasswordHash: []byte("hashedpassword"),
-	}
-	createError := errors.New("create verification code error")
-
-	emailVerificationType, _ := enum.NewTokenTypeEnum(enum.TokenTypeLoginVerification)
-	s.validatorMock.On("Struct", input).Return(nil)
-	s.userRepositoryMock.On("FindByEmail", mock.Anything, input.Email).Return(user, nil)
-	s.hashServiceMock.On("CompareHashAndPassword", user.PasswordHash, []byte(input.Password)).Return(nil)
-	s.oneTimeTokenRepositoryMock.On("Delete", mock.Anything, user.ID, emailVerificationType).Return(nil)
-	s.hashServiceMock.On("GenerateFromPassword", mock.AnythingOfType("[]uint8")).Return([]byte("hashedtoken"), nil)
-	s.oneTimeTokenRepositoryMock.On("Create", mock.Anything, mock.AnythingOfType("model.OneTimeTokenModel")).
-		Return(model.OneTimeTokenModel{}, createError)
-	logger := zerolog.New(os.Stderr)
-	s.loggerMock.On("Error").Return(logger.Error())
-
-	// Act
-	output, err := s.sut.Execute(ctx, input)
-
-	// Assert
-	s.Require().Error(err)
-	s.Equal(createError, err)
-	s.Equal(uint64(0), output.UserID)
-}
-
-func (s *AuthLoginUseCaseTestSuite) TestExecute_HashServiceError_ReturnsError() {
-	// Arrange
-	ctx := context.Background()
-	input := usecase.AuthLoginInput{
-		Email:    "test@example.com",
-		Password: "validpassword",
-	}
-	user := model.UserModel{
-		ID:           1,
-		Email:        "test@example.com",
-		Status:       "active",
-		PasswordHash: []byte("hashedpassword"),
-	}
-	hashError := errors.New("hash service error")
-
-	emailVerificationType, _ := enum.NewTokenTypeEnum(enum.TokenTypeLoginVerification)
-	s.validatorMock.On("Struct", input).Return(nil)
-	s.userRepositoryMock.On("FindByEmail", mock.Anything, input.Email).Return(user, nil)
-	s.hashServiceMock.On("CompareHashAndPassword", user.PasswordHash, []byte(input.Password)).Return(nil)
-	s.oneTimeTokenRepositoryMock.On("Delete", mock.Anything, user.ID, emailVerificationType).Return(nil)
-	s.hashServiceMock.On("GenerateFromPassword", mock.AnythingOfType("[]uint8")).Return(nil, hashError)
-	logger := zerolog.New(os.Stderr)
-	s.loggerMock.On("Error").Return(logger.Error())
-
-	// Act
-	output, err := s.sut.Execute(ctx, input)
-
-	// Assert
-	s.Require().Error(err)
-	s.Equal(hashError, err)
-	s.Equal(uint64(0), output.UserID)
-}
-
-func (s *AuthLoginUseCaseTestSuite) TestExecute_SendEmailError_ReturnsError() {
-	// Arrange
-	ctx := context.Background()
-	input := usecase.AuthLoginInput{
-		Email:    "test@example.com",
-		Password: "validpassword",
-	}
-	user := model.UserModel{
-		ID:           1,
-		Email:        "test@example.com",
-		Status:       "active",
-		PasswordHash: []byte("hashedpassword"),
-	}
-	oneTimeToken := model.OneTimeTokenModel{
-		ID:        1,
-		UserID:    user.ID,
-		TokenHash: []byte("hashedtoken"),
-		ExpiresAt: time.Now().UTC().Add(10 * time.Minute),
-		CreatedAt: time.Now().UTC(),
-	}
-	emailError := errors.New("send email error")
-
-	emailVerificationType, _ := enum.NewTokenTypeEnum(enum.TokenTypeLoginVerification)
-	s.validatorMock.On("Struct", input).Return(nil)
-	s.userRepositoryMock.On("FindByEmail", mock.Anything, input.Email).Return(user, nil)
-	s.hashServiceMock.On("CompareHashAndPassword", user.PasswordHash, []byte(input.Password)).Return(nil)
-	s.oneTimeTokenRepositoryMock.On("Delete", mock.Anything, user.ID, emailVerificationType).Return(nil)
-	s.hashServiceMock.On("GenerateFromPassword", mock.AnythingOfType("[]uint8")).Return([]byte("hashedtoken"), nil)
-	s.oneTimeTokenRepositoryMock.On("Create", mock.Anything, mock.AnythingOfType("model.OneTimeTokenModel")).
-		Return(oneTimeToken, nil)
-	s.sendEmailVerificationServiceMock.On("Execute", mock.Anything, mock.AnythingOfType("service.SendEmailVerificationCodeInput")).
-		Return(emailError)
-	logger := zerolog.New(os.Stderr)
-	s.loggerMock.On("Error").Return(logger.Error())
-
-	// Act
-	output, err := s.sut.Execute(ctx, input)
-
-	// Assert
-	s.Require().Error(err)
-	s.Equal(emailError, err)
-	s.Equal(uint64(0), output.UserID)
-}
-
-func (s *AuthLoginUseCaseTestSuite) TestExecute_DeleteVerificationCodeNotFound_ContinuesExecution() {
-	// Arrange
-	ctx := context.Background()
-	input := usecase.AuthLoginInput{
-		Email:    "test@example.com",
-		Password: "validpassword",
-	}
-	user := model.UserModel{
-		ID:           1,
-		Email:        "test@example.com",
-		Status:       "active",
-		PasswordHash: []byte("hashedpassword"),
-	}
-	oneTimeToken := model.OneTimeTokenModel{
-		ID:        1,
-		UserID:    user.ID,
-		TokenHash: []byte("hashedtoken"),
-		ExpiresAt: time.Now().UTC().Add(10 * time.Minute),
-		CreatedAt: time.Now().UTC(),
-	}
-
-	emailVerificationType, _ := enum.NewTokenTypeEnum(enum.TokenTypeLoginVerification)
-	s.validatorMock.On("Struct", input).Return(nil)
-	s.userRepositoryMock.On("FindByEmail", mock.Anything, input.Email).Return(user, nil)
-	s.hashServiceMock.On("CompareHashAndPassword", user.PasswordHash, []byte(input.Password)).Return(nil)
-	s.oneTimeTokenRepositoryMock.On("Delete", mock.Anything, user.ID, emailVerificationType).
-		Return(shared_errs.ErrRecordNotFound)
-	s.hashServiceMock.On("GenerateFromPassword", mock.AnythingOfType("[]uint8")).Return([]byte("hashedtoken"), nil)
-	s.oneTimeTokenRepositoryMock.On("Create", mock.Anything, mock.AnythingOfType("model.OneTimeTokenModel")).
-		Return(oneTimeToken, nil)
-	s.sendEmailVerificationServiceMock.On("Execute", mock.Anything, mock.AnythingOfType("service.SendEmailVerificationCodeInput")).
-		Return(nil)
-
-	// Act
-	output, err := s.sut.Execute(ctx, input)
-
-	// Assert
-	s.Require().NoError(err)
-	s.Equal(user.ID, output.UserID)
-}
-
-func (s *AuthLoginUseCaseTestSuite) TestExecute_EmptyUser_ReturnsInvalidCredentials() {
-	// Arrange
-	ctx := context.Background()
-	input := usecase.AuthLoginInput{
-		Email:    "test@example.com",
-		Password: "validpassword",
-	}
-	emptyUser := model.UserModel{} // Empty user with ID = 0
-
-	s.validatorMock.On("Struct", input).Return(nil)
-	s.userRepositoryMock.On("FindByEmail", mock.Anything, input.Email).Return(emptyUser, nil)
-
-	// Act
-	output, err := s.sut.Execute(ctx, input)
-
-	// Assert
-	s.Require().ErrorIs(err, errs.ErrInvalidCredentials)
-	s.Equal(uint64(0), output.UserID)
-}
-
-func (s *AuthLoginUseCaseTestSuite) TestExecute_ValidCredentialsGeneratesVerificationCode() {
-	// Arrange
-	ctx := context.Background()
-	input := usecase.AuthLoginInput{
-		Email:    "test@example.com",
-		Password: "validpassword",
-	}
-	user := model.UserModel{
-		ID:           1,
-		Email:        "test@example.com",
-		Status:       "active",
-		PasswordHash: []byte("hashedpassword"),
-	}
-
-	emailVerificationType, _ := enum.NewTokenTypeEnum(enum.TokenTypeLoginVerification)
-	s.validatorMock.On("Struct", input).Return(nil)
-	s.userRepositoryMock.On("FindByEmail", mock.Anything, input.Email).Return(user, nil)
-	s.hashServiceMock.On("CompareHashAndPassword", user.PasswordHash, []byte(input.Password)).Return(nil)
-	s.oneTimeTokenRepositoryMock.On("Delete", mock.Anything, user.ID, emailVerificationType).Return(nil)
-	s.hashServiceMock.On("GenerateFromPassword", mock.AnythingOfType("[]uint8")).Return([]byte("hashedtoken"), nil)
-	s.oneTimeTokenRepositoryMock.On("Create", mock.Anything, mock.MatchedBy(func(ott model.OneTimeTokenModel) bool {
-		return ott.UserID == user.ID && len(ott.TokenHash) > 0
-	})).Return(model.OneTimeTokenModel{
-		ID:        1,
-		UserID:    user.ID,
-		TokenHash: []byte("hashedtoken"),
-		ExpiresAt: time.Now().UTC().Add(10 * time.Minute),
-		CreatedAt: time.Now().UTC(),
-	}, nil)
-	s.sendEmailVerificationServiceMock.On("Execute", mock.Anything, mock.MatchedBy(func(input interface{}) bool {
-		if sei, ok := input.(service.SendEmailVerificationCodeInput); ok {
-			return sei.UserID == user.ID && sei.Code != ""
-		}
-		return false
-	})).Return(nil)
-
-	// Act
-	output, err := s.sut.Execute(ctx, input)
-
-	// Assert
-	s.Require().NoError(err)
-	s.Equal(user.ID, output.UserID)
-}
-
-func (s *AuthLoginUseCaseTestSuite) TestExecute_VerificationCodeFormat_SixDigitCode() {
-	// Arrange
-	ctx := context.Background()
-	input := usecase.AuthLoginInput{
-		Email:    "test@example.com",
-		Password: "validpassword",
-	}
-	user := model.UserModel{
-		ID:           1,
-		Email:        "test@example.com",
-		Status:       "active",
-		PasswordHash: []byte("hashedpassword"),
-	}
-
-	emailVerificationType, _ := enum.NewTokenTypeEnum(enum.TokenTypeLoginVerification)
-	s.validatorMock.On("Struct", input).Return(nil)
-	s.userRepositoryMock.On("FindByEmail", mock.Anything, input.Email).Return(user, nil)
-	s.hashServiceMock.On("CompareHashAndPassword", user.PasswordHash, []byte(input.Password)).Return(nil)
-	s.oneTimeTokenRepositoryMock.On("Delete", mock.Anything, user.ID, emailVerificationType).Return(nil)
-	s.hashServiceMock.On("GenerateFromPassword", mock.AnythingOfType("[]uint8")).Return([]byte("hashedtoken"), nil)
-
-	// Capture the created one-time token to verify its properties
-	var capturedCode string
-	s.oneTimeTokenRepositoryMock.On("Create", mock.Anything, mock.MatchedBy(func(ott model.OneTimeTokenModel) bool {
-		return ott.UserID == user.ID && len(ott.TokenHash) > 0
-	})).Return(model.OneTimeTokenModel{
-		ID:        1,
-		UserID:    user.ID,
-		TokenHash: []byte("hashedtoken"),
-		ExpiresAt: time.Now().UTC().Add(10 * time.Minute),
-		CreatedAt: time.Now().UTC(),
-	}, nil)
-
-	s.sendEmailVerificationServiceMock.On("Execute", mock.Anything, mock.MatchedBy(func(input interface{}) bool {
-		if sei, ok := input.(service.SendEmailVerificationCodeInput); ok {
-			capturedCode = sei.Code
-			return sei.UserID == user.ID && len(sei.Code) == 6
-		}
-		return false
-	})).Return(nil)
-
-	// Act
-	output, err := s.sut.Execute(ctx, input)
-
-	// Assert
-	s.Require().NoError(err)
-	s.Equal(user.ID, output.UserID)
-	s.Len(capturedCode, 6)
-	s.Regexp(`^\d{6}$`, capturedCode) // Verify it's 6 digits
 }
