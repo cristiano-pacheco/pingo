@@ -22,11 +22,9 @@ func newConsumer(config Config, topic, groupID string) Consumer {
 	return &consumer{
 		config: config,
 		reader: kafka.NewReader(kafka.ReaderConfig{
-			Brokers:  config.Address,
-			GroupID:  groupID,
-			Topic:    topic,
-			MinBytes: 10e3, // 10KB
-			MaxBytes: 10e6, // 10MB
+			Brokers: config.Address,
+			GroupID: groupID,
+			Topic:   topic,
 		}),
 	}
 }
@@ -64,7 +62,7 @@ func (c *consumer) Consume(ctx context.Context, handler MessageHandler) error {
 			Time:          rawMessage.Time,
 		}
 
-		if err := handler(ctx, message); err != nil {
+		if err = handler(ctx, message); err != nil {
 			// TODO: implement DLQ
 			return err
 		}

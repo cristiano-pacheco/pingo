@@ -133,7 +133,8 @@ func (s *UserCreatedConsumerTestSuite) TestProcessMessage_ValidMessage_Processes
 	s.sendEmailConfirmationService.On("Execute", mock.Anything, mock.MatchedBy(func(input service.SendEmailConfirmationInput) bool {
 		return input.UserModel.ID == user.ID &&
 			string(input.ConfirmationTokenHash) == string(tokenBytes)
-	})).Return(nil)
+	})).
+		Return(nil)
 
 	// Act
 	err = s.sut.ProcessMessage(ctx, message)
@@ -277,7 +278,8 @@ func (s *UserCreatedConsumerTestSuite) TestProcessMessage_OneTimeTokenCreationFa
 	// Mock expectations
 	s.userRepository.On("FindByID", mock.Anything, userID).Return(user, nil)
 	s.hashService.On("GenerateRandomBytes").Return(tokenBytes, nil)
-	s.oneTimeTokenRepository.On("Create", mock.Anything, mock.AnythingOfType("model.OneTimeTokenModel")).Return(model.OneTimeTokenModel{}, tokenCreationError)
+	s.oneTimeTokenRepository.On("Create", mock.Anything, mock.AnythingOfType("model.OneTimeTokenModel")).
+		Return(model.OneTimeTokenModel{}, tokenCreationError)
 
 	// Act
 	err = s.sut.ProcessMessage(ctx, message)
@@ -326,7 +328,8 @@ func (s *UserCreatedConsumerTestSuite) TestProcessMessage_SendEmailConfirmationF
 	// Mock expectations
 	s.userRepository.On("FindByID", mock.Anything, userID).Return(user, nil)
 	s.hashService.On("GenerateRandomBytes").Return(tokenBytes, nil)
-	s.oneTimeTokenRepository.On("Create", mock.Anything, mock.AnythingOfType("model.OneTimeTokenModel")).Return(createdToken, nil)
+	s.oneTimeTokenRepository.On("Create", mock.Anything, mock.AnythingOfType("model.OneTimeTokenModel")).
+		Return(createdToken, nil)
 	s.sendEmailConfirmationService.On("Execute", mock.Anything, mock.Anything).Return(emailError)
 
 	// Act

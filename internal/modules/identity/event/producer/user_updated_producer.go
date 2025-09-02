@@ -27,6 +27,7 @@ func NewUserUpdatedProducer(lc fx.Lifecycle,
 ) UserUpdatedProducer {
 	p := userUpdatedProducer{
 		producer: kafkaBuilder.BuildProducer(event.IdentityUserUpdatedTopic),
+		otel:     otel,
 	}
 
 	lc.Append(fx.Hook{

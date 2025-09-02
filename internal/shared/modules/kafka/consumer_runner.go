@@ -2,6 +2,7 @@ package kafka
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/logger"
@@ -52,7 +53,7 @@ func NewConsumerRunner(
 				logger.Info().Msgf("Starting consumer %s...", consumerName)
 
 				if err := runner.Run(ctx); err != nil {
-					if err == context.Canceled {
+					if errors.Is(err, context.Canceled) {
 						logger.Info().Msgf("Consumer %s stopped gracefully", consumerName)
 					} else {
 						logger.Error().Msgf("Consumer %s stopped with error: %v", consumerName, err)
