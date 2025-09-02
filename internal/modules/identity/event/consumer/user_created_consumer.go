@@ -11,16 +11,13 @@ import (
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/model"
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/repository"
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/service"
-	"github.com/cristiano-pacheco/pingo/internal/shared/modules/kafka"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/logger"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/otel"
-	pkgkafka "github.com/cristiano-pacheco/pingo/pkg/kafka"
-	"go.uber.org/fx"
+	"github.com/cristiano-pacheco/pingo/pkg/kafka"
 )
 
 const accountConfirmationTokenExpiration = 24 * time.Hour
 
-// UserCreatedConsumer handles user creation events
 type UserCreatedConsumer struct {
 	sendEmailConfirmationService service.SendEmailConfirmationService
 	oneTimeTokenRepository       repository.OneTimeTokenRepository
@@ -30,18 +27,15 @@ type UserCreatedConsumer struct {
 	otel                         otel.Otel
 }
 
-// NewUserCreatedConsumer creates a new user created event consumer using the decorator pattern
 func NewUserCreatedConsumer(
 	sendEmailConfirmationService service.SendEmailConfirmationService,
 	oneTimeTokenRepository repository.OneTimeTokenRepository,
 	userRepository repository.UserRepository,
 	hashService service.HashService,
-	kafkaBuilder pkgkafka.Builder,
 	logger logger.Logger,
-	lc fx.Lifecycle,
 	otel otel.Otel,
-) *kafka.ConsumerDecorator {
-	userConsumer := &UserCreatedConsumer{
+) *UserCreatedConsumer {
+	return &UserCreatedConsumer{
 		sendEmailConfirmationService: sendEmailConfirmationService,
 		oneTimeTokenRepository:       oneTimeTokenRepository,
 		userRepository:               userRepository,
@@ -49,21 +43,18 @@ func NewUserCreatedConsumer(
 		logger:                       logger,
 		otel:                         otel,
 	}
-
-	consumer := kafkaBuilder.BuildConsumer(event.IdentityUserCreatedTopic, "default")
-
-	return kafka.NewConsumerDecorator(
-		consumer,
-		userConsumer.processMessage,
-		"identity.user.created",
-		logger,
-		otel,
-		lc,
-	)
 }
 
-func (c *UserCreatedConsumer) processMessage(ctx context.Context, message pkgkafka.Message) error {
-	ctx, span := c.otel.StartSpan(ctx, "UserCreatedConsumer.handleMessage")
+func (c *UserCreatedConsumer) Topic() string {
+	return event.IdentityUserCreatedTopic
+}
+
+func (c *UserCreatedConsumer) GroupID() string {
+	return "default"
+}
+
+func (c *UserCreatedConsumer) ProcessMessage(ctx context.Context, message kafka.Message) error {
+	ctx, span := c.otel.StartSpan(ctx, "UserCreatedConsumer.ProcessMessage")
 	defer span.End()
 
 	var userCreatedMessage event.UserCreatedMessage

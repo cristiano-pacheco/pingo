@@ -10,6 +10,10 @@ import (
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/service"
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/usecase"
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/validator"
+	shared_kafka "github.com/cristiano-pacheco/pingo/internal/shared/modules/kafka"
+	"github.com/cristiano-pacheco/pingo/internal/shared/modules/logger"
+	"github.com/cristiano-pacheco/pingo/internal/shared/modules/otel"
+	"github.com/cristiano-pacheco/pingo/pkg/kafka"
 	"go.uber.org/fx"
 )
 
@@ -41,10 +45,23 @@ var Module = fx.Module(
 		producer.NewUserAuthenticatedProducer,
 		producer.NewUserCreatedProducer,
 		producer.NewUserUpdatedProducer,
+
+		consumer.NewUserCreatedConsumer,
 	),
 	fx.Invoke(
 		router.SetupUserRoutes,
 		router.SetupAuthRoutes,
 		consumer.NewUserCreatedConsumer,
+		registerConsumerRunners,
 	),
 )
+
+func registerConsumerRunners(
+	builder kafka.Builder,
+	logger logger.Logger,
+	otel otel.Otel,
+	lc fx.Lifecycle,
+	userCreatedConsumer *consumer.UserCreatedConsumer,
+) {
+	shared_kafka.NewConsumerRunner(builder, userCreatedConsumer, logger, otel, lc)
+}
