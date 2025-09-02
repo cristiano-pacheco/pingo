@@ -41,12 +41,10 @@ var Module = fx.Module(
 		producer.NewUserAuthenticatedProducer,
 		producer.NewUserCreatedProducer,
 		producer.NewUserUpdatedProducer,
-
-		consumer.NewUserCreatedConsumer,
 	),
 	fx.Invoke(
 		router.SetupUserRoutes,
 		router.SetupAuthRoutes,
-		func(*consumer.UserCreatedConsumer) {}, // Invoke to ensure consumer is started
+		consumer.NewUserCreatedConsumer,
 	),
 )
