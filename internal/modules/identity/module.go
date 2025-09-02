@@ -47,6 +47,7 @@ var Module = fx.Module(
 		producer.NewUserUpdatedProducer,
 
 		consumer.NewUserCreatedConsumer,
+		consumer.NewUserAuthenticatedConsumer,
 	),
 	fx.Invoke(
 		router.SetupUserRoutes,
@@ -62,6 +63,8 @@ func registerConsumerRunners(
 	otel otel.Otel,
 	lc fx.Lifecycle,
 	userCreatedConsumer *consumer.UserCreatedConsumer,
+	userAuthenticatedConsumer *consumer.UserAuthenticatedConsumer,
 ) {
 	shared_kafka.NewConsumerRunner(builder, userCreatedConsumer, logger, otel, lc)
+	shared_kafka.NewConsumerRunner(builder, userAuthenticatedConsumer, logger, otel, lc)
 }
