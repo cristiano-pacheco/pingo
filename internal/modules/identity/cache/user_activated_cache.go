@@ -36,14 +36,24 @@ func (c *userActivatedCache) Set(userID uint64) error {
 	key := c.buildKey(userID)
 	ctx := context.Background()
 
-	return c.redisClient.Client().Set(ctx, key, "1", cacheTTL).Err()
+	client := c.redisClient.Client()
+	if client == nil {
+		return errors.New("redis client is nil")
+	}
+
+	return client.Set(ctx, key, "1", cacheTTL).Err()
 }
 
 func (c *userActivatedCache) Get(userID uint64) (bool, error) {
 	key := c.buildKey(userID)
 	ctx := context.Background()
 
-	result := c.redisClient.Client().Get(ctx, key)
+	client := c.redisClient.Client()
+	if client == nil {
+		return false, errors.New("redis client is nil")
+	}
+
+	result := client.Get(ctx, key)
 	if err := result.Err(); err != nil {
 		if errors.Is(err, redisClient.Nil) {
 			return false, nil // Key does not exist, user is not activated
@@ -58,7 +68,12 @@ func (c *userActivatedCache) Delete(userID uint64) error {
 	key := c.buildKey(userID)
 	ctx := context.Background()
 
-	return c.redisClient.Client().Del(ctx, key).Err()
+	client := c.redisClient.Client()
+	if client == nil {
+		return errors.New("redis client is nil")
+	}
+
+	return client.Del(ctx, key).Err()
 }
 
 func (c *userActivatedCache) buildKey(userID uint64) string {
