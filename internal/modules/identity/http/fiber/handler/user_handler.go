@@ -135,7 +135,8 @@ func (h *UserHandler) ActivateUser(c *fiber.Ctx) error {
 	}
 
 	input := usecase.UserActivateInput{
-		Token: activateUserRequest.Token,
+		Token:  activateUserRequest.Token,
+		UserID: activateUserRequest.UserID,
 	}
 
 	err := h.userActivateUseCase.Execute(ctx, input)
