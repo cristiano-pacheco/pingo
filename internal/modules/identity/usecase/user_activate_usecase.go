@@ -9,6 +9,7 @@ import (
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/cache"
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/enum"
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/errs"
+	"github.com/cristiano-pacheco/pingo/internal/modules/identity/model"
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/repository"
 	shared_errs "github.com/cristiano-pacheco/pingo/internal/shared/errs"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/logger"
@@ -57,36 +58,14 @@ func (uc *UserActivateUseCase) Execute(ctx context.Context, input UserActivateIn
 		return err
 	}
 
-	token, err := base64.StdEncoding.DecodeString(input.Token)
+	user, err := uc.validateUserAndToken(ctx, input)
 	if err != nil {
-		uc.logger.Error().Msgf("Failed to decode token: %v", err)
 		return err
-	}
-
-	user, err := uc.userRepository.FindByID(ctx, input.UserID)
-	if err != nil && !errors.Is(err, shared_errs.ErrRecordNotFound) {
-		uc.logger.Error().
-			Msgf("Failed to find user with confirmation token for the user_id: %d, error: %v", user.ID, err)
-		return err
-	}
-
-	if user.Status != enum.UserStatusPending {
-		return errs.ErrUserNotInPendingStatus
 	}
 
 	confirmationTokenType, err := enum.NewTokenTypeEnum(enum.TokenTypeAccountConfirmation)
 	if err != nil {
 		return err
-	}
-
-	oneTimeToken, err := uc.oneTimeTokenRepository.Find(ctx, user.ID, confirmationTokenType)
-	if err != nil {
-		uc.logger.Error().Msgf("Failed to find one-time token for the user_id: %d, error: %v", user.ID, err)
-		return err
-	}
-
-	if oneTimeToken.ID == 0 || string(oneTimeToken.TokenHash) != string(token) {
-		return errs.ErrInvalidAccountConfirmationToken
 	}
 
 	now := time.Now().UTC()
@@ -113,4 +92,43 @@ func (uc *UserActivateUseCase) Execute(ctx context.Context, input UserActivateIn
 	}
 
 	return nil
+}
+
+func (uc *UserActivateUseCase) validateUserAndToken(
+	ctx context.Context,
+	input UserActivateInput,
+) (model.UserModel, error) {
+	token, err := base64.StdEncoding.DecodeString(input.Token)
+	if err != nil {
+		uc.logger.Error().Msgf("Failed to decode token: %v", err)
+		return model.UserModel{}, err
+	}
+
+	user, err := uc.userRepository.FindByID(ctx, input.UserID)
+	if err != nil && !errors.Is(err, shared_errs.ErrRecordNotFound) {
+		uc.logger.Error().
+			Msgf("Failed to find user with confirmation token for the user_id: %d, error: %v", user.ID, err)
+		return model.UserModel{}, err
+	}
+
+	if user.Status != enum.UserStatusPending {
+		return model.UserModel{}, errs.ErrUserNotInPendingStatus
+	}
+
+	confirmationTokenType, err := enum.NewTokenTypeEnum(enum.TokenTypeAccountConfirmation)
+	if err != nil {
+		return model.UserModel{}, err
+	}
+
+	oneTimeToken, err := uc.oneTimeTokenRepository.Find(ctx, user.ID, confirmationTokenType)
+	if err != nil {
+		uc.logger.Error().Msgf("Failed to find one-time token for the user_id: %d, error: %v", user.ID, err)
+		return model.UserModel{}, err
+	}
+
+	if oneTimeToken.ID == 0 || string(oneTimeToken.TokenHash) != string(token) {
+		return model.UserModel{}, errs.ErrInvalidAccountConfirmationToken
+	}
+
+	return user, nil
 }
