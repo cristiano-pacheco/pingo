@@ -1,6 +1,7 @@
 package identity
 
 import (
+	"github.com/cristiano-pacheco/pingo/internal/modules/identity/cache"
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/event/consumer"
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/event/producer"
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/http/fiber/handler"
@@ -31,8 +32,11 @@ var Module = fx.Module(
 		service.NewEmailTemplateService,
 		service.NewTokenService,
 		service.NewHashService,
+		service.NewUserActivationService,
 
 		validator.NewPasswordValidator,
+
+		cache.NewUserActivatedCache,
 
 		usecase.NewUserActivateUseCase,
 		usecase.NewUserCreateUseCase,

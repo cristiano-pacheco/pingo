@@ -6,6 +6,7 @@ import (
 	"errors"
 	"time"
 
+	"github.com/cristiano-pacheco/pingo/internal/modules/identity/cache"
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/enum"
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/errs"
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/repository"
@@ -23,6 +24,7 @@ type UserActivateInput struct {
 type UserActivateUseCase struct {
 	oneTimeTokenRepository repository.OneTimeTokenRepository
 	userRepository         repository.UserRepository
+	userActivatedCache     cache.UserActivatedCache
 	validate               validator.Validate
 	logger                 logger.Logger
 	otel                   otel.Otel
@@ -31,6 +33,7 @@ type UserActivateUseCase struct {
 func NewUserActivateUseCase(
 	oneTimeTokenRepository repository.OneTimeTokenRepository,
 	userRepository repository.UserRepository,
+	userActivatedCache cache.UserActivatedCache,
 	validate validator.Validate,
 	logger logger.Logger,
 	otel otel.Otel,
@@ -38,6 +41,7 @@ func NewUserActivateUseCase(
 	return &UserActivateUseCase{
 		oneTimeTokenRepository: oneTimeTokenRepository,
 		userRepository:         userRepository,
+		userActivatedCache:     userActivatedCache,
 		validate:               validate,
 		logger:                 logger,
 		otel:                   otel,
@@ -99,6 +103,13 @@ func (uc *UserActivateUseCase) Execute(ctx context.Context, input UserActivateIn
 	if err != nil {
 		uc.logger.Error().Msgf("Failed to delete one-time token for the user_id: %d, error: %v", user.ID, err)
 		return err
+	}
+
+	// Set user as activated in cache for fast lookup
+	err = uc.userActivatedCache.Set(user.ID)
+	if err != nil {
+		// Log the error but don't fail the request since the user is already activated in the database
+		uc.logger.Warn().Msgf("Failed to set user in activation cache for user_id: %d, error: %v", user.ID, err)
 	}
 
 	return nil
