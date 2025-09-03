@@ -406,7 +406,8 @@ func (s *UserAuthenticatedConsumerTestSuite) TestProcessMessage_GeneratesValidVe
 	s.sendEmailVerificationCodeService.On("Execute", mock.Anything, mock.AnythingOfType("service.SendEmailVerificationCodeInput")).
 		Run(func(args mock.Arguments) {
 			*capturedInput = args.Get(1).(service.SendEmailVerificationCodeInput)
-		}).Return(nil)
+		}).
+		Return(nil)
 
 	// Act
 	err = s.sut.ProcessMessage(ctx, message)

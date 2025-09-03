@@ -92,7 +92,9 @@ func (s *UserActivationServiceTestSuite) TestIsUserActivated_UserNotFound_Return
 	// Arrange
 	userID := uint64(999)
 
-	s.mockUserRepository.EXPECT().FindByID(context.Background(), userID).Return(model.UserModel{}, shared_errs.ErrRecordNotFound)
+	s.mockUserRepository.EXPECT().
+		FindByID(context.Background(), userID).
+		Return(model.UserModel{}, shared_errs.ErrRecordNotFound)
 
 	// Act
 	isActivated, err := s.sut.IsUserActivated(context.Background(), userID)
