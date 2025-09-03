@@ -10,6 +10,7 @@ import (
 
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/errs"
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/repository"
+	"github.com/cristiano-pacheco/pingo/internal/modules/identity/service"
 	internal_jwt "github.com/cristiano-pacheco/pingo/internal/shared/modules/jwt"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/logger"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/registry"
@@ -17,10 +18,10 @@ import (
 )
 
 type AuthMiddleware struct {
-	jwtParser          *jwt.Parser
-	logger             logger.Logger
-	privateKeyRegistry registry.PrivateKeyRegistry
-	userRepository     repository.UserRepository
+	jwtParser             *jwt.Parser
+	logger                logger.Logger
+	privateKeyRegistry    registry.PrivateKeyRegistry
+	userActivationService service.UserActivationService
 }
 
 func NewAuthMiddleware(
@@ -63,7 +64,7 @@ func (m *AuthMiddleware) Middleware() fiber.Handler {
 		}
 
 		ctx := c.UserContext()
-		isActivated, err := m.userRepository.IsUserActivated(ctx, userID)
+		isActivated, err := m.userActivationService.IsUserActivated(ctx, userID)
 		if err != nil {
 			return err
 		}
