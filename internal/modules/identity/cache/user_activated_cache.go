@@ -2,6 +2,7 @@ package cache
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strconv"
 	"time"
@@ -44,7 +45,7 @@ func (c *userActivatedCache) Get(userID uint64) (bool, error) {
 
 	result := c.redisClient.Client().Get(ctx, key)
 	if err := result.Err(); err != nil {
-		if err == redisClient.Nil {
+		if errors.Is(err, redisClient.Nil) {
 			return false, nil // Key does not exist, user is not activated
 		}
 		return false, err
