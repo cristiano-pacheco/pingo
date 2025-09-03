@@ -116,5 +116,6 @@ func (c *UserAuthenticatedConsumer) ProcessMessage(ctx context.Context, message 
 		return err
 	}
 
+	c.logger.Info().Msgf("Successfully processed user authenticated event for user ID: %d", userAuthenticatedMessage.UserID)
 	return nil
 }
