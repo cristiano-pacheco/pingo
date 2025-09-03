@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 
+	cache_mocks "github.com/cristiano-pacheco/pingo/internal/modules/identity/cache/mocks"
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/enum"
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/errs"
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/model"
@@ -27,6 +28,7 @@ type UserActivateUseCaseTestSuite struct {
 	sut                        *usecase.UserActivateUseCase
 	oneTimeTokenRepositoryMock *repository_mocks.MockOneTimeTokenRepository
 	userRepositoryMock         *repository_mocks.MockUserRepository
+	userActivatedCacheMock     *cache_mocks.MockUserActivatedCache
 	validateMock               *validator_mocks.MockValidate
 	logger                     logger.Logger
 	cfg                        config.Config
@@ -56,12 +58,14 @@ func (s *UserActivateUseCaseTestSuite) SetupTest() {
 
 	s.oneTimeTokenRepositoryMock = repository_mocks.NewMockOneTimeTokenRepository(s.T())
 	s.userRepositoryMock = repository_mocks.NewMockUserRepository(s.T())
+	s.userActivatedCacheMock = cache_mocks.NewMockUserActivatedCache(s.T())
 	s.validateMock = validator_mocks.NewMockValidate(s.T())
 	s.logger = logger.New(s.cfg)
 
 	s.sut = usecase.NewUserActivateUseCase(
 		s.oneTimeTokenRepositoryMock,
 		s.userRepositoryMock,
+		s.userActivatedCacheMock,
 		s.validateMock,
 		s.logger,
 		s.otel,
@@ -103,6 +107,7 @@ func (s *UserActivateUseCaseTestSuite) TestExecute_ValidInput_ReturnsSuccess() {
 	s.oneTimeTokenRepositoryMock.On("Find", mock.Anything, userID, confirmationTokenType).Return(oneTimeToken, nil)
 	s.userRepositoryMock.On("Update", mock.Anything, mock.AnythingOfType("model.UserModel")).Return(nil)
 	s.oneTimeTokenRepositoryMock.On("Delete", mock.Anything, userID, confirmationTokenType).Return(nil)
+	s.userActivatedCacheMock.On("Set", userID).Return(nil)
 
 	// Act
 	err := s.sut.Execute(ctx, input)
@@ -422,6 +427,49 @@ func (s *UserActivateUseCaseTestSuite) TestExecute_UserFoundButRecordNotFoundErr
 	s.oneTimeTokenRepositoryMock.On("Find", mock.Anything, userID, confirmationTokenType).Return(oneTimeToken, nil)
 	s.userRepositoryMock.On("Update", mock.Anything, mock.AnythingOfType("model.UserModel")).Return(nil)
 	s.oneTimeTokenRepositoryMock.On("Delete", mock.Anything, userID, confirmationTokenType).Return(nil)
+	s.userActivatedCacheMock.On("Set", userID).Return(nil)
+
+	// Act
+	err := s.sut.Execute(ctx, input)
+
+	// Assert
+	s.NoError(err)
+}
+
+func (s *UserActivateUseCaseTestSuite) TestExecute_CacheSetError_DoesNotFailExecution() {
+	// Arrange
+	ctx := context.Background()
+	userID := uint64(123)
+	token := "valid-token"
+	encodedToken := base64.StdEncoding.EncodeToString([]byte(token))
+
+	input := usecase.UserActivateInput{
+		UserID: userID,
+		Token:  encodedToken,
+	}
+
+	user := model.UserModel{
+		ID:     userID,
+		Status: enum.UserStatusPending,
+	}
+
+	confirmationTokenType, _ := enum.NewTokenTypeEnum(enum.TokenTypeAccountConfirmation)
+	oneTimeToken := model.OneTimeTokenModel{
+		ID:        1,
+		UserID:    userID,
+		TokenHash: []byte(token),
+		TokenType: confirmationTokenType.String(),
+		ExpiresAt: time.Now().Add(time.Hour),
+	}
+
+	cacheError := errors.New("cache error")
+
+	s.validateMock.On("Struct", input).Return(nil)
+	s.userRepositoryMock.On("FindByID", mock.Anything, userID).Return(user, nil)
+	s.oneTimeTokenRepositoryMock.On("Find", mock.Anything, userID, confirmationTokenType).Return(oneTimeToken, nil)
+	s.userRepositoryMock.On("Update", mock.Anything, mock.AnythingOfType("model.UserModel")).Return(nil)
+	s.oneTimeTokenRepositoryMock.On("Delete", mock.Anything, userID, confirmationTokenType).Return(nil)
+	s.userActivatedCacheMock.On("Set", userID).Return(cacheError)
 
 	// Act
 	err := s.sut.Execute(ctx, input)
