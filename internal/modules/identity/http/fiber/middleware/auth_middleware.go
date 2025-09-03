@@ -9,7 +9,6 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/errs"
-	"github.com/cristiano-pacheco/pingo/internal/modules/identity/repository"
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/service"
 	internal_jwt "github.com/cristiano-pacheco/pingo/internal/shared/modules/jwt"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/logger"
@@ -18,23 +17,23 @@ import (
 )
 
 type AuthMiddleware struct {
-	jwtParser             *jwt.Parser
-	logger                logger.Logger
 	privateKeyRegistry    registry.PrivateKeyRegistry
 	userActivationService service.UserActivationService
+	jwtParser             *jwt.Parser
+	logger                logger.Logger
 }
 
 func NewAuthMiddleware(
+	privateKeyRegistry registry.PrivateKeyRegistry,
+	userActivationService service.UserActivationService,
 	jwtParser *jwt.Parser,
 	logger logger.Logger,
-	privateKeyRegistry registry.PrivateKeyRegistry,
-	userRepository repository.UserRepository,
 ) *AuthMiddleware {
 	return &AuthMiddleware{
+		privateKeyRegistry,
+		userActivationService,
 		jwtParser,
 		logger,
-		privateKeyRegistry,
-		userRepository,
 	}
 }
 
