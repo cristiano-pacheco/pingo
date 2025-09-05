@@ -2,6 +2,12 @@
 SHELL_PATH = /bin/ash
 SHELL = $(if $(wildcard $(SHELL_PATH)),/bin/ash,/bin/bash)
 
+# Load environment variables from .env file if it exists
+ifneq (,$(wildcard ./.env))
+    include .env
+    export
+endif
+
 .PHONY: all
 all: install-libs lint test cover
 
@@ -51,7 +57,7 @@ test:
 
 .PHONY: test-integration
 test-integration:
-	CGO_ENABLED=0 go test -v ./test/integration/...
+	CGO_ENABLED=0 go test -v -race -timeout=30s -tags=integration ./test/integration/...
 
 .PHONY: cover
 cover:
