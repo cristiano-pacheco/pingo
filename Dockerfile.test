@@ -1,0 +1,15 @@
+FROM golang:1.25.1
+
+WORKDIR /src
+
+# Copy everything but defined in docker ignore file
+COPY . .
+
+# Download dependencies
+RUN go mod vendor
+
+# Set environment variables for integration tests
+ENV APP_BASE_URL=http://host.docker.internal:9000
+ENV CGO_ENABLED=0
+
+CMD [ "go", "test", "-v", "-race", "-timeout=30s", "-tags=integration", "./test/integration/..." ]
