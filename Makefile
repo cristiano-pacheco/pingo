@@ -57,7 +57,7 @@ test:
 
 .PHONY: test-integration
 test-integration:
-	CGO_ENABLED=0 go test -v -race -timeout=30s -tags=integration ./test/integration/...
+	APP_BASE_URL=http://localhost:9000 CGO_ENABLED=0 go test -v -race -timeout=30s -tags=integration ./test/integration/...
 
 .PHONY: cover
 cover:
