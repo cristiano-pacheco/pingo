@@ -1,0 +1,54 @@
+# Ignore version control
+.git
+.gitignore
+
+# Ignore documentation (but keep docs/ directory for swagger)
+README.md
+docs/project/
+docs/*.md
+*.md
+
+# Ignore test files
+*_test.go
+test/
+coverage.out
+reports/
+
+# Ignore build artifacts
+build/
+dist/
+bin/
+
+# Ignore vendor directory (we use go mod download instead)
+vendor/
+
+# Ignore IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Ignore OS files
+.DS_Store
+Thumbs.db
+
+# Ignore Docker files
+Dockerfile*
+docker-compose*.yml
+docker-compose*.yaml
+
+# Ignore CI/CD files
+.github/
+.gitlab-ci.yml
+codecov.yml
+
+# Ignore config files that shouldn't be in container
+config/prometheus.yml
+
+# Ignore development files
+Makefile
+.env*
+
+# Ignore logs
+*.log
+logs/
