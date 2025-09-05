@@ -389,3 +389,4 @@ linters:
           - noctx
           - wrapcheck
           - testifylint
+          - revive
