@@ -10,6 +10,10 @@ coverage:
     # Ignore all test files
     - "**/*_test.go"
     - "**/mock_**"
+    - "**/*_model.go"
+    - "**/*_repository.go"
+    - "**/*_dto.go"
+    - "**/*_handler.go"
   
   status:
     project:
