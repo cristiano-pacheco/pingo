@@ -14,7 +14,7 @@ coverage:
     - "**/*_repository.go"
     - "**/*_dto.go"
     - "**/*_handler.go"
-    - "shared/**"
+    - "internal/shared/**"
   
   status:
     project:
