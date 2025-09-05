@@ -1,6 +1,7 @@
 coverage:
   ignore:
     # Ignore specific folders
+    - "main.go"
     - "cmd/**"
     - "docs/**"
     - "config/**"
@@ -8,6 +9,7 @@ coverage:
     - "vendor/**"
     # Ignore all test files
     - "**/*_test.go"
+    - "**/mock_**"
   
   status:
     project:
