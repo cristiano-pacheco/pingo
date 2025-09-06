@@ -17,6 +17,7 @@ import (
 )
 
 func TestUserCreateSuccess(t *testing.T) {
+	// Arrange
 	apiURL := os.Getenv("APP_BASE_URL")
 	url := apiURL + "/api/v1/users"
 
@@ -40,6 +41,7 @@ func TestUserCreateSuccess(t *testing.T) {
 
 	client := &http.Client{}
 
+	// Act
 	resp, err := client.Do(req)
 	require.NoError(t, err)
 
@@ -48,6 +50,7 @@ func TestUserCreateSuccess(t *testing.T) {
 	resbody, err := io.ReadAll(resp.Body)
 	require.NoError(t, err)
 
+	// Assert
 	require.Equal(t, http.StatusCreated, resp.StatusCode)
 
 	// Parse and check response structure
@@ -63,9 +66,8 @@ func TestUserCreateSuccess(t *testing.T) {
 	err = json.Unmarshal(resbody, &response)
 	require.NoError(t, err)
 
-	// Verify response data
 	assert.Equal(t, "cristiano", response.Data.FirstName)
 	assert.Equal(t, "pacheco", response.Data.LastName)
 	assert.Equal(t, email, response.Data.Email)
-	assert.Greater(t, response.Data.UserID, 0) // Should have a valid user ID
+	assert.Greater(t, response.Data.UserID, 0)
 }
