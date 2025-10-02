@@ -4,9 +4,11 @@ CREATE TABLE IF NOT EXISTS notifications (
     contact_id BIGINT NOT NULL,
     notification_type VARCHAR(50) NOT NULL, -- 'failure', 'recovery', 'maintenance'
     message TEXT NOT NULL,
-    sent_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    sent_at TIMESTAMP ,
     status VARCHAR(50) NOT NULL DEFAULT 'pending', -- 'pending', 'sent', 'failed'
     error_message TEXT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW()
     CONSTRAINT fk_notification_monitor FOREIGN KEY (http_monitor_id) REFERENCES http_monitors(id) ON DELETE CASCADE,
     CONSTRAINT fk_notification_contact FOREIGN KEY (contact_id) REFERENCES contacts(id) ON DELETE CASCADE
 );
