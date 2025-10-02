@@ -2,6 +2,7 @@ package config
 
 import (
 	"log/slog"
+	"os"
 	"strings"
 
 	"github.com/spf13/viper"
@@ -25,6 +26,7 @@ type Config struct {
 const EnvProduction = "production"
 const EnvDevelopment = "development"
 const EnvStaging = "staging"
+const EnvIntegration = "integration"
 
 var _global Config
 
@@ -35,8 +37,14 @@ func Init() {
 	v.AutomaticEnv()
 	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 
-	// Configure to read from .env file
-	v.SetConfigName(".env")
+	// Determine config file based on environment
+	configFile := ".env"
+	if isIntegrationEnvironment() {
+		configFile = ".env.integration"
+	}
+
+	// Configure to read from config file
+	v.SetConfigName(configFile)
 	v.SetConfigType("env")
 	v.AddConfigPath(".")
 
@@ -62,4 +70,19 @@ func GetConfig() Config {
 
 func (c *Config) IsProduction() bool {
 	return c.Environment == "production"
+}
+
+func (c *Config) IsIntegration() bool {
+	return c.Environment == "integration"
+}
+
+// isIntegrationEnvironment checks if we're running in integration test mode
+// This checks for the TEST_ENV environment variable or if we're running with integration build tags
+func isIntegrationEnvironment() bool {
+	// Check if ENVIRONMENT is explicitly set to integration
+	if env := os.Getenv("ENVIRONMENT"); env == "integration" {
+		return true
+	}
+
+	return false
 }
