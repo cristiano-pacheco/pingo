@@ -12,6 +12,7 @@ import (
 
 type ContactRepository interface {
 	FindAll(ctx context.Context) ([]model.ContactModel, error)
+	FindByName(ctx context.Context, name string) (model.ContactModel, error)
 	Create(ctx context.Context, contact model.ContactModel) (model.ContactModel, error)
 	Update(ctx context.Context, contact model.ContactModel) (model.ContactModel, error)
 	Delete(ctx context.Context, contactID uint64) error
@@ -35,6 +36,22 @@ func (r *contactRepository) FindAll(ctx context.Context) ([]model.ContactModel, 
 		return nil, err
 	}
 	return contacts, nil
+}
+
+func (r *contactRepository) FindByName(ctx context.Context, name string) (model.ContactModel, error) {
+	ctx, otelSpan := r.otel.StartSpan(ctx, "ContactRepository.FindByName")
+	defer otelSpan.End()
+
+	contact, err := gorm.G[model.ContactModel](r.DB).
+		Where("name = ?", name).
+		First(ctx)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return model.ContactModel{}, errs.ErrRecordNotFound
+		}
+		return model.ContactModel{}, err
+	}
+	return contact, nil
 }
 
 func (r *contactRepository) Create(ctx context.Context, contact model.ContactModel) (model.ContactModel, error) {
