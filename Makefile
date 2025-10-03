@@ -72,7 +72,6 @@ update-mocks:
 .PHONY: update-swagger
 update-swagger:
 	go install github.com/swaggo/swag/cmd/swag@latest
-	swag fmt -d swagger
 	swag i --parseDependency
 
 # ==============================================================================
