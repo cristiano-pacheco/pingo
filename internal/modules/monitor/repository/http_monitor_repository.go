@@ -17,6 +17,7 @@ type HTTPMonitorRepository interface {
 	Create(ctx context.Context, monitor model.HTTPMonitorModel) (model.HTTPMonitorModel, error)
 	Update(ctx context.Context, monitor model.HTTPMonitorModel) (model.HTTPMonitorModel, error)
 	Delete(ctx context.Context, monitorID uint64) error
+	AssignContacts(ctx context.Context, monitorID uint64, contactIDs []uint64) error
 }
 
 type httpMonitorRepository struct {
@@ -103,5 +104,42 @@ func (r *httpMonitorRepository) Delete(ctx context.Context, monitorID uint64) er
 	if rowsAffected == 0 {
 		return errs.ErrRecordNotFound
 	}
+	return nil
+}
+
+func (r *httpMonitorRepository) AssignContacts(ctx context.Context, monitorID uint64, contactIDs []uint64) error {
+	ctx, otelSpan := r.otel.StartSpan(ctx, "HTTPMonitorRepository.AssignContacts")
+	defer otelSpan.End()
+
+	// start a transaction
+	tx := r.DB.Begin()
+
+	_, err := gorm.G[model.HTTPMonitorContactModel](tx).
+		Where("http_monitor_id = ?", monitorID).
+		Delete(ctx)
+
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	var monitorContacts []model.HTTPMonitorContactModel
+	for _, contactID := range contactIDs {
+		monitorContacts = append(monitorContacts, model.HTTPMonitorContactModel{
+			HTTPMonitorID: monitorID,
+			ContactID:     contactID,
+		})
+	}
+
+	err = gorm.G[model.HTTPMonitorContactModel](tx).CreateInBatches(ctx, &monitorContacts, len(monitorContacts))
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		return err
+	}
+
 	return nil
 }
