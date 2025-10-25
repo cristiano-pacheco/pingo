@@ -1,4 +1,4 @@
-//go:build integration
+//go:build e2e
 
 package identity_test
 
@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"net/http"
 	"strings"
 	"testing"
 	"time"
@@ -18,31 +17,26 @@ import (
 
 func TestUserCreateSuccess(t *testing.T) {
 	// Arrange
-	apiURL := test.GetAPIBaseUrl()
-	url := apiURL + "/api/v1/users"
+	url := "/api/v1/users"
 
 	// Generate unique email for this test run
 	timestamp := time.Now().UnixNano()
 	email := fmt.Sprintf("test%d@gmail.com", timestamp)
 
 	// Create request body
-	requestBody := fmt.Sprintf(`{
+	requestBody := map[string]interface{}{
 		"first_name": "cristiano",
-		"last_name": "pacheco",
-		"email": "%s",
-		"password": "Ci@23456789"
-	}`, email)
+		"last_name":  "pacheco",
+		"email":      email,
+		"password":   "Ci@23456789",
+	}
 
-	req, err := http.NewRequest(http.MethodPost, url, strings.NewReader(requestBody))
-	require.NoError(t, err)
-
-	req.Header.Set("Accept", "application/json")
-	req.Header.Set("Content-Type", "application/json")
-
-	client := &http.Client{}
+	headers := map[string]string{
+		"Accept": "application/json",
+	}
 
 	// Act
-	resp, err := client.Do(req)
+	resp, err := test.MakeRequest("POST", url, requestBody, headers)
 	require.NoError(t, err)
 
 	defer resp.Body.Close()
@@ -51,7 +45,7 @@ func TestUserCreateSuccess(t *testing.T) {
 	require.NoError(t, err)
 
 	// Assert
-	require.Equal(t, http.StatusCreated, resp.StatusCode)
+	require.Equal(t, 201, resp.StatusCode)
 
 	// Parse and check response structure
 	var response struct {
@@ -73,223 +67,217 @@ func TestUserCreateSuccess(t *testing.T) {
 }
 
 func TestUserCreateValidation(t *testing.T) {
-	apiURL := test.GetAPIBaseUrl()
-	url := apiURL + "/api/v1/users"
+	url := "/api/v1/users"
 
 	testCases := []struct {
 		name               string
-		requestBody        string
+		requestBody        map[string]interface{}
 		expectedStatusCode int
 		expectedMessage    string
 	}{
 		// FirstName validation tests
 		{
 			name: "FirstName_Required",
-			requestBody: `{
+			requestBody: map[string]interface{}{
 				"last_name": "pacheco",
-				"email": "test@gmail.com",
-				"password": "Ci@23456789"
-			}`,
+				"email":     "test@gmail.com",
+				"password":  "Ci@23456789",
+			},
 			expectedStatusCode: 400,
 			expectedMessage:    "validation failed",
 		},
 		{
 			name: "FirstName_Empty",
-			requestBody: `{
+			requestBody: map[string]interface{}{
 				"first_name": "",
-				"last_name": "pacheco",
-				"email": "test@gmail.com",
-				"password": "Ci@23456789"
-			}`,
+				"last_name":  "pacheco",
+				"email":      "test@gmail.com",
+				"password":   "Ci@23456789",
+			},
 			expectedStatusCode: 400,
 			expectedMessage:    "validation failed",
 		},
 		{
 			name: "FirstName_TooShort",
-			requestBody: `{
+			requestBody: map[string]interface{}{
 				"first_name": "ab",
-				"last_name": "pacheco",
-				"email": "test@gmail.com",
-				"password": "Ci@23456789"
-			}`,
+				"last_name":  "pacheco",
+				"email":      "test@gmail.com",
+				"password":   "Ci@23456789",
+			},
 			expectedStatusCode: 400,
 			expectedMessage:    "validation failed",
 		},
 		{
 			name: "FirstName_TooLong",
-			requestBody: fmt.Sprintf(`{
-				"first_name": "%s",
-				"last_name": "pacheco",
-				"email": "test@gmail.com",
-				"password": "Ci@23456789"
-			}`, strings.Repeat("a", 256)),
+			requestBody: map[string]interface{}{
+				"first_name": strings.Repeat("a", 256),
+				"last_name":  "pacheco",
+				"email":      "test@gmail.com",
+				"password":   "Ci@23456789",
+			},
 			expectedStatusCode: 400,
 			expectedMessage:    "validation failed",
 		},
 		// LastName validation tests
 		{
 			name: "LastName_Required",
-			requestBody: `{
+			requestBody: map[string]interface{}{
 				"first_name": "cristiano",
-				"email": "test@gmail.com",
-				"password": "Ci@23456789"
-			}`,
+				"email":      "test@gmail.com",
+				"password":   "Ci@23456789",
+			},
 			expectedStatusCode: 400,
 			expectedMessage:    "validation failed",
 		},
 		{
 			name: "LastName_Empty",
-			requestBody: `{
+			requestBody: map[string]interface{}{
 				"first_name": "cristiano",
-				"last_name": "",
-				"email": "test@gmail.com",
-				"password": "Ci@23456789"
-			}`,
+				"last_name":  "",
+				"email":      "test@gmail.com",
+				"password":   "Ci@23456789",
+			},
 			expectedStatusCode: 400,
 			expectedMessage:    "validation failed",
 		},
 		{
 			name: "LastName_TooShort",
-			requestBody: `{
+			requestBody: map[string]interface{}{
 				"first_name": "cristiano",
-				"last_name": "ab",
-				"email": "test@gmail.com",
-				"password": "Ci@23456789"
-			}`,
+				"last_name":  "ab",
+				"email":      "test@gmail.com",
+				"password":   "Ci@23456789",
+			},
 			expectedStatusCode: 400,
 			expectedMessage:    "validation failed",
 		},
 		{
 			name: "LastName_TooLong",
-			requestBody: fmt.Sprintf(`{
+			requestBody: map[string]interface{}{
 				"first_name": "cristiano",
-				"last_name": "%s",
-				"email": "test@gmail.com",
-				"password": "Ci@23456789"
-			}`, strings.Repeat("a", 256)),
+				"last_name":  strings.Repeat("a", 256),
+				"email":      "test@gmail.com",
+				"password":   "Ci@23456789",
+			},
 			expectedStatusCode: 400,
 			expectedMessage:    "validation failed",
 		},
 		// Password validation tests
 		{
 			name: "Password_Required",
-			requestBody: `{
+			requestBody: map[string]interface{}{
 				"first_name": "cristiano",
-				"last_name": "pacheco",
-				"email": "test@gmail.com"
-			}`,
+				"last_name":  "pacheco",
+				"email":      "test@gmail.com",
+			},
 			expectedStatusCode: 400,
 			expectedMessage:    "validation failed",
 		},
 		{
 			name: "Password_Empty",
-			requestBody: `{
+			requestBody: map[string]interface{}{
 				"first_name": "cristiano",
-				"last_name": "pacheco",
-				"email": "test@gmail.com",
-				"password": ""
-			}`,
+				"last_name":  "pacheco",
+				"email":      "test@gmail.com",
+				"password":   "",
+			},
 			expectedStatusCode: 400,
 			expectedMessage:    "validation failed",
 		},
 		{
 			name: "Password_TooShort",
-			requestBody: `{
+			requestBody: map[string]interface{}{
 				"first_name": "cristiano",
-				"last_name": "pacheco",
-				"email": "test@gmail.com",
-				"password": "1234567"
-			}`,
+				"last_name":  "pacheco",
+				"email":      "test@gmail.com",
+				"password":   "1234567",
+			},
 			expectedStatusCode: 400,
 			expectedMessage:    "validation failed",
 		},
 		// Email validation tests
 		{
 			name: "Email_Required",
-			requestBody: `{
+			requestBody: map[string]interface{}{
 				"first_name": "cristiano",
-				"last_name": "pacheco",
-				"password": "Ci@23456789"
-			}`,
+				"last_name":  "pacheco",
+				"password":   "Ci@23456789",
+			},
 			expectedStatusCode: 400,
 			expectedMessage:    "validation failed",
 		},
 		{
 			name: "Email_Empty",
-			requestBody: `{
+			requestBody: map[string]interface{}{
 				"first_name": "cristiano",
-				"last_name": "pacheco",
-				"email": "",
-				"password": "Ci@23456789"
-			}`,
+				"last_name":  "pacheco",
+				"email":      "",
+				"password":   "Ci@23456789",
+			},
 			expectedStatusCode: 400,
 			expectedMessage:    "validation failed",
 		},
 		{
 			name: "Email_InvalidFormat_NoAtSymbol",
-			requestBody: `{
+			requestBody: map[string]interface{}{
 				"first_name": "cristiano",
-				"last_name": "pacheco",
-				"email": "testgmail.com",
-				"password": "Ci@23456789"
-			}`,
+				"last_name":  "pacheco",
+				"email":      "testgmail.com",
+				"password":   "Ci@23456789",
+			},
 			expectedStatusCode: 400,
 			expectedMessage:    "validation failed",
 		},
 		{
 			name: "Email_InvalidFormat_NoDomain",
-			requestBody: `{
+			requestBody: map[string]interface{}{
 				"first_name": "cristiano",
-				"last_name": "pacheco",
-				"email": "test@",
-				"password": "Ci@23456789"
-			}`,
+				"last_name":  "pacheco",
+				"email":      "test@",
+				"password":   "Ci@23456789",
+			},
 			expectedStatusCode: 400,
 			expectedMessage:    "validation failed",
 		},
 		{
 			name: "Email_InvalidFormat_NoUsername",
-			requestBody: `{
+			requestBody: map[string]interface{}{
 				"first_name": "cristiano",
-				"last_name": "pacheco",
-				"email": "@gmail.com",
-				"password": "Ci@23456789"
-			}`,
+				"last_name":  "pacheco",
+				"email":      "@gmail.com",
+				"password":   "Ci@23456789",
+			},
 			expectedStatusCode: 400,
 			expectedMessage:    "validation failed",
 		},
 		{
 			name: "Email_TooLong",
-			requestBody: fmt.Sprintf(`{
+			requestBody: map[string]interface{}{
 				"first_name": "cristiano",
-				"last_name": "pacheco",
-				"email": "%s@gmail.com",
-				"password": "Ci@23456789"
-			}`, strings.Repeat("a", 250)), // 250 + "@gmail.com" = 260 characters
+				"last_name":  "pacheco",
+				"email":      strings.Repeat("a", 250) + "@gmail.com", // 250 + "@gmail.com" = 260 characters
+				"password":   "Ci@23456789",
+			},
 			expectedStatusCode: 400,
 			expectedMessage:    "validation failed",
 		},
 	}
 
+	headers := map[string]string{
+		"Accept": "application/json",
+	}
+
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			// Generate unique email for tests that need valid email format
-			if strings.Contains(tc.requestBody, "test@gmail.com") {
+			if email, ok := tc.requestBody["email"].(string); ok && email == "test@gmail.com" {
 				timestamp := time.Now().UnixNano()
-				uniqueEmail := fmt.Sprintf("test%d@gmail.com", timestamp)
-				tc.requestBody = strings.ReplaceAll(tc.requestBody, "test@gmail.com", uniqueEmail)
+				tc.requestBody["email"] = fmt.Sprintf("test%d@gmail.com", timestamp)
 			}
 
-			req, err := http.NewRequest(http.MethodPost, url, strings.NewReader(tc.requestBody))
-			require.NoError(t, err)
-
-			req.Header.Set("Accept", "application/json")
-			req.Header.Set("Content-Type", "application/json")
-
-			client := &http.Client{}
-
 			// Act
-			resp, err := client.Do(req)
+			resp, err := test.MakeRequest("POST", url, tc.requestBody, headers)
 			require.NoError(t, err)
 
 			defer resp.Body.Close()
@@ -316,77 +304,80 @@ func TestUserCreateValidation(t *testing.T) {
 }
 
 func TestUserCreateValidation_EdgeCases(t *testing.T) {
-	apiURL := test.GetAPIBaseUrl()
-	url := apiURL + "/api/v1/users"
+	url := "/api/v1/users"
 
 	testCases := []struct {
 		name               string
-		requestBody        string
+		requestBody        map[string]interface{}
 		expectedStatusCode int
 		expectedMessage    string
 	}{
 		// Edge cases for minimum valid values
 		{
 			name: "FirstName_MinimumValid",
-			requestBody: `{
+			requestBody: map[string]interface{}{
 				"first_name": "abc",
-				"last_name": "def",
-				"email": "test@gmail.com",
-				"password": "12345678"
-			}`,
+				"last_name":  "def",
+				"email":      "test@gmail.com",
+				"password":   "12345678",
+			},
 			expectedStatusCode: 201, // Should succeed
 		},
 		{
 			name: "LastName_MinimumValid",
-			requestBody: `{
+			requestBody: map[string]interface{}{
 				"first_name": "abc",
-				"last_name": "def",
-				"email": "test@gmail.com",
-				"password": "12345678"
-			}`,
+				"last_name":  "def",
+				"email":      "test@gmail.com",
+				"password":   "12345678",
+			},
 			expectedStatusCode: 201, // Should succeed
 		},
 		{
 			name: "Password_MinimumValid",
-			requestBody: `{
+			requestBody: map[string]interface{}{
 				"first_name": "cristiano",
-				"last_name": "pacheco",
-				"email": "test@gmail.com",
-				"password": "12345678"
-			}`,
+				"last_name":  "pacheco",
+				"email":      "test@gmail.com",
+				"password":   "12345678",
+			},
 			expectedStatusCode: 201, // Should succeed
 		},
 		// Edge cases for maximum valid values
 		{
 			name: "FirstName_MaximumValid",
-			requestBody: fmt.Sprintf(`{
-				"first_name": "%s",
-				"last_name": "pacheco",
-				"email": "test@gmail.com",
-				"password": "Ci@23456789"
-			}`, strings.Repeat("a", 255)),
+			requestBody: map[string]interface{}{
+				"first_name": strings.Repeat("a", 255),
+				"last_name":  "pacheco",
+				"email":      "test@gmail.com",
+				"password":   "Ci@23456789",
+			},
 			expectedStatusCode: 201, // Should succeed
 		},
 		{
 			name: "LastName_MaximumValid",
-			requestBody: fmt.Sprintf(`{
+			requestBody: map[string]interface{}{
 				"first_name": "cristiano",
-				"last_name": "%s",
-				"email": "test@gmail.com",
-				"password": "Ci@23456789"
-			}`, strings.Repeat("a", 255)),
+				"last_name":  strings.Repeat("a", 255),
+				"email":      "test@gmail.com",
+				"password":   "Ci@23456789",
+			},
 			expectedStatusCode: 201, // Should succeed
 		},
 		{
 			name: "Email_MaximumValid",
-			requestBody: fmt.Sprintf(`{
+			requestBody: map[string]interface{}{
 				"first_name": "cristiano",
-				"last_name": "pacheco",
-				"email": "%s@test.com",
-				"password": "Ci@23456789"
-			}`, strings.Repeat("a", 246)), // 246 + "@test.com" = 255 characters
+				"last_name":  "pacheco",
+				"email":      strings.Repeat("a", 246) + "@test.com", // 246 + "@test.com" = 255 characters
+				"password":   "Ci@23456789",
+			},
 			expectedStatusCode: 201, // Should succeed
 		},
+	}
+
+	headers := map[string]string{
+		"Accept": "application/json",
 	}
 
 	for _, tc := range testCases {
@@ -394,26 +385,18 @@ func TestUserCreateValidation_EdgeCases(t *testing.T) {
 			// Generate unique email for success cases
 			if tc.expectedStatusCode == 201 {
 				timestamp := time.Now().UnixNano()
-				uniqueEmail := fmt.Sprintf("test%d@gmail.com", timestamp)
-				tc.requestBody = strings.ReplaceAll(tc.requestBody, "test@gmail.com", uniqueEmail)
 
 				// For the maximum email test, create a unique long email
 				if strings.Contains(tc.name, "Email_MaximumValid") {
 					uniqueLongEmail := fmt.Sprintf("%s%d@test.com", strings.Repeat("a", 240), timestamp)
-					tc.requestBody = strings.ReplaceAll(tc.requestBody, strings.Repeat("a", 246)+"@test.com", uniqueLongEmail)
+					tc.requestBody["email"] = uniqueLongEmail
+				} else {
+					tc.requestBody["email"] = fmt.Sprintf("test%d@gmail.com", timestamp)
 				}
 			}
 
-			req, err := http.NewRequest(http.MethodPost, url, strings.NewReader(tc.requestBody))
-			require.NoError(t, err)
-
-			req.Header.Set("Accept", "application/json")
-			req.Header.Set("Content-Type", "application/json")
-
-			client := &http.Client{}
-
 			// Act
-			resp, err := client.Do(req)
+			resp, err := test.MakeRequest("POST", url, tc.requestBody, headers)
 			require.NoError(t, err)
 
 			defer resp.Body.Close()

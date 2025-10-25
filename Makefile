@@ -55,9 +55,9 @@ nilaway:
 test:
 	CGO_ENABLED=0 go test ./...
 
-.PHONY: test-integration
-test-integration:
-	APP_BASE_URL=http://localhost:9000 CGO_ENABLED=0 go test -v -race -timeout=30s -tags=integration ./test/integration/...
+.PHONY: test-e2e
+test-e2e:
+	APP_BASE_URL=http://localhost:9000 CGO_ENABLED=0 go test -v -race -timeout=30s -tags=e2e ./test/e2e/...
 
 .PHONY: cover
 cover:
