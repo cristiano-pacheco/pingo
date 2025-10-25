@@ -137,8 +137,8 @@ func (r *httpMonitorRepository) AssignContacts(ctx context.Context, monitorID ui
 		return err
 	}
 
-	if err := tx.Commit().Error; err != nil {
-		return err
+	if commitErr := tx.Commit().Error; commitErr != nil {
+		return commitErr
 	}
 
 	return nil

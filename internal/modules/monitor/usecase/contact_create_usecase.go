@@ -70,8 +70,8 @@ func (uc *ContactCreateUseCase) Execute(ctx context.Context, input ContactCreate
 	}
 
 	// Validate contact data based on contact type
-	if err := uc.contactValidator.Validate(input.ContactType, input.ContactData); err != nil {
-		return output, err
+	if validationErr := uc.contactValidator.Validate(input.ContactType, input.ContactData); validationErr != nil {
+		return output, validationErr
 	}
 
 	// Check if contact with the same name already exists
