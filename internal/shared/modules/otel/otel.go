@@ -4,17 +4,24 @@ import (
 	"context"
 	"time"
 
+	"github.com/cristiano-pacheco/go-otel/trace"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/config"
-	"github.com/cristiano-pacheco/pingo/pkg/otel/trace"
+	oteltrace "go.opentelemetry.io/otel/trace"
 	"go.uber.org/fx"
 )
 
 type Otel interface {
-	trace.Trace
+	StartSpan(ctx context.Context, name string) (context.Context, oteltrace.Span)
 }
 
 func New(lc fx.Lifecycle, config config.Config) Otel {
 	batchTimeout := time.Duration(config.OpenTelemetry.BatchTimeoutSeconds) * time.Second
+
+	exporterType, err := trace.NewExporterType(trace.ExporterTypeHTTP)
+	if err != nil {
+		panic(err)
+	}
+
 	tc := trace.TracerConfig{
 		AppName:      config.App.Name,
 		AppVersion:   config.App.Version,
@@ -25,15 +32,22 @@ func New(lc fx.Lifecycle, config config.Config) Otel {
 		MaxBatchSize: config.OpenTelemetry.MaxBatchSize,
 		Insecure:     config.OpenTelemetry.Insecure,
 		SampleRate:   config.OpenTelemetry.SampleRate,
+		ExporterType: exporterType,
 	}
 
-	tracer, shutdown := trace.MustNew(tc)
+	trace.MustInitialize(tc)
 
 	lc.Append(fx.Hook{
 		OnStop: func(ctx context.Context) error {
-			return shutdown(ctx)
+			return trace.Shutdown(ctx)
 		},
 	})
 
-	return tracer
+	return &otelWrapper{}
+}
+
+type otelWrapper struct{}
+
+func (o *otelWrapper) StartSpan(ctx context.Context, name string) (context.Context, oteltrace.Span) {
+	return trace.StartSpan(ctx, name)
 }
