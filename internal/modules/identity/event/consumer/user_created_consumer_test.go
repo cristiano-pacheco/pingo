@@ -16,7 +16,7 @@ import (
 	service_mocks "github.com/cristiano-pacheco/pingo/internal/modules/identity/service/mocks"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/config"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/logger"
-	"github.com/cristiano-pacheco/pingo/internal/shared/modules/otel"
+
 	"github.com/cristiano-pacheco/pingo/pkg/kafka"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
@@ -30,7 +30,6 @@ type UserCreatedConsumerTestSuite struct {
 	userRepository               *repository_mocks.MockUserRepository
 	hashService                  *service_mocks.MockHashService
 	logger                       logger.Logger
-	otel                         otel.Otel
 }
 
 func (s *UserCreatedConsumerTestSuite) SetupTest() {
@@ -38,7 +37,6 @@ func (s *UserCreatedConsumerTestSuite) SetupTest() {
 	s.oneTimeTokenRepository = repository_mocks.NewMockOneTimeTokenRepository(s.T())
 	s.userRepository = repository_mocks.NewMockUserRepository(s.T())
 	s.hashService = service_mocks.NewMockHashService(s.T())
-	s.otel = otel.NewNoopOtel()
 
 	// Use a disabled logger for testing
 	loggerConfig := config.Config{
@@ -57,7 +55,6 @@ func (s *UserCreatedConsumerTestSuite) SetupTest() {
 		s.userRepository,
 		s.hashService,
 		s.logger,
-		s.otel,
 	)
 }
 

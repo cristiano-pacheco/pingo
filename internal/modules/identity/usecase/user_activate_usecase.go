@@ -13,8 +13,9 @@ import (
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/repository"
 	shared_errs "github.com/cristiano-pacheco/pingo/internal/shared/errs"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/logger"
-	"github.com/cristiano-pacheco/pingo/internal/shared/modules/otel"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/validator"
+
+	"github.com/cristiano-pacheco/go-otel/trace"
 )
 
 type UserActivateInput struct {
@@ -28,7 +29,6 @@ type UserActivateUseCase struct {
 	userActivatedCache     cache.UserActivatedCache
 	validate               validator.Validate
 	logger                 logger.Logger
-	otel                   otel.Otel
 }
 
 func NewUserActivateUseCase(
@@ -37,7 +37,6 @@ func NewUserActivateUseCase(
 	userActivatedCache cache.UserActivatedCache,
 	validate validator.Validate,
 	logger logger.Logger,
-	otel otel.Otel,
 ) *UserActivateUseCase {
 	return &UserActivateUseCase{
 		oneTimeTokenRepository: oneTimeTokenRepository,
@@ -45,12 +44,11 @@ func NewUserActivateUseCase(
 		userActivatedCache:     userActivatedCache,
 		validate:               validate,
 		logger:                 logger,
-		otel:                   otel,
 	}
 }
 
 func (uc *UserActivateUseCase) Execute(ctx context.Context, input UserActivateInput) error {
-	ctx, span := uc.otel.StartSpan(ctx, "UserActivateUseCase.Execute")
+	ctx, span := trace.StartSpan(ctx, "UserActivateUseCase.Execute")
 	defer span.End()
 
 	err := uc.validate.Struct(input)

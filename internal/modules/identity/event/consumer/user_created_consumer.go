@@ -6,13 +6,13 @@ import (
 	"errors"
 	"time"
 
+	"github.com/cristiano-pacheco/go-otel/trace"
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/enum"
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/event"
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/model"
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/repository"
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/service"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/logger"
-	"github.com/cristiano-pacheco/pingo/internal/shared/modules/otel"
 	"github.com/cristiano-pacheco/pingo/pkg/kafka"
 )
 
@@ -24,7 +24,6 @@ type UserCreatedConsumer struct {
 	userRepository               repository.UserRepository
 	hashService                  service.HashService
 	logger                       logger.Logger
-	otel                         otel.Otel
 }
 
 func NewUserCreatedConsumer(
@@ -33,7 +32,6 @@ func NewUserCreatedConsumer(
 	userRepository repository.UserRepository,
 	hashService service.HashService,
 	logger logger.Logger,
-	otel otel.Otel,
 ) *UserCreatedConsumer {
 	return &UserCreatedConsumer{
 		sendEmailConfirmationService: sendEmailConfirmationService,
@@ -41,7 +39,6 @@ func NewUserCreatedConsumer(
 		userRepository:               userRepository,
 		hashService:                  hashService,
 		logger:                       logger,
-		otel:                         otel,
 	}
 }
 
@@ -54,7 +51,7 @@ func (c *UserCreatedConsumer) GroupID() string {
 }
 
 func (c *UserCreatedConsumer) ProcessMessage(ctx context.Context, message kafka.Message) error {
-	ctx, span := c.otel.StartSpan(ctx, "UserCreatedConsumer.ProcessMessage")
+	ctx, span := trace.StartSpan(ctx, "UserCreatedConsumer.ProcessMessage")
 	defer span.End()
 
 	var userCreatedMessage event.UserCreatedMessage

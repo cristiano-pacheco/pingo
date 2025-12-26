@@ -14,7 +14,6 @@ import (
 	shared_errs "github.com/cristiano-pacheco/pingo/internal/shared/errs"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/config"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/logger"
-	"github.com/cristiano-pacheco/pingo/internal/shared/modules/otel"
 	shared_validator_mocks "github.com/cristiano-pacheco/pingo/internal/shared/modules/validator/mocks"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
@@ -29,7 +28,6 @@ type UserUpdateUseCaseTestSuite struct {
 	passwordValidatorMock *validator_mocks.MockPasswordValidator
 	logger                logger.Logger
 	cfg                   config.Config
-	otel                  otel.Otel
 }
 
 func (s *UserUpdateUseCaseTestSuite) SetupTest() {
@@ -51,8 +49,6 @@ func (s *UserUpdateUseCaseTestSuite) SetupTest() {
 		},
 	}
 
-	// Create a simple no-op otel implementation for testing
-	s.otel = otel.NewNoopOtel()
 	s.logger = logger.New(s.cfg)
 
 	s.sut = usecase.NewUserUpdateUseCase(
@@ -61,7 +57,6 @@ func (s *UserUpdateUseCaseTestSuite) SetupTest() {
 		s.validatorMock,
 		s.passwordValidatorMock,
 		s.logger,
-		s.otel,
 	)
 }
 

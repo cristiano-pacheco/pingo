@@ -5,8 +5,9 @@ import (
 
 	"github.com/cristiano-pacheco/pingo/internal/modules/monitor/repository"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/logger"
-	"github.com/cristiano-pacheco/pingo/internal/shared/modules/otel"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/validator"
+
+	"github.com/cristiano-pacheco/go-otel/trace"
 )
 
 type ContactDeleteInput struct {
@@ -17,25 +18,22 @@ type ContactDeleteUseCase struct {
 	contactRepository repository.ContactRepository
 	validate          validator.Validate
 	logger            logger.Logger
-	otel              otel.Otel
 }
 
 func NewContactDeleteUseCase(
 	contactRepository repository.ContactRepository,
 	validate validator.Validate,
 	logger logger.Logger,
-	otel otel.Otel,
 ) *ContactDeleteUseCase {
 	return &ContactDeleteUseCase{
 		contactRepository: contactRepository,
 		validate:          validate,
 		logger:            logger,
-		otel:              otel,
 	}
 }
 
 func (uc *ContactDeleteUseCase) Execute(ctx context.Context, input ContactDeleteInput) error {
-	ctx, span := uc.otel.StartSpan(ctx, "ContactDeleteUseCase.Execute")
+	ctx, span := trace.StartSpan(ctx, "ContactDeleteUseCase.Execute")
 	defer span.End()
 
 	err := uc.validate.Struct(input)

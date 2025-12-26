@@ -4,10 +4,10 @@ import (
 	"context"
 	"errors"
 
+	"github.com/cristiano-pacheco/go-otel/trace"
 	"github.com/cristiano-pacheco/pingo/internal/modules/monitor/model"
 	"github.com/cristiano-pacheco/pingo/internal/shared/errs"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/database"
-	"github.com/cristiano-pacheco/pingo/internal/shared/modules/otel"
 	"gorm.io/gorm"
 )
 
@@ -20,15 +20,14 @@ type NotificationRepository interface {
 
 type notificationRepository struct {
 	*database.PingoDB
-	otel otel.Otel
 }
 
-func NewNotificationRepository(db *database.PingoDB, otel otel.Otel) NotificationRepository {
-	return &notificationRepository{db, otel}
+func NewNotificationRepository(db *database.PingoDB) NotificationRepository {
+	return &notificationRepository{db}
 }
 
 func (r *notificationRepository) FindByID(ctx context.Context, notificationID uint64) (model.NotificationModel, error) {
-	ctx, otelSpan := r.otel.StartSpan(ctx, "NotificationRepository.FindByID")
+	ctx, otelSpan := trace.StartSpan(ctx, "NotificationRepository.FindByID")
 	defer otelSpan.End()
 
 	notification, err := gorm.G[model.NotificationModel](r.DB).
@@ -46,7 +45,7 @@ func (r *notificationRepository) FindByID(ctx context.Context, notificationID ui
 }
 
 func (r *notificationRepository) FindByMonitorID(ctx context.Context, monitorID uint64) ([]model.NotificationModel, error) {
-	ctx, otelSpan := r.otel.StartSpan(ctx, "NotificationRepository.FindByMonitorID")
+	ctx, otelSpan := trace.StartSpan(ctx, "NotificationRepository.FindByMonitorID")
 	defer otelSpan.End()
 
 	notifications, err := gorm.G[model.NotificationModel](r.DB).
@@ -61,7 +60,7 @@ func (r *notificationRepository) FindByMonitorID(ctx context.Context, monitorID 
 }
 
 func (r *notificationRepository) Create(ctx context.Context, notification model.NotificationModel) (model.NotificationModel, error) {
-	ctx, otelSpan := r.otel.StartSpan(ctx, "NotificationRepository.Create")
+	ctx, otelSpan := trace.StartSpan(ctx, "NotificationRepository.Create")
 	defer otelSpan.End()
 
 	err := gorm.G[model.NotificationModel](r.DB).Create(ctx, &notification)
@@ -69,7 +68,7 @@ func (r *notificationRepository) Create(ctx context.Context, notification model.
 }
 
 func (r *notificationRepository) Update(ctx context.Context, notification model.NotificationModel) (model.NotificationModel, error) {
-	ctx, otelSpan := r.otel.StartSpan(ctx, "NotificationRepository.Update")
+	ctx, otelSpan := trace.StartSpan(ctx, "NotificationRepository.Update")
 	defer otelSpan.End()
 
 	_, err := gorm.G[model.NotificationModel](r.DB).Updates(ctx, notification)

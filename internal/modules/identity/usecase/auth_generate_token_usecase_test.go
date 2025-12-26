@@ -18,7 +18,6 @@ import (
 	shared_errs "github.com/cristiano-pacheco/pingo/internal/shared/errs"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/config"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/logger"
-	"github.com/cristiano-pacheco/pingo/internal/shared/modules/otel"
 	validator_mocks "github.com/cristiano-pacheco/pingo/internal/shared/modules/validator/mocks"
 )
 
@@ -32,7 +31,6 @@ type AuthGenerateTokenUseCaseTestSuite struct {
 	hashServiceMock            *service_mocks.MockHashService
 	logger                     logger.Logger
 	cfg                        config.Config
-	otel                       otel.Otel
 }
 
 func (s *AuthGenerateTokenUseCaseTestSuite) SetupTest() {
@@ -50,8 +48,6 @@ func (s *AuthGenerateTokenUseCaseTestSuite) SetupTest() {
 		},
 	}
 
-	// Create a simple no-op otel implementation for testing
-	s.otel = otel.NewNoopOtel()
 	s.logger = logger.New(s.cfg)
 
 	s.oneTimeTokenRepositoryMock = repository_mocks.NewMockOneTimeTokenRepository(s.T())
@@ -67,7 +63,6 @@ func (s *AuthGenerateTokenUseCaseTestSuite) SetupTest() {
 		s.hashServiceMock,
 		s.validatorMock,
 		s.logger,
-		s.otel,
 	)
 }
 

@@ -3,10 +3,10 @@ package repository
 import (
 	"context"
 
+	"github.com/cristiano-pacheco/go-otel/trace"
 	"github.com/cristiano-pacheco/pingo/internal/modules/monitor/model"
 	"github.com/cristiano-pacheco/pingo/internal/shared/errs"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/database"
-	"github.com/cristiano-pacheco/pingo/internal/shared/modules/otel"
 	"gorm.io/gorm"
 )
 
@@ -20,15 +20,14 @@ type ContactRepository interface {
 
 type contactRepository struct {
 	*database.PingoDB
-	otel otel.Otel
 }
 
-func NewContactRepository(db *database.PingoDB, otel otel.Otel) ContactRepository {
-	return &contactRepository{db, otel}
+func NewContactRepository(db *database.PingoDB) ContactRepository {
+	return &contactRepository{db}
 }
 
 func (r *contactRepository) FindAll(ctx context.Context) ([]model.ContactModel, error) {
-	ctx, otelSpan := r.otel.StartSpan(ctx, "ContactRepository.FindAll")
+	ctx, otelSpan := trace.StartSpan(ctx, "ContactRepository.FindAll")
 	defer otelSpan.End()
 
 	contacts, err := gorm.G[model.ContactModel](r.DB).Find(ctx)
@@ -39,7 +38,7 @@ func (r *contactRepository) FindAll(ctx context.Context) ([]model.ContactModel, 
 }
 
 func (r *contactRepository) FindByName(ctx context.Context, name string) (model.ContactModel, error) {
-	ctx, otelSpan := r.otel.StartSpan(ctx, "ContactRepository.FindByName")
+	ctx, otelSpan := trace.StartSpan(ctx, "ContactRepository.FindByName")
 	defer otelSpan.End()
 
 	contact, err := gorm.G[model.ContactModel](r.DB).
@@ -55,7 +54,7 @@ func (r *contactRepository) FindByName(ctx context.Context, name string) (model.
 }
 
 func (r *contactRepository) Create(ctx context.Context, contact model.ContactModel) (model.ContactModel, error) {
-	ctx, otelSpan := r.otel.StartSpan(ctx, "ContactRepository.Create")
+	ctx, otelSpan := trace.StartSpan(ctx, "ContactRepository.Create")
 	defer otelSpan.End()
 
 	err := gorm.G[model.ContactModel](r.DB).Create(ctx, &contact)
@@ -63,7 +62,7 @@ func (r *contactRepository) Create(ctx context.Context, contact model.ContactMod
 }
 
 func (r *contactRepository) Update(ctx context.Context, contact model.ContactModel) (model.ContactModel, error) {
-	ctx, otelSpan := r.otel.StartSpan(ctx, "ContactRepository.Update")
+	ctx, otelSpan := trace.StartSpan(ctx, "ContactRepository.Update")
 	defer otelSpan.End()
 
 	_, err := gorm.G[model.ContactModel](r.DB).Updates(ctx, contact)
@@ -74,7 +73,7 @@ func (r *contactRepository) Update(ctx context.Context, contact model.ContactMod
 }
 
 func (r *contactRepository) Delete(ctx context.Context, contactID uint64) error {
-	ctx, otelSpan := r.otel.StartSpan(ctx, "ContactRepository.Delete")
+	ctx, otelSpan := trace.StartSpan(ctx, "ContactRepository.Delete")
 	defer otelSpan.End()
 
 	rowsAffected, err := gorm.G[model.ContactModel](r.DB).

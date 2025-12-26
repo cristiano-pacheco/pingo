@@ -19,7 +19,6 @@ import (
 	shared_errs "github.com/cristiano-pacheco/pingo/internal/shared/errs"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/config"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/logger"
-	"github.com/cristiano-pacheco/pingo/internal/shared/modules/otel"
 	validator_mocks "github.com/cristiano-pacheco/pingo/internal/shared/modules/validator/mocks"
 )
 
@@ -32,7 +31,6 @@ type UserActivateUseCaseTestSuite struct {
 	validateMock               *validator_mocks.MockValidate
 	logger                     logger.Logger
 	cfg                        config.Config
-	otel                       otel.Otel
 }
 
 func (s *UserActivateUseCaseTestSuite) SetupTest() {
@@ -53,9 +51,6 @@ func (s *UserActivateUseCaseTestSuite) SetupTest() {
 		},
 	}
 
-	// Create a simple no-op otel implementation for testing
-	s.otel = otel.NewNoopOtel()
-
 	s.oneTimeTokenRepositoryMock = repository_mocks.NewMockOneTimeTokenRepository(s.T())
 	s.userRepositoryMock = repository_mocks.NewMockUserRepository(s.T())
 	s.userActivatedCacheMock = cache_mocks.NewMockUserActivatedCache(s.T())
@@ -68,7 +63,6 @@ func (s *UserActivateUseCaseTestSuite) SetupTest() {
 		s.userActivatedCacheMock,
 		s.validateMock,
 		s.logger,
-		s.otel,
 	)
 }
 

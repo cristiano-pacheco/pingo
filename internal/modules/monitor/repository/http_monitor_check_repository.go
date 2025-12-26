@@ -5,10 +5,10 @@ import (
 	"errors"
 	"time"
 
+	"github.com/cristiano-pacheco/go-otel/trace"
 	"github.com/cristiano-pacheco/pingo/internal/modules/monitor/model"
 	"github.com/cristiano-pacheco/pingo/internal/shared/errs"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/database"
-	"github.com/cristiano-pacheco/pingo/internal/shared/modules/otel"
 	"gorm.io/gorm"
 )
 
@@ -20,15 +20,14 @@ type HTTPMonitorCheckRepository interface {
 
 type httpMonitorCheckRepository struct {
 	*database.PingoDB
-	otel otel.Otel
 }
 
-func NewHTTPMonitorCheckRepository(db *database.PingoDB, otel otel.Otel) HTTPMonitorCheckRepository {
-	return &httpMonitorCheckRepository{db, otel}
+func NewHTTPMonitorCheckRepository(db *database.PingoDB) HTTPMonitorCheckRepository {
+	return &httpMonitorCheckRepository{db}
 }
 
 func (r *httpMonitorCheckRepository) FindByID(ctx context.Context, checkID uint64) (model.HTTPMonitorCheckModel, error) {
-	ctx, otelSpan := r.otel.StartSpan(ctx, "HTTPMonitorCheckRepository.FindByID")
+	ctx, otelSpan := trace.StartSpan(ctx, "HTTPMonitorCheckRepository.FindByID")
 	defer otelSpan.End()
 
 	check, err := gorm.G[model.HTTPMonitorCheckModel](r.DB).
@@ -46,7 +45,7 @@ func (r *httpMonitorCheckRepository) FindByID(ctx context.Context, checkID uint6
 }
 
 func (r *httpMonitorCheckRepository) FindAll(ctx context.Context, monitorID uint64, from, to *time.Time, page, pageSize int) ([]model.HTTPMonitorCheckModel, int64, error) {
-	ctx, otelSpan := r.otel.StartSpan(ctx, "HTTPMonitorCheckRepository.FindAll")
+	ctx, otelSpan := trace.StartSpan(ctx, "HTTPMonitorCheckRepository.FindAll")
 	defer otelSpan.End()
 
 	// Calculate offset
@@ -97,7 +96,7 @@ func (r *httpMonitorCheckRepository) FindAll(ctx context.Context, monitorID uint
 }
 
 func (r *httpMonitorCheckRepository) Create(ctx context.Context, check model.HTTPMonitorCheckModel) (model.HTTPMonitorCheckModel, error) {
-	ctx, otelSpan := r.otel.StartSpan(ctx, "HTTPMonitorCheckRepository.Create")
+	ctx, otelSpan := trace.StartSpan(ctx, "HTTPMonitorCheckRepository.Create")
 	defer otelSpan.End()
 
 	err := gorm.G[model.HTTPMonitorCheckModel](r.DB).Create(ctx, &check)

@@ -13,7 +13,6 @@ import (
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/logger"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/mailer"
 	mailer_mocks "github.com/cristiano-pacheco/pingo/internal/shared/modules/mailer/mocks"
-	"github.com/cristiano-pacheco/pingo/internal/shared/modules/otel"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 )
@@ -26,7 +25,6 @@ type SendEmailVerificationCodeServiceTestSuite struct {
 	userRepository       *mocks.MockUserRepository
 	logger               logger.Logger
 	cfg                  config.Config
-	otel                 otel.Otel
 }
 
 func (s *SendEmailVerificationCodeServiceTestSuite) SetupTest() {
@@ -51,9 +49,6 @@ func (s *SendEmailVerificationCodeServiceTestSuite) SetupTest() {
 		},
 	}
 
-	// Create a simple no-op otel implementation for testing
-	s.otel = otel.NewNoopOtel()
-
 	// Use real logger but with disabled level
 	s.logger = logger.New(s.cfg)
 
@@ -63,7 +58,6 @@ func (s *SendEmailVerificationCodeServiceTestSuite) SetupTest() {
 		s.userRepository,
 		s.logger,
 		s.cfg,
-		s.otel,
 	)
 }
 

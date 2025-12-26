@@ -14,8 +14,9 @@ import (
 	identity_validator "github.com/cristiano-pacheco/pingo/internal/modules/identity/validator"
 	shared_errs "github.com/cristiano-pacheco/pingo/internal/shared/errs"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/logger"
-	"github.com/cristiano-pacheco/pingo/internal/shared/modules/otel"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/validator"
+
+	"github.com/cristiano-pacheco/go-otel/trace"
 )
 
 type UserCreateInput struct {
@@ -39,7 +40,6 @@ type UserCreateUseCase struct {
 	hashService         service.HashService
 	validate            validator.Validate
 	logger              logger.Logger
-	otel                otel.Otel
 }
 
 func NewUserCreateUseCase(
@@ -49,7 +49,6 @@ func NewUserCreateUseCase(
 	userCreatedProducer producer.UserCreatedProducer,
 	validate validator.Validate,
 	logger logger.Logger,
-	otel otel.Otel,
 ) *UserCreateUseCase {
 	return &UserCreateUseCase{
 		userCreatedProducer: userCreatedProducer,
@@ -58,12 +57,11 @@ func NewUserCreateUseCase(
 		hashService:         hashService,
 		validate:            validate,
 		logger:              logger,
-		otel:                otel,
 	}
 }
 
 func (uc *UserCreateUseCase) Execute(ctx context.Context, input UserCreateInput) (UserCreateOutput, error) {
-	ctx, span := uc.otel.StartSpan(ctx, "UserCreateUseCase.Execute")
+	ctx, span := trace.StartSpan(ctx, "UserCreateUseCase.Execute")
 	defer span.End()
 
 	output := UserCreateOutput{}

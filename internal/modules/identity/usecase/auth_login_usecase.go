@@ -12,8 +12,9 @@ import (
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/service"
 	shared_errs "github.com/cristiano-pacheco/pingo/internal/shared/errs"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/logger"
-	"github.com/cristiano-pacheco/pingo/internal/shared/modules/otel"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/validator"
+
+	"github.com/cristiano-pacheco/go-otel/trace"
 )
 
 type AuthLoginInput struct {
@@ -31,7 +32,6 @@ type AuthLoginUseCase struct {
 	hashService               service.HashService
 	validator                 validator.Validate
 	logger                    logger.Logger
-	otel                      otel.Otel
 }
 
 func NewAuthLoginUseCase(
@@ -40,7 +40,6 @@ func NewAuthLoginUseCase(
 	validator validator.Validate,
 	hashService service.HashService,
 	logger logger.Logger,
-	otel otel.Otel,
 ) *AuthLoginUseCase {
 	return &AuthLoginUseCase{
 		userAuthenticatedProducer: userAuthenticatedProducer,
@@ -48,12 +47,11 @@ func NewAuthLoginUseCase(
 		validator:                 validator,
 		hashService:               hashService,
 		logger:                    logger,
-		otel:                      otel,
 	}
 }
 
 func (u *AuthLoginUseCase) Execute(ctx context.Context, input AuthLoginInput) (AuthLoginOutput, error) {
-	ctx, span := u.otel.StartSpan(ctx, "AuthLoginUseCase.Execute")
+	ctx, span := trace.StartSpan(ctx, "AuthLoginUseCase.Execute")
 	defer span.End()
 	if err := u.validator.Struct(input); err != nil {
 		return AuthLoginOutput{}, err

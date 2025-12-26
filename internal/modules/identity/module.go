@@ -13,7 +13,6 @@ import (
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/validator"
 	shared_kafka "github.com/cristiano-pacheco/pingo/internal/shared/modules/kafka"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/logger"
-	"github.com/cristiano-pacheco/pingo/internal/shared/modules/otel"
 	"github.com/cristiano-pacheco/pingo/pkg/kafka"
 	"go.uber.org/fx"
 )
@@ -64,11 +63,10 @@ var Module = fx.Module(
 func registerConsumerRunners(
 	builder kafka.Builder,
 	logger logger.Logger,
-	otel otel.Otel,
 	lc fx.Lifecycle,
 	userCreatedConsumer *consumer.UserCreatedConsumer,
 	userAuthenticatedConsumer *consumer.UserAuthenticatedConsumer,
 ) {
-	shared_kafka.NewConsumerRunner(builder, userCreatedConsumer, logger, otel, lc)
-	shared_kafka.NewConsumerRunner(builder, userAuthenticatedConsumer, logger, otel, lc)
+	shared_kafka.NewConsumerRunner(builder, userCreatedConsumer, logger, lc)
+	shared_kafka.NewConsumerRunner(builder, userAuthenticatedConsumer, logger, lc)
 }

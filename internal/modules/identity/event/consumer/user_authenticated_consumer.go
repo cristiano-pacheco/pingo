@@ -9,6 +9,7 @@ import (
 	"math/big"
 	"time"
 
+	"github.com/cristiano-pacheco/go-otel/trace"
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/enum"
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/event"
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/model"
@@ -16,7 +17,6 @@ import (
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/service"
 	"github.com/cristiano-pacheco/pingo/internal/shared/errs"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/logger"
-	"github.com/cristiano-pacheco/pingo/internal/shared/modules/otel"
 	"github.com/cristiano-pacheco/pingo/pkg/kafka"
 )
 
@@ -31,7 +31,6 @@ type UserAuthenticatedConsumer struct {
 	userRepository                   repository.UserRepository
 	hashService                      service.HashService
 	logger                           logger.Logger
-	otel                             otel.Otel
 }
 
 func NewUserAuthenticatedConsumer(
@@ -40,7 +39,6 @@ func NewUserAuthenticatedConsumer(
 	userRepository repository.UserRepository,
 	hashService service.HashService,
 	logger logger.Logger,
-	otel otel.Otel,
 ) *UserAuthenticatedConsumer {
 	return &UserAuthenticatedConsumer{
 		oneTimeTokenRepository:           oneTimeTokenRepository,
@@ -48,7 +46,6 @@ func NewUserAuthenticatedConsumer(
 		hashService:                      hashService,
 		sendEmailVerificationCodeService: sendEmailVerificationCodeService,
 		logger:                           logger,
-		otel:                             otel,
 	}
 }
 
@@ -61,7 +58,7 @@ func (c *UserAuthenticatedConsumer) GroupID() string {
 }
 
 func (c *UserAuthenticatedConsumer) ProcessMessage(ctx context.Context, message kafka.Message) error {
-	ctx, span := c.otel.StartSpan(ctx, "AuthLoginUseCase.Execute")
+	ctx, span := trace.StartSpan(ctx, "AuthLoginUseCase.Execute")
 	defer span.End()
 
 	var userAuthenticatedMessage event.UserAuthenticatedMessage

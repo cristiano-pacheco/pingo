@@ -4,10 +4,10 @@ import (
 	"context"
 	"errors"
 
+	"github.com/cristiano-pacheco/go-otel/trace"
 	"github.com/cristiano-pacheco/pingo/internal/modules/monitor/model"
 	"github.com/cristiano-pacheco/pingo/internal/shared/errs"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/database"
-	"github.com/cristiano-pacheco/pingo/internal/shared/modules/otel"
 	"gorm.io/gorm"
 )
 
@@ -22,15 +22,14 @@ type HTTPMonitorRepository interface {
 
 type httpMonitorRepository struct {
 	*database.PingoDB
-	otel otel.Otel
 }
 
-func NewHTTPMonitorRepository(db *database.PingoDB, otel otel.Otel) HTTPMonitorRepository {
-	return &httpMonitorRepository{db, otel}
+func NewHTTPMonitorRepository(db *database.PingoDB) HTTPMonitorRepository {
+	return &httpMonitorRepository{db}
 }
 
 func (r *httpMonitorRepository) FindAll(ctx context.Context, page, pageSize int) ([]model.HTTPMonitorModel, int64, error) {
-	ctx, otelSpan := r.otel.StartSpan(ctx, "HTTPMonitorRepository.FindAll")
+	ctx, otelSpan := trace.StartSpan(ctx, "HTTPMonitorRepository.FindAll")
 	defer otelSpan.End()
 
 	// Calculate offset
@@ -55,7 +54,7 @@ func (r *httpMonitorRepository) FindAll(ctx context.Context, page, pageSize int)
 }
 
 func (r *httpMonitorRepository) FindByID(ctx context.Context, monitorID uint64) (model.HTTPMonitorModel, error) {
-	ctx, otelSpan := r.otel.StartSpan(ctx, "HTTPMonitorRepository.FindByID")
+	ctx, otelSpan := trace.StartSpan(ctx, "HTTPMonitorRepository.FindByID")
 	defer otelSpan.End()
 
 	monitor, err := gorm.G[model.HTTPMonitorModel](r.DB).
@@ -73,7 +72,7 @@ func (r *httpMonitorRepository) FindByID(ctx context.Context, monitorID uint64) 
 }
 
 func (r *httpMonitorRepository) Create(ctx context.Context, monitor model.HTTPMonitorModel) (model.HTTPMonitorModel, error) {
-	ctx, otelSpan := r.otel.StartSpan(ctx, "HTTPMonitorRepository.Create")
+	ctx, otelSpan := trace.StartSpan(ctx, "HTTPMonitorRepository.Create")
 	defer otelSpan.End()
 
 	err := gorm.G[model.HTTPMonitorModel](r.DB).Create(ctx, &monitor)
@@ -81,7 +80,7 @@ func (r *httpMonitorRepository) Create(ctx context.Context, monitor model.HTTPMo
 }
 
 func (r *httpMonitorRepository) Update(ctx context.Context, monitor model.HTTPMonitorModel) (model.HTTPMonitorModel, error) {
-	ctx, otelSpan := r.otel.StartSpan(ctx, "HTTPMonitorRepository.Update")
+	ctx, otelSpan := trace.StartSpan(ctx, "HTTPMonitorRepository.Update")
 	defer otelSpan.End()
 
 	_, err := gorm.G[model.HTTPMonitorModel](r.DB).Updates(ctx, monitor)
@@ -92,7 +91,7 @@ func (r *httpMonitorRepository) Update(ctx context.Context, monitor model.HTTPMo
 }
 
 func (r *httpMonitorRepository) Delete(ctx context.Context, monitorID uint64) error {
-	ctx, otelSpan := r.otel.StartSpan(ctx, "HTTPMonitorRepository.Delete")
+	ctx, otelSpan := trace.StartSpan(ctx, "HTTPMonitorRepository.Delete")
 	defer otelSpan.End()
 
 	rowsAffected, err := gorm.G[model.HTTPMonitorModel](r.DB).
@@ -108,7 +107,7 @@ func (r *httpMonitorRepository) Delete(ctx context.Context, monitorID uint64) er
 }
 
 func (r *httpMonitorRepository) AssignContacts(ctx context.Context, monitorID uint64, contactIDs []uint64) error {
-	ctx, otelSpan := r.otel.StartSpan(ctx, "HTTPMonitorRepository.AssignContacts")
+	ctx, otelSpan := trace.StartSpan(ctx, "HTTPMonitorRepository.AssignContacts")
 	defer otelSpan.End()
 
 	// start a transaction

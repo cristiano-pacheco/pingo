@@ -15,7 +15,6 @@ import (
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/service"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/config"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/logger"
-	"github.com/cristiano-pacheco/pingo/internal/shared/modules/otel"
 	registry_mocks "github.com/cristiano-pacheco/pingo/internal/shared/modules/registry/mocks"
 )
 
@@ -25,7 +24,6 @@ type TokenServiceTestSuite struct {
 	privateKeyRegistryMock *registry_mocks.MockPrivateKeyRegistry
 	logger                 logger.Logger
 	cfg                    config.Config
-	otel                   otel.Otel
 	privateKey             *rsa.PrivateKey
 }
 
@@ -47,9 +45,6 @@ func (s *TokenServiceTestSuite) SetupTest() {
 		},
 	}
 
-	// Create a simple no-op otel implementation for testing
-	s.otel = otel.NewNoopOtel()
-
 	s.logger = logger.New(s.cfg)
 
 	s.privateKeyRegistryMock = registry_mocks.NewMockPrivateKeyRegistry(s.T())
@@ -58,7 +53,7 @@ func (s *TokenServiceTestSuite) SetupTest() {
 	s.privateKey, err = rsa.GenerateKey(rand.Reader, 2048)
 	s.Require().NoError(err)
 
-	s.sut = service.NewTokenService(s.cfg, s.privateKeyRegistryMock, s.logger, s.otel)
+	s.sut = service.NewTokenService(s.cfg, s.privateKeyRegistryMock, s.logger)
 }
 
 func TestTokenServiceSuite(t *testing.T) {

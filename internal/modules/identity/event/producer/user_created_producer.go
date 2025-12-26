@@ -4,9 +4,9 @@ import (
 	"context"
 	"encoding/json"
 
+	"github.com/cristiano-pacheco/go-otel/trace"
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/event"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/logger"
-	"github.com/cristiano-pacheco/pingo/internal/shared/modules/otel"
 	"github.com/cristiano-pacheco/pingo/pkg/kafka"
 	"go.uber.org/fx"
 )
@@ -17,18 +17,15 @@ type UserCreatedProducer interface {
 
 type userCreatedProducer struct {
 	producer kafka.Producer
-	otel     otel.Otel
 }
 
 func NewUserCreatedProducer(
 	lc fx.Lifecycle,
 	logger logger.Logger,
-	otel otel.Otel,
 	kafkaBuilder kafka.Builder,
 ) UserCreatedProducer {
 	p := userCreatedProducer{
 		producer: kafkaBuilder.BuildProducer(event.IdentityUserCreatedTopic),
-		otel:     otel,
 	}
 
 	lc.Append(fx.Hook{
@@ -46,7 +43,7 @@ func NewUserCreatedProducer(
 }
 
 func (p *userCreatedProducer) Produce(ctx context.Context, message event.UserCreatedMessage) error {
-	ctx, span := p.otel.StartSpan(ctx, "UserCreatedProducer.Produce")
+	ctx, span := trace.StartSpan(ctx, "UserCreatedProducer.Produce")
 	defer span.End()
 
 	msg, err := json.Marshal(message)

@@ -11,8 +11,9 @@ import (
 	monitor_validator "github.com/cristiano-pacheco/pingo/internal/modules/monitor/validator"
 	shared_errs "github.com/cristiano-pacheco/pingo/internal/shared/errs"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/logger"
-	"github.com/cristiano-pacheco/pingo/internal/shared/modules/otel"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/validator"
+
+	"github.com/cristiano-pacheco/go-otel/trace"
 )
 
 type ContactUpdateInput struct {
@@ -28,7 +29,6 @@ type ContactUpdateUseCase struct {
 	contactRepository repository.ContactRepository
 	validate          validator.Validate
 	logger            logger.Logger
-	otel              otel.Otel
 }
 
 func NewContactUpdateUseCase(
@@ -36,19 +36,17 @@ func NewContactUpdateUseCase(
 	contactRepository repository.ContactRepository,
 	validate validator.Validate,
 	logger logger.Logger,
-	otel otel.Otel,
 ) *ContactUpdateUseCase {
 	return &ContactUpdateUseCase{
 		contactValidator:  contactValidator,
 		contactRepository: contactRepository,
 		validate:          validate,
 		logger:            logger,
-		otel:              otel,
 	}
 }
 
 func (uc *ContactUpdateUseCase) Execute(ctx context.Context, input ContactUpdateInput) error {
-	ctx, span := uc.otel.StartSpan(ctx, "ContactUpdateUseCase.Execute")
+	ctx, span := trace.StartSpan(ctx, "ContactUpdateUseCase.Execute")
 	defer span.End()
 
 	err := uc.validate.Struct(input)

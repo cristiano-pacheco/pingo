@@ -6,15 +6,10 @@ import (
 
 	"github.com/cristiano-pacheco/go-otel/trace"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/config"
-	oteltrace "go.opentelemetry.io/otel/trace"
 	"go.uber.org/fx"
 )
 
-type Otel interface {
-	StartSpan(ctx context.Context, name string) (context.Context, oteltrace.Span)
-}
-
-func New(lc fx.Lifecycle, config config.Config) Otel {
+func Initialize(lc fx.Lifecycle, config config.Config) {
 	batchTimeout := time.Duration(config.OpenTelemetry.BatchTimeoutSeconds) * time.Second
 
 	exporterType, err := trace.NewExporterType(trace.ExporterTypeHTTP)
@@ -42,12 +37,4 @@ func New(lc fx.Lifecycle, config config.Config) Otel {
 			return trace.Shutdown(ctx)
 		},
 	})
-
-	return &otelWrapper{}
-}
-
-type otelWrapper struct{}
-
-func (o *otelWrapper) StartSpan(ctx context.Context, name string) (context.Context, oteltrace.Span) {
-	return trace.StartSpan(ctx, name)
 }

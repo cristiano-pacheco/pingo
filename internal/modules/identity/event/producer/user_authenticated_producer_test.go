@@ -10,7 +10,6 @@ import (
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/event/producer"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/config"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/logger"
-	"github.com/cristiano-pacheco/pingo/internal/shared/modules/otel"
 	"github.com/cristiano-pacheco/pingo/pkg/kafka"
 	kafka_mocks "github.com/cristiano-pacheco/pingo/pkg/kafka/mocks"
 	"github.com/stretchr/testify/mock"
@@ -30,13 +29,11 @@ type UserAuthenticatedProducerTestSuite struct {
 	kafkaBuilder *kafka_mocks.MockBuilder
 	mockProducer *kafka_mocks.MockProducer
 	logger       logger.Logger
-	otel         otel.Otel
 }
 
 func (s *UserAuthenticatedProducerTestSuite) SetupTest() {
 	s.kafkaBuilder = kafka_mocks.NewMockBuilder(s.T())
 	s.mockProducer = kafka_mocks.NewMockProducer(s.T())
-	s.otel = otel.NewNoopOtel()
 
 	loggerConfig := config.Config{
 		Log: config.Log{
@@ -55,7 +52,6 @@ func (s *UserAuthenticatedProducerTestSuite) SetupTest() {
 	s.sut = producer.NewUserAuthenticatedProducer(
 		lifecycle,
 		s.kafkaBuilder,
-		s.otel,
 		s.logger,
 	)
 }

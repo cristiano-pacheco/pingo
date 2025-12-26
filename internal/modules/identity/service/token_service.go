@@ -5,10 +5,10 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/cristiano-pacheco/go-otel/trace"
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/model"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/config"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/logger"
-	"github.com/cristiano-pacheco/pingo/internal/shared/modules/otel"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/registry"
 	"github.com/golang-jwt/jwt/v5"
 )
@@ -21,20 +21,18 @@ type tokenService struct {
 	privateKeyRegistry registry.PrivateKeyRegistry
 	conf               config.Config
 	logger             logger.Logger
-	otel               otel.Otel
 }
 
 func NewTokenService(
 	conf config.Config,
 	privateKeyRegistry registry.PrivateKeyRegistry,
 	logger logger.Logger,
-	otel otel.Otel,
 ) TokenService {
-	return &tokenService{privateKeyRegistry, conf, logger, otel}
+	return &tokenService{privateKeyRegistry, conf, logger}
 }
 
 func (s *tokenService) GenerateJWT(ctx context.Context, user model.UserModel) (string, error) {
-	_, span := s.otel.StartSpan(ctx, "TokenService.GenerateJWT")
+	_, span := trace.StartSpan(ctx, "TokenService.GenerateJWT")
 	defer span.End()
 
 	now := time.Now()

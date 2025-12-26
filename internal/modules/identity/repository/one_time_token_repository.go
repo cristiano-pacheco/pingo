@@ -5,11 +5,11 @@ import (
 	"errors"
 	"time"
 
+	"github.com/cristiano-pacheco/go-otel/trace"
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/enum"
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/model"
 	"github.com/cristiano-pacheco/pingo/internal/shared/errs"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/database"
-	"github.com/cristiano-pacheco/pingo/internal/shared/modules/otel"
 	"gorm.io/gorm"
 )
 
@@ -21,11 +21,10 @@ type OneTimeTokenRepository interface {
 
 type oneTimeTokenRepository struct {
 	*database.PingoDB
-	otel otel.Otel
 }
 
-func NewOneTimeTokenRepository(db *database.PingoDB, otel otel.Otel) OneTimeTokenRepository {
-	return &oneTimeTokenRepository{db, otel}
+func NewOneTimeTokenRepository(db *database.PingoDB) OneTimeTokenRepository {
+	return &oneTimeTokenRepository{db}
 }
 
 func (r *oneTimeTokenRepository) Find(
@@ -33,7 +32,7 @@ func (r *oneTimeTokenRepository) Find(
 	userID uint64,
 	tokenTypeEnum enum.TokenTypeEnum,
 ) (model.OneTimeTokenModel, error) {
-	ctx, otelSpan := r.otel.StartSpan(ctx, "OneTimeTokenRepository.Find")
+	ctx, otelSpan := trace.StartSpan(ctx, "OneTimeTokenRepository.Find")
 	defer otelSpan.End()
 
 	now := time.Now()
@@ -57,7 +56,7 @@ func (r *oneTimeTokenRepository) Create(
 	ctx context.Context,
 	token model.OneTimeTokenModel,
 ) (model.OneTimeTokenModel, error) {
-	ctx, otelSpan := r.otel.StartSpan(ctx, "OneTimeTokenRepository.Create")
+	ctx, otelSpan := trace.StartSpan(ctx, "OneTimeTokenRepository.Create")
 	defer otelSpan.End()
 
 	err := gorm.G[model.OneTimeTokenModel](r.DB).Create(ctx, &token)
@@ -65,7 +64,7 @@ func (r *oneTimeTokenRepository) Create(
 }
 
 func (r *oneTimeTokenRepository) Delete(ctx context.Context, userID uint64, tokenTypeEnum enum.TokenTypeEnum) error {
-	ctx, otelSpan := r.otel.StartSpan(ctx, "OneTimeTokenRepository.Delete")
+	ctx, otelSpan := trace.StartSpan(ctx, "OneTimeTokenRepository.Delete")
 	defer otelSpan.End()
 
 	rowsAffected, err := gorm.G[model.OneTimeTokenModel](r.DB).

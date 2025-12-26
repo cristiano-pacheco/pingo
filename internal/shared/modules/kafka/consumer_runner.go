@@ -5,8 +5,8 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/cristiano-pacheco/go-otel/trace"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/logger"
-	"github.com/cristiano-pacheco/pingo/internal/shared/modules/otel"
 	"github.com/cristiano-pacheco/pingo/pkg/kafka"
 	"go.uber.org/fx"
 )
@@ -24,7 +24,6 @@ type ConsumerRunner struct {
 	consumer  kafka.Consumer
 	processor MessageProcessor
 	logger    logger.Logger
-	otel      otel.Otel
 }
 
 // NewConsumerRunner creates a ConsumerRunner that automatically
@@ -33,13 +32,11 @@ func NewConsumerRunner(
 	builder kafka.Builder,
 	processor MessageProcessor,
 	logger logger.Logger,
-	otel otel.Otel,
 	lc fx.Lifecycle,
 ) *ConsumerRunner {
 	runner := &ConsumerRunner{
 		processor: processor,
 		logger:    logger,
-		otel:      otel,
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -75,7 +72,7 @@ func NewConsumerRunner(
 // Run starts the consumer loop and delegates to the processor.
 func (r *ConsumerRunner) Run(ctx context.Context) error {
 	return r.consumer.Consume(ctx, func(ctx context.Context, msg kafka.Message) error {
-		ctx, span := r.otel.StartSpan(ctx, "kafka.consumer")
+		ctx, span := trace.StartSpan(ctx, "kafka.consumer")
 		defer span.End()
 		return r.processor.ProcessMessage(ctx, msg)
 	})

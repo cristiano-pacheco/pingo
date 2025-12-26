@@ -5,7 +5,8 @@ import (
 
 	"github.com/cristiano-pacheco/pingo/internal/modules/monitor/repository"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/logger"
-	"github.com/cristiano-pacheco/pingo/internal/shared/modules/otel"
+
+	"github.com/cristiano-pacheco/go-otel/trace"
 )
 
 type ContactListOutput struct {
@@ -23,23 +24,20 @@ type ContactListItem struct {
 type ContactListUseCase struct {
 	contactRepository repository.ContactRepository
 	logger            logger.Logger
-	otel              otel.Otel
 }
 
 func NewContactListUseCase(
 	contactRepository repository.ContactRepository,
 	logger logger.Logger,
-	otel otel.Otel,
 ) *ContactListUseCase {
 	return &ContactListUseCase{
 		contactRepository: contactRepository,
 		logger:            logger,
-		otel:              otel,
 	}
 }
 
 func (uc *ContactListUseCase) Execute(ctx context.Context) (ContactListOutput, error) {
-	ctx, span := uc.otel.StartSpan(ctx, "ContactListUseCase.Execute")
+	ctx, span := trace.StartSpan(ctx, "ContactListUseCase.Execute")
 	defer span.End()
 
 	output := ContactListOutput{}

@@ -16,7 +16,6 @@ import (
 	shared_errs "github.com/cristiano-pacheco/pingo/internal/shared/errs"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/config"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/logger"
-	"github.com/cristiano-pacheco/pingo/internal/shared/modules/otel"
 	shared_validator_mocks "github.com/cristiano-pacheco/pingo/internal/shared/modules/validator/mocks"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
@@ -31,7 +30,6 @@ type AuthLoginUseCaseTestSuite struct {
 	validatorMock                 *shared_validator_mocks.MockValidate
 	logger                        logger.Logger
 	cfg                           config.Config
-	otel                          otel.Otel
 }
 
 func (s *AuthLoginUseCaseTestSuite) SetupTest() {
@@ -49,7 +47,6 @@ func (s *AuthLoginUseCaseTestSuite) SetupTest() {
 		},
 	}
 
-	s.otel = otel.NewNoopOtel()
 	s.logger = logger.New(s.cfg)
 
 	s.userAuthenticatedProducerMock = producer_mocks.NewMockUserAuthenticatedProducer(s.T())
@@ -63,7 +60,6 @@ func (s *AuthLoginUseCaseTestSuite) SetupTest() {
 		s.validatorMock,
 		s.hashServiceMock,
 		s.logger,
-		s.otel,
 	)
 }
 

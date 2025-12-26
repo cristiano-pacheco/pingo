@@ -5,11 +5,11 @@ import (
 	"encoding/base64"
 	"fmt"
 
+	"github.com/cristiano-pacheco/go-otel/trace"
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/model"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/config"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/logger"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/mailer"
-	"github.com/cristiano-pacheco/pingo/internal/shared/modules/otel"
 )
 
 const sendAccountConfirmationEmailSubject = "Account Confirmation"
@@ -28,7 +28,6 @@ type sendEmailConfirmationService struct {
 	mailerSMTP           mailer.SMTP
 	logger               logger.Logger
 	cfg                  config.Config
-	otel                 otel.Otel
 }
 
 func NewSendEmailConfirmationService(
@@ -36,19 +35,17 @@ func NewSendEmailConfirmationService(
 	mailerSMTP mailer.SMTP,
 	logger logger.Logger,
 	cfg config.Config,
-	otel otel.Otel,
 ) SendEmailConfirmationService {
 	return &sendEmailConfirmationService{
 		emailTemplateService,
 		mailerSMTP,
 		logger,
 		cfg,
-		otel,
 	}
 }
 
 func (s *sendEmailConfirmationService) Execute(ctx context.Context, input SendEmailConfirmationInput) error {
-	ctx, span := s.otel.StartSpan(ctx, "SendEmailConfirmationService.Execute")
+	ctx, span := trace.StartSpan(ctx, "SendEmailConfirmationService.Execute")
 	defer span.End()
 
 	confirmationToken := base64.StdEncoding.EncodeToString(input.ConfirmationTokenHash)

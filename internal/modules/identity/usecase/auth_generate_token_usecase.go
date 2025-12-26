@@ -10,8 +10,9 @@ import (
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/service"
 	shared_errs "github.com/cristiano-pacheco/pingo/internal/shared/errs"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/logger"
-	"github.com/cristiano-pacheco/pingo/internal/shared/modules/otel"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/validator"
+
+	"github.com/cristiano-pacheco/go-otel/trace"
 )
 
 type AuthGenerateTokenUseCase struct {
@@ -21,7 +22,6 @@ type AuthGenerateTokenUseCase struct {
 	hashService            service.HashService
 	validator              validator.Validate
 	logger                 logger.Logger
-	otel                   otel.Otel
 }
 
 func NewAuthGenerateTokenUseCase(
@@ -31,7 +31,6 @@ func NewAuthGenerateTokenUseCase(
 	hashService service.HashService,
 	validator validator.Validate,
 	logger logger.Logger,
-	otel otel.Otel,
 ) *AuthGenerateTokenUseCase {
 	return &AuthGenerateTokenUseCase{
 		oneTimeTokenRepository: oneTimeTokenRepository,
@@ -40,7 +39,6 @@ func NewAuthGenerateTokenUseCase(
 		hashService:            hashService,
 		validator:              validator,
 		logger:                 logger,
-		otel:                   otel,
 	}
 }
 
@@ -57,7 +55,7 @@ func (uc *AuthGenerateTokenUseCase) Execute(
 	ctx context.Context,
 	input GenerateTokenInput,
 ) (GenerateTokenOutput, error) {
-	ctx, span := uc.otel.StartSpan(ctx, "AuthGenerateTokenUseCase.Execute")
+	ctx, span := trace.StartSpan(ctx, "AuthGenerateTokenUseCase.Execute")
 	defer span.End()
 
 	output := GenerateTokenOutput{}

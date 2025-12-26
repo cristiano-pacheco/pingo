@@ -10,7 +10,6 @@ import (
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/event/producer"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/config"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/logger"
-	"github.com/cristiano-pacheco/pingo/internal/shared/modules/otel"
 	"github.com/cristiano-pacheco/pingo/pkg/kafka"
 	kafka_mocks "github.com/cristiano-pacheco/pingo/pkg/kafka/mocks"
 	"github.com/stretchr/testify/mock"
@@ -23,13 +22,11 @@ type UserCreatedProducerTestSuite struct {
 	producerMock *kafka_mocks.MockProducer
 	builderMock  *kafka_mocks.MockBuilder
 	logger       logger.Logger
-	otel         otel.Otel
 }
 
 func (s *UserCreatedProducerTestSuite) SetupTest() {
 	s.producerMock = kafka_mocks.NewMockProducer(s.T())
 	s.builderMock = kafka_mocks.NewMockBuilder(s.T())
-	s.otel = otel.NewNoopOtel()
 
 	loggerConfig := config.Config{
 		Log: config.Log{
@@ -47,7 +44,6 @@ func (s *UserCreatedProducerTestSuite) SetupTest() {
 	s.sut = producer.NewUserCreatedProducer(
 		lifecycle,
 		s.logger,
-		s.otel,
 		s.builderMock,
 	)
 }
