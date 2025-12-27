@@ -1,7 +1,6 @@
 package otel
 
 import (
-	"context"
 	"time"
 
 	"github.com/cristiano-pacheco/go-otel/trace"
@@ -49,8 +48,6 @@ func Initialize(lc fx.Lifecycle, config config.Config) {
 	trace.MustInitialize(tc)
 
 	lc.Append(fx.Hook{
-		OnStop: func(ctx context.Context) error {
-			return trace.Shutdown(ctx)
-		},
+		OnStop: trace.Shutdown,
 	})
 }

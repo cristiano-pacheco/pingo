@@ -14,7 +14,12 @@ import (
 
 type HTTPMonitorCheckRepository interface {
 	FindByID(ctx context.Context, checkID uint64) (model.HTTPMonitorCheckModel, error)
-	FindAll(ctx context.Context, monitorID uint64, from, to *time.Time, page, pageSize int) ([]model.HTTPMonitorCheckModel, int64, error)
+	FindAll(
+		ctx context.Context,
+		monitorID uint64,
+		from, to *time.Time,
+		page, pageSize int,
+	) ([]model.HTTPMonitorCheckModel, int64, error)
 	Create(ctx context.Context, check model.HTTPMonitorCheckModel) (model.HTTPMonitorCheckModel, error)
 }
 
@@ -26,7 +31,10 @@ func NewHTTPMonitorCheckRepository(db *database.PingoDB) HTTPMonitorCheckReposit
 	return &httpMonitorCheckRepository{db}
 }
 
-func (r *httpMonitorCheckRepository) FindByID(ctx context.Context, checkID uint64) (model.HTTPMonitorCheckModel, error) {
+func (r *httpMonitorCheckRepository) FindByID(
+	ctx context.Context,
+	checkID uint64,
+) (model.HTTPMonitorCheckModel, error) {
 	ctx, otelSpan := trace.StartSpan(ctx, "HTTPMonitorCheckRepository.FindByID")
 	defer otelSpan.End()
 
@@ -44,7 +52,12 @@ func (r *httpMonitorCheckRepository) FindByID(ctx context.Context, checkID uint6
 	return check, nil
 }
 
-func (r *httpMonitorCheckRepository) FindAll(ctx context.Context, monitorID uint64, from, to *time.Time, page, pageSize int) ([]model.HTTPMonitorCheckModel, int64, error) {
+func (r *httpMonitorCheckRepository) FindAll(
+	ctx context.Context,
+	monitorID uint64,
+	from, to *time.Time,
+	page, pageSize int,
+) ([]model.HTTPMonitorCheckModel, int64, error) {
 	ctx, otelSpan := trace.StartSpan(ctx, "HTTPMonitorCheckRepository.FindAll")
 	defer otelSpan.End()
 
@@ -95,7 +108,10 @@ func (r *httpMonitorCheckRepository) FindAll(ctx context.Context, monitorID uint
 	return checks, total, nil
 }
 
-func (r *httpMonitorCheckRepository) Create(ctx context.Context, check model.HTTPMonitorCheckModel) (model.HTTPMonitorCheckModel, error) {
+func (r *httpMonitorCheckRepository) Create(
+	ctx context.Context,
+	check model.HTTPMonitorCheckModel,
+) (model.HTTPMonitorCheckModel, error) {
 	ctx, otelSpan := trace.StartSpan(ctx, "HTTPMonitorCheckRepository.Create")
 	defer otelSpan.End()
 

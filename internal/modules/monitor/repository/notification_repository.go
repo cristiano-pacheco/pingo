@@ -44,7 +44,10 @@ func (r *notificationRepository) FindByID(ctx context.Context, notificationID ui
 	return notification, nil
 }
 
-func (r *notificationRepository) FindByMonitorID(ctx context.Context, monitorID uint64) ([]model.NotificationModel, error) {
+func (r *notificationRepository) FindByMonitorID(
+	ctx context.Context,
+	monitorID uint64,
+) ([]model.NotificationModel, error) {
 	ctx, otelSpan := trace.StartSpan(ctx, "NotificationRepository.FindByMonitorID")
 	defer otelSpan.End()
 
@@ -59,7 +62,10 @@ func (r *notificationRepository) FindByMonitorID(ctx context.Context, monitorID 
 	return notifications, nil
 }
 
-func (r *notificationRepository) Create(ctx context.Context, notification model.NotificationModel) (model.NotificationModel, error) {
+func (r *notificationRepository) Create(
+	ctx context.Context,
+	notification model.NotificationModel,
+) (model.NotificationModel, error) {
 	ctx, otelSpan := trace.StartSpan(ctx, "NotificationRepository.Create")
 	defer otelSpan.End()
 
@@ -67,7 +73,10 @@ func (r *notificationRepository) Create(ctx context.Context, notification model.
 	return notification, err
 }
 
-func (r *notificationRepository) Update(ctx context.Context, notification model.NotificationModel) (model.NotificationModel, error) {
+func (r *notificationRepository) Update(
+	ctx context.Context,
+	notification model.NotificationModel,
+) (model.NotificationModel, error) {
 	ctx, otelSpan := trace.StartSpan(ctx, "NotificationRepository.Update")
 	defer otelSpan.End()
 

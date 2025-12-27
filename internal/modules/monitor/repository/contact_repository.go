@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"errors"
 
 	"github.com/cristiano-pacheco/go-otel/trace"
 	"github.com/cristiano-pacheco/pingo/internal/modules/monitor/model"
@@ -45,7 +46,7 @@ func (r *contactRepository) FindByName(ctx context.Context, name string) (model.
 		Where("name = ?", name).
 		First(ctx)
 	if err != nil {
-		if err == gorm.ErrRecordNotFound {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return model.ContactModel{}, errs.ErrRecordNotFound
 		}
 		return model.ContactModel{}, err

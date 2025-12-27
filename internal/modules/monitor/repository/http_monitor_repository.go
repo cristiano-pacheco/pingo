@@ -28,7 +28,10 @@ func NewHTTPMonitorRepository(db *database.PingoDB) HTTPMonitorRepository {
 	return &httpMonitorRepository{db}
 }
 
-func (r *httpMonitorRepository) FindAll(ctx context.Context, page, pageSize int) ([]model.HTTPMonitorModel, int64, error) {
+func (r *httpMonitorRepository) FindAll(
+	ctx context.Context,
+	page, pageSize int,
+) ([]model.HTTPMonitorModel, int64, error) {
 	ctx, otelSpan := trace.StartSpan(ctx, "HTTPMonitorRepository.FindAll")
 	defer otelSpan.End()
 
@@ -71,7 +74,10 @@ func (r *httpMonitorRepository) FindByID(ctx context.Context, monitorID uint64) 
 	return monitor, nil
 }
 
-func (r *httpMonitorRepository) Create(ctx context.Context, monitor model.HTTPMonitorModel) (model.HTTPMonitorModel, error) {
+func (r *httpMonitorRepository) Create(
+	ctx context.Context,
+	monitor model.HTTPMonitorModel,
+) (model.HTTPMonitorModel, error) {
 	ctx, otelSpan := trace.StartSpan(ctx, "HTTPMonitorRepository.Create")
 	defer otelSpan.End()
 
@@ -79,7 +85,10 @@ func (r *httpMonitorRepository) Create(ctx context.Context, monitor model.HTTPMo
 	return monitor, err
 }
 
-func (r *httpMonitorRepository) Update(ctx context.Context, monitor model.HTTPMonitorModel) (model.HTTPMonitorModel, error) {
+func (r *httpMonitorRepository) Update(
+	ctx context.Context,
+	monitor model.HTTPMonitorModel,
+) (model.HTTPMonitorModel, error) {
 	ctx, otelSpan := trace.StartSpan(ctx, "HTTPMonitorRepository.Update")
 	defer otelSpan.End()
 
