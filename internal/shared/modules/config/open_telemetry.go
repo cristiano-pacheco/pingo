@@ -8,4 +8,5 @@ type OpenTelemetry struct {
 	MaxBatchSize        int     `mapstructure:"OPEN_TELEMETRY_MAX_BATCH_SIZE"`
 	Insecure            bool    `mapstructure:"OPEN_TELEMETRY_INSECURE"`
 	SampleRate          float64 `mapstructure:"OPEN_TELEMETRY_SAMPLE_RATE"`
+	ExporterType        string  `mapstructure:"OPEN_TELEMETRY_EXPORTER_TYPE"`
 }

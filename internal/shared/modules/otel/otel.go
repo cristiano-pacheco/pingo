@@ -12,9 +12,25 @@ import (
 func Initialize(lc fx.Lifecycle, config config.Config) {
 	batchTimeout := time.Duration(config.OpenTelemetry.BatchTimeoutSeconds) * time.Second
 
-	exporterType, err := trace.NewExporterType(trace.ExporterTypeHTTP)
-	if err != nil {
-		panic(err)
+	var exporterType trace.ExporterType
+	var err error
+
+	if config.OpenTelemetry.ExporterType == trace.ExporterTypeHTTP {
+		exporterType, err = trace.NewExporterType(trace.ExporterTypeHTTP)
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	if config.OpenTelemetry.ExporterType == trace.ExporterTypeGRPC {
+		exporterType, err = trace.NewExporterType(trace.ExporterTypeGRPC)
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	if exporterType.IsZero() {
+		panic("invalid exporter type for OpenTelemetry")
 	}
 
 	tc := trace.TracerConfig{
