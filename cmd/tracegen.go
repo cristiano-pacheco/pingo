@@ -1,7 +1,10 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
+	"log/slog"
+	"os"
 
 	"github.com/cristiano-pacheco/pingo/pkg/tracegen"
 	"github.com/spf13/cobra"
@@ -39,9 +42,9 @@ Example usage:
   # Remove existing traces
   pingo tracegen --path ./internal --remove
 `,
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(_ *cobra.Command, _ []string) error {
 		if len(tracegenPaths) == 0 {
-			return fmt.Errorf("at least one path must be specified with --path")
+			return errors.New("at least one path must be specified with --path")
 		}
 
 		if tracegenRemove {
@@ -55,14 +58,18 @@ Example usage:
 func init() {
 	rootCmd.AddCommand(tracegenCmd)
 
-	tracegenCmd.Flags().StringSliceVarP(&tracegenPaths, "path", "p", []string{}, "Path(s) to scan for Go files (required)")
+	tracegenCmd.Flags().
+		StringSliceVarP(&tracegenPaths, "path", "p", []string{}, "Path(s) to scan for Go files (required)")
 	tracegenCmd.Flags().StringVar(&tracegenPattern, "pattern", "", "Function name pattern to match (e.g., 'Execute')")
-	tracegenCmd.Flags().StringVar(&tracegenImportPath, "import", "github.com/cristiano-pacheco/go-otel/trace", "Import path for trace package")
+	tracegenCmd.Flags().
+		StringVar(&tracegenImportPath, "import", "github.com/cristiano-pacheco/go-otel/trace", "Import path for trace package")
 	tracegenCmd.Flags().BoolVar(&tracegenDryRun, "dry-run", false, "Show what would be changed without modifying files")
 	tracegenCmd.Flags().BoolVarP(&tracegenVerbose, "verbose", "v", false, "Enable verbose output")
 	tracegenCmd.Flags().BoolVar(&tracegenRemove, "remove", false, "Remove existing trace instrumentation")
 
-	tracegenCmd.MarkFlagRequired("path")
+	if err := tracegenCmd.MarkFlagRequired("path"); err != nil {
+		panic(err)
+	}
 }
 
 func runTraceGeneration() error {
@@ -76,16 +83,14 @@ func runTraceGeneration() error {
 
 	generator := tracegen.NewGenerator(config)
 
+	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
+
 	if tracegenVerbose {
-		fmt.Println("Starting trace generation...")
-		fmt.Printf("Paths: %v\n", tracegenPaths)
-		if tracegenPattern != "" {
-			fmt.Printf("Pattern: %s\n", tracegenPattern)
-		}
+		logger.Info("Starting trace generation...")
+		logger.Info("Configuration", "paths", tracegenPaths, "pattern", tracegenPattern)
 		if tracegenDryRun {
-			fmt.Println("DRY RUN MODE - No files will be modified")
+			logger.Warn("DRY RUN MODE - No files will be modified")
 		}
-		fmt.Println()
 	}
 
 	if err := generator.Generate(); err != nil {
@@ -93,7 +98,7 @@ func runTraceGeneration() error {
 	}
 
 	if !tracegenDryRun {
-		fmt.Println("✓ Trace generation completed successfully")
+		logger.Info("✓ Trace generation completed successfully")
 	}
 
 	return nil
@@ -108,13 +113,14 @@ func runTraceRemoval() error {
 
 	remover := tracegen.NewRemover(config)
 
+	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
+
 	if tracegenVerbose {
-		fmt.Println("Starting trace removal...")
-		fmt.Printf("Paths: %v\n", tracegenPaths)
+		logger.Info("Starting trace removal...")
+		logger.Info("Configuration", "paths", tracegenPaths)
 		if tracegenDryRun {
-			fmt.Println("DRY RUN MODE - No files will be modified")
+			logger.Warn("DRY RUN MODE - No files will be modified")
 		}
-		fmt.Println()
 	}
 
 	if err := remover.Remove(); err != nil {
@@ -122,7 +128,7 @@ func runTraceRemoval() error {
 	}
 
 	if !tracegenDryRun {
-		fmt.Println("✓ Trace removal completed successfully")
+		logger.Info("✓ Trace removal completed successfully")
 	}
 
 	return nil

@@ -7,6 +7,7 @@ import (
 	"go/format"
 	"go/parser"
 	"go/token"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
@@ -26,6 +27,7 @@ type RemovalConfig struct {
 type Remover struct {
 	config RemovalConfig
 	fset   *token.FileSet
+	logger *slog.Logger
 }
 
 // NewRemover creates a new trace remover
@@ -33,6 +35,7 @@ func NewRemover(config RemovalConfig) *Remover {
 	return &Remover{
 		config: config,
 		fset:   token.NewFileSet(),
+		logger: slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo})),
 	}
 }
 
@@ -45,12 +48,12 @@ func (r *Remover) Remove() error {
 		}
 
 		if info.IsDir() {
-			if err := r.processDirectory(path); err != nil {
-				return err
+			if processErr := r.processDirectory(path); processErr != nil {
+				return processErr
 			}
 		} else {
-			if err := r.processFile(path); err != nil {
-				return err
+			if processErr := r.processFile(path); processErr != nil {
+				return processErr
 			}
 		}
 	}
@@ -64,8 +67,8 @@ func (r *Remover) processDirectory(dir string) error {
 			return err
 		}
 		if !info.IsDir() && strings.HasSuffix(path, ".go") && !strings.HasSuffix(path, "_test.go") {
-			if err := r.processFile(path); err != nil {
-				return fmt.Errorf("error processing %s: %w", path, err)
+			if processErr := r.processFile(path); processErr != nil {
+				return fmt.Errorf("error processing %s: %w", path, processErr)
 			}
 		}
 		return nil
@@ -102,7 +105,7 @@ func (r *Remover) processFile(filename string) error {
 	// Write the modified file
 	if r.config.DryRun {
 		if r.config.Verbose {
-			fmt.Printf("[DRY RUN] Would modify: %s\n", filename)
+			r.logger.Info("[DRY RUN] Would modify file", "file", filename)
 		}
 		return nil
 	}
@@ -122,7 +125,7 @@ func (r *Remover) removeTracingCode(funcDecl *ast.FuncDecl) bool {
 	if r.isStartSpanStatement(funcDecl.Body.List[0]) {
 		if r.config.Verbose {
 			spanName := r.getSpanName(funcDecl)
-			fmt.Printf("Removing trace from: %s\n", spanName)
+			r.logger.Info("Removing trace", "function", spanName)
 		}
 
 		// Remove the first statement (ctx, span := trace.Span(...))
@@ -227,12 +230,12 @@ func (r *Remover) writeFile(filename string, node *ast.File) error {
 		return fmt.Errorf("error formatting node: %w", err)
 	}
 
-	if err := os.WriteFile(filename, buf.Bytes(), 0644); err != nil {
+	if err := os.WriteFile(filename, buf.Bytes(), 0600); err != nil {
 		return fmt.Errorf("error writing file: %w", err)
 	}
 
 	if r.config.Verbose {
-		fmt.Printf("Modified: %s\n", filename)
+		r.logger.Info("Modified file", "file", filename)
 	}
 
 	return nil

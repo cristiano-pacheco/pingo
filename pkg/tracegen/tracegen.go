@@ -7,6 +7,7 @@ import (
 	"go/format"
 	"go/parser"
 	"go/token"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
@@ -31,6 +32,7 @@ type Config struct {
 type Generator struct {
 	config Config
 	fset   *token.FileSet
+	logger *slog.Logger
 }
 
 // NewGenerator creates a new trace generator
@@ -41,6 +43,7 @@ func NewGenerator(config Config) *Generator {
 	return &Generator{
 		config: config,
 		fset:   token.NewFileSet(),
+		logger: slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo})),
 	}
 }
 
@@ -53,12 +56,12 @@ func (g *Generator) Generate() error {
 		}
 
 		if info.IsDir() {
-			if err := g.processDirectory(path); err != nil {
-				return err
+			if processErr := g.processDirectory(path); processErr != nil {
+				return processErr
 			}
 		} else {
-			if err := g.processFile(path); err != nil {
-				return err
+			if processErr := g.processFile(path); processErr != nil {
+				return processErr
 			}
 		}
 	}
@@ -72,8 +75,8 @@ func (g *Generator) processDirectory(dir string) error {
 			return err
 		}
 		if !info.IsDir() && strings.HasSuffix(path, ".go") && !strings.HasSuffix(path, "_test.go") {
-			if err := g.processFile(path); err != nil {
-				return fmt.Errorf("error processing %s: %w", path, err)
+			if processErr := g.processFile(path); processErr != nil {
+				return fmt.Errorf("error processing %s: %w", path, processErr)
 			}
 		}
 		return nil
@@ -87,6 +90,29 @@ func (g *Generator) processFile(filename string) error {
 		return fmt.Errorf("error parsing file: %w", err)
 	}
 
+	modified, hasTraceImport := g.processAST(node)
+	if !modified {
+		return nil
+	}
+
+	// Add trace import if not present
+	if hasTraceImport && !g.hasImport(node, g.config.TraceImportPath) {
+		g.addImport(node, g.config.TraceImportPath)
+	}
+
+	// Write the modified file
+	if g.config.DryRun {
+		if g.config.Verbose {
+			g.logger.Info("[DRY RUN] Would modify file", "file", filename)
+		}
+		return nil
+	}
+
+	return g.writeFile(filename, node)
+}
+
+// processAST walks the AST and injects tracing code
+func (g *Generator) processAST(node *ast.File) (bool, bool) {
 	modified := false
 	hasTraceImport := false
 
@@ -124,24 +150,7 @@ func (g *Generator) processFile(filename string) error {
 		return true
 	})
 
-	if !modified {
-		return nil
-	}
-
-	// Add trace import if not present
-	if hasTraceImport && !g.hasImport(node, g.config.TraceImportPath) {
-		g.addImport(node, g.config.TraceImportPath)
-	}
-
-	// Write the modified file
-	if g.config.DryRun {
-		if g.config.Verbose {
-			fmt.Printf("[DRY RUN] Would modify: %s\n", filename)
-		}
-		return nil
-	}
-
-	return g.writeFile(filename, node)
+	return modified, hasTraceImport
 }
 
 // shouldTraceFunction determines if a function should have tracing injected
@@ -225,7 +234,7 @@ func (g *Generator) injectTracingCode(funcDecl *ast.FuncDecl) bool {
 	spanName := g.getSpanName(funcDecl)
 
 	if g.config.Verbose {
-		fmt.Printf("Injecting trace into: %s\n", spanName)
+		g.logger.Info("Injecting trace", "function", spanName)
 	}
 
 	// Create: ctx, span := trace.Span(ctx, "SpanName")
@@ -351,12 +360,12 @@ func (g *Generator) writeFile(filename string, node *ast.File) error {
 		return fmt.Errorf("error formatting node: %w", err)
 	}
 
-	if err := os.WriteFile(filename, buf.Bytes(), 0644); err != nil {
+	if err := os.WriteFile(filename, buf.Bytes(), 0600); err != nil {
 		return fmt.Errorf("error writing file: %w", err)
 	}
 
 	if g.config.Verbose {
-		fmt.Printf("Modified: %s\n", filename)
+		g.logger.Info("Modified file", "file", filename)
 	}
 
 	return nil
