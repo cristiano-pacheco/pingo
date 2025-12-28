@@ -24,9 +24,9 @@ import (
 type AuthLoginUseCaseTestSuite struct {
 	suite.Suite
 	sut                           *usecase.AuthLoginUseCase
-	userAuthenticatedProducerMock *producer_mocks.MockUserAuthenticatedProducer
-	userRepositoryMock            *repository_mocks.MockUserRepository
-	hashServiceMock               *service_mocks.MockHashService
+	userAuthenticatedProducerMock *producer_mocks.MockUserAuthenticatedProducerI
+	userRepositoryMock            *repository_mocks.MockUserRepositoryI
+	hashServiceMock               *service_mocks.MockHashServiceI
 	validatorMock                 *shared_validator_mocks.MockValidate
 	logger                        logger.Logger
 	cfg                           config.Config
@@ -49,9 +49,9 @@ func (s *AuthLoginUseCaseTestSuite) SetupTest() {
 
 	s.logger = logger.New(s.cfg)
 
-	s.userAuthenticatedProducerMock = producer_mocks.NewMockUserAuthenticatedProducer(s.T())
-	s.userRepositoryMock = repository_mocks.NewMockUserRepository(s.T())
-	s.hashServiceMock = service_mocks.NewMockHashService(s.T())
+	s.userAuthenticatedProducerMock = producer_mocks.NewMockUserAuthenticatedProducerI(s.T())
+	s.userRepositoryMock = repository_mocks.NewMockUserRepositoryI(s.T())
+	s.hashServiceMock = service_mocks.NewMockHashServiceI(s.T())
 	s.validatorMock = shared_validator_mocks.NewMockValidate(s.T())
 
 	s.sut = usecase.NewAuthLoginUseCase(

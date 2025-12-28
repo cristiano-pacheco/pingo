@@ -25,9 +25,9 @@ import (
 type UserActivateUseCaseTestSuite struct {
 	suite.Suite
 	sut                        *usecase.UserActivateUseCase
-	oneTimeTokenRepositoryMock *repository_mocks.MockOneTimeTokenRepository
-	userRepositoryMock         *repository_mocks.MockUserRepository
-	userActivatedCacheMock     *cache_mocks.MockUserActivatedCache
+	oneTimeTokenRepositoryMock *repository_mocks.MockOneTimeTokenRepositoryI
+	userRepositoryMock         *repository_mocks.MockUserRepositoryI
+	userActivatedCacheMock     *cache_mocks.MockUserActivatedCacheI
 	validateMock               *validator_mocks.MockValidate
 	logger                     logger.Logger
 	cfg                        config.Config
@@ -51,9 +51,9 @@ func (s *UserActivateUseCaseTestSuite) SetupTest() {
 		},
 	}
 
-	s.oneTimeTokenRepositoryMock = repository_mocks.NewMockOneTimeTokenRepository(s.T())
-	s.userRepositoryMock = repository_mocks.NewMockUserRepository(s.T())
-	s.userActivatedCacheMock = cache_mocks.NewMockUserActivatedCache(s.T())
+	s.oneTimeTokenRepositoryMock = repository_mocks.NewMockOneTimeTokenRepositoryI(s.T())
+	s.userRepositoryMock = repository_mocks.NewMockUserRepositoryI(s.T())
+	s.userActivatedCacheMock = cache_mocks.NewMockUserActivatedCacheI(s.T())
 	s.validateMock = validator_mocks.NewMockValidate(s.T())
 	s.logger = logger.New(s.cfg)
 

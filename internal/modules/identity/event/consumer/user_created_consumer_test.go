@@ -25,18 +25,18 @@ import (
 type UserCreatedConsumerTestSuite struct {
 	suite.Suite
 	sut                          *consumer.UserCreatedConsumer
-	sendEmailConfirmationService *service_mocks.MockSendEmailConfirmationService
-	oneTimeTokenRepository       *repository_mocks.MockOneTimeTokenRepository
-	userRepository               *repository_mocks.MockUserRepository
-	hashService                  *service_mocks.MockHashService
+	sendEmailConfirmationService *service_mocks.MockSendEmailConfirmationServiceI
+	oneTimeTokenRepository       *repository_mocks.MockOneTimeTokenRepositoryI
+	userRepository               *repository_mocks.MockUserRepositoryI
+	hashService                  *service_mocks.MockHashServiceI
 	logger                       logger.Logger
 }
 
 func (s *UserCreatedConsumerTestSuite) SetupTest() {
-	s.sendEmailConfirmationService = service_mocks.NewMockSendEmailConfirmationService(s.T())
-	s.oneTimeTokenRepository = repository_mocks.NewMockOneTimeTokenRepository(s.T())
-	s.userRepository = repository_mocks.NewMockUserRepository(s.T())
-	s.hashService = service_mocks.NewMockHashService(s.T())
+	s.sendEmailConfirmationService = service_mocks.NewMockSendEmailConfirmationServiceI(s.T())
+	s.oneTimeTokenRepository = repository_mocks.NewMockOneTimeTokenRepositoryI(s.T())
+	s.userRepository = repository_mocks.NewMockUserRepositoryI(s.T())
+	s.hashService = service_mocks.NewMockHashServiceI(s.T())
 
 	// Use a disabled logger for testing
 	loggerConfig := config.Config{

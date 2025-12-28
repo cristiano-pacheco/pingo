@@ -21,7 +21,7 @@ import (
 type TokenServiceTestSuite struct {
 	suite.Suite
 	sut                    *service.TokenService
-	privateKeyRegistryMock *registry_mocks.MockPrivateKeyRegistry
+	privateKeyRegistryMock *registry_mocks.MockPrivateKeyRegistryI
 	logger                 logger.Logger
 	cfg                    config.Config
 	privateKey             *rsa.PrivateKey
@@ -47,7 +47,7 @@ func (s *TokenServiceTestSuite) SetupTest() {
 
 	s.logger = logger.New(s.cfg)
 
-	s.privateKeyRegistryMock = registry_mocks.NewMockPrivateKeyRegistry(s.T())
+	s.privateKeyRegistryMock = registry_mocks.NewMockPrivateKeyRegistryI(s.T())
 
 	var err error
 	s.privateKey, err = rsa.GenerateKey(rand.Reader, 2048)

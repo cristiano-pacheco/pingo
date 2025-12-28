@@ -17,15 +17,15 @@ import (
 
 type UserActivationServiceTestSuite struct {
 	suite.Suite
-	mockUserActivatedCache *cache_mocks.MockUserActivatedCache
-	mockUserRepository     *repository_mocks.MockUserRepository
+	mockUserActivatedCache *cache_mocks.MockUserActivatedCacheI
+	mockUserRepository     *repository_mocks.MockUserRepositoryI
 	mockLogger             *mocks.MockLogger
 	sut                    *service.UserActivationService
 }
 
 func (s *UserActivationServiceTestSuite) SetupTest() {
-	s.mockUserActivatedCache = cache_mocks.NewMockUserActivatedCache(s.T())
-	s.mockUserRepository = repository_mocks.NewMockUserRepository(s.T())
+	s.mockUserActivatedCache = cache_mocks.NewMockUserActivatedCacheI(s.T())
+	s.mockUserRepository = repository_mocks.NewMockUserRepositoryI(s.T())
 	s.mockLogger = mocks.NewMockLogger(s.T())
 
 	s.sut = service.NewUserActivationService(

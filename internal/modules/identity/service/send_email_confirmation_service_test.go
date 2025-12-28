@@ -20,14 +20,14 @@ import (
 type SendEmailConfirmationServiceTestSuite struct {
 	suite.Suite
 	sut                  *service.SendEmailConfirmationService
-	emailTemplateService *email_template_service_mocks.MockEmailTemplateService
+	emailTemplateService *email_template_service_mocks.MockEmailTemplateServiceI
 	mailerSMTP           *mailer_mocks.MockSMTP
 	logger               logger.Logger
 	cfg                  config.Config
 }
 
 func (s *SendEmailConfirmationServiceTestSuite) SetupTest() {
-	s.emailTemplateService = email_template_service_mocks.NewMockEmailTemplateService(s.T())
+	s.emailTemplateService = email_template_service_mocks.NewMockEmailTemplateServiceI(s.T())
 	s.mailerSMTP = mailer_mocks.NewMockSMTP(s.T())
 
 	s.cfg = config.Config{

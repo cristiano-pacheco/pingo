@@ -25,20 +25,20 @@ import (
 type UserCreateUseCaseTestSuite struct {
 	suite.Suite
 	sut                     *usecase.UserCreateUseCase
-	userCreatedProducerMock *producer_mocks.MockUserCreatedProducer
-	passwordValidatorMock   *validator_mocks.MockPasswordValidator
-	userRepositoryMock      *repository_mocks.MockUserRepository
-	hashServiceMock         *service_mocks.MockHashService
+	userCreatedProducerMock *producer_mocks.MockUserCreatedProducerI
+	passwordValidatorMock   *validator_mocks.MockPasswordValidatorI
+	userRepositoryMock      *repository_mocks.MockUserRepositoryI
+	hashServiceMock         *service_mocks.MockHashServiceI
 	validatorMock           *shared_validator_mocks.MockValidate
 	logger                  logger.Logger
 	cfg                     config.Config
 }
 
 func (s *UserCreateUseCaseTestSuite) SetupTest() {
-	s.userCreatedProducerMock = producer_mocks.NewMockUserCreatedProducer(s.T())
-	s.passwordValidatorMock = validator_mocks.NewMockPasswordValidator(s.T())
-	s.userRepositoryMock = repository_mocks.NewMockUserRepository(s.T())
-	s.hashServiceMock = service_mocks.NewMockHashService(s.T())
+	s.userCreatedProducerMock = producer_mocks.NewMockUserCreatedProducerI(s.T())
+	s.passwordValidatorMock = validator_mocks.NewMockPasswordValidatorI(s.T())
+	s.userRepositoryMock = repository_mocks.NewMockUserRepositoryI(s.T())
+	s.hashServiceMock = service_mocks.NewMockHashServiceI(s.T())
 	s.validatorMock = shared_validator_mocks.NewMockValidate(s.T())
 
 	s.cfg = config.Config{

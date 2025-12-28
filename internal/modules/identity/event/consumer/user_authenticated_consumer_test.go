@@ -25,18 +25,18 @@ import (
 type UserAuthenticatedConsumerTestSuite struct {
 	suite.Suite
 	sut                              *consumer.UserAuthenticatedConsumer
-	sendEmailVerificationCodeService *service_mocks.MockSendEmailVerificationCodeService
-	oneTimeTokenRepository           *repository_mocks.MockOneTimeTokenRepository
-	userRepository                   *repository_mocks.MockUserRepository
-	hashService                      *service_mocks.MockHashService
+	sendEmailVerificationCodeService *service_mocks.MockSendEmailVerificationCodeServiceI
+	oneTimeTokenRepository           *repository_mocks.MockOneTimeTokenRepositoryI
+	userRepository                   *repository_mocks.MockUserRepositoryI
+	hashService                      *service_mocks.MockHashServiceI
 	logger                           logger.Logger
 }
 
 func (s *UserAuthenticatedConsumerTestSuite) SetupTest() {
-	s.sendEmailVerificationCodeService = service_mocks.NewMockSendEmailVerificationCodeService(s.T())
-	s.oneTimeTokenRepository = repository_mocks.NewMockOneTimeTokenRepository(s.T())
-	s.userRepository = repository_mocks.NewMockUserRepository(s.T())
-	s.hashService = service_mocks.NewMockHashService(s.T())
+	s.sendEmailVerificationCodeService = service_mocks.NewMockSendEmailVerificationCodeServiceI(s.T())
+	s.oneTimeTokenRepository = repository_mocks.NewMockOneTimeTokenRepositoryI(s.T())
+	s.userRepository = repository_mocks.NewMockUserRepositoryI(s.T())
+	s.hashService = service_mocks.NewMockHashServiceI(s.T())
 
 	// Use a disabled logger for testing
 	loggerConfig := config.Config{

@@ -22,19 +22,19 @@ import (
 type UserUpdateUseCaseTestSuite struct {
 	suite.Suite
 	sut                   *usecase.UserUpdateUseCase
-	hashServiceMock       *service_mocks.MockHashService
-	userRepositoryMock    *mocks.MockUserRepository
+	hashServiceMock       *service_mocks.MockHashServiceI
+	userRepositoryMock    *mocks.MockUserRepositoryI
 	validatorMock         *shared_validator_mocks.MockValidate
-	passwordValidatorMock *validator_mocks.MockPasswordValidator
+	passwordValidatorMock *validator_mocks.MockPasswordValidatorI
 	logger                logger.Logger
 	cfg                   config.Config
 }
 
 func (s *UserUpdateUseCaseTestSuite) SetupTest() {
-	s.hashServiceMock = service_mocks.NewMockHashService(s.T())
-	s.userRepositoryMock = mocks.NewMockUserRepository(s.T())
+	s.hashServiceMock = service_mocks.NewMockHashServiceI(s.T())
+	s.userRepositoryMock = mocks.NewMockUserRepositoryI(s.T())
 	s.validatorMock = shared_validator_mocks.NewMockValidate(s.T())
-	s.passwordValidatorMock = validator_mocks.NewMockPasswordValidator(s.T())
+	s.passwordValidatorMock = validator_mocks.NewMockPasswordValidatorI(s.T())
 
 	s.cfg = config.Config{
 		App: config.App{

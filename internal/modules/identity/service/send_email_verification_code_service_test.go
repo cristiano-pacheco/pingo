@@ -20,17 +20,17 @@ import (
 type SendEmailVerificationCodeServiceTestSuite struct {
 	suite.Suite
 	sut                  *service.SendEmailVerificationCodeService
-	emailTemplateService *email_template_service_mocks.MockEmailTemplateService
+	emailTemplateService *email_template_service_mocks.MockEmailTemplateServiceI
 	mailerSMTP           *mailer_mocks.MockSMTP
-	userRepository       *mocks.MockUserRepository
+	userRepository       *mocks.MockUserRepositoryI
 	logger               logger.Logger
 	cfg                  config.Config
 }
 
 func (s *SendEmailVerificationCodeServiceTestSuite) SetupTest() {
-	s.emailTemplateService = email_template_service_mocks.NewMockEmailTemplateService(s.T())
+	s.emailTemplateService = email_template_service_mocks.NewMockEmailTemplateServiceI(s.T())
 	s.mailerSMTP = mailer_mocks.NewMockSMTP(s.T())
-	s.userRepository = mocks.NewMockUserRepository(s.T())
+	s.userRepository = mocks.NewMockUserRepositoryI(s.T())
 
 	s.cfg = config.Config{
 		MAIL: config.MAIL{

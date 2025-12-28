@@ -24,11 +24,11 @@ import (
 type AuthGenerateTokenUseCaseTestSuite struct {
 	suite.Suite
 	sut                        *usecase.AuthGenerateTokenUseCase
-	oneTimeTokenRepositoryMock *repository_mocks.MockOneTimeTokenRepository
-	userRepositoryMock         *repository_mocks.MockUserRepository
+	oneTimeTokenRepositoryMock *repository_mocks.MockOneTimeTokenRepositoryI
+	userRepositoryMock         *repository_mocks.MockUserRepositoryI
 	validatorMock              *validator_mocks.MockValidate
-	tokenServiceMock           *service_mocks.MockTokenService
-	hashServiceMock            *service_mocks.MockHashService
+	tokenServiceMock           *service_mocks.MockTokenServiceI
+	hashServiceMock            *service_mocks.MockHashServiceI
 	logger                     logger.Logger
 	cfg                        config.Config
 }
@@ -50,11 +50,11 @@ func (s *AuthGenerateTokenUseCaseTestSuite) SetupTest() {
 
 	s.logger = logger.New(s.cfg)
 
-	s.oneTimeTokenRepositoryMock = repository_mocks.NewMockOneTimeTokenRepository(s.T())
-	s.userRepositoryMock = repository_mocks.NewMockUserRepository(s.T())
+	s.oneTimeTokenRepositoryMock = repository_mocks.NewMockOneTimeTokenRepositoryI(s.T())
+	s.userRepositoryMock = repository_mocks.NewMockUserRepositoryI(s.T())
 	s.validatorMock = validator_mocks.NewMockValidate(s.T())
-	s.tokenServiceMock = service_mocks.NewMockTokenService(s.T())
-	s.hashServiceMock = service_mocks.NewMockHashService(s.T())
+	s.tokenServiceMock = service_mocks.NewMockTokenServiceI(s.T())
+	s.hashServiceMock = service_mocks.NewMockHashServiceI(s.T())
 
 	s.sut = usecase.NewAuthGenerateTokenUseCase(
 		s.oneTimeTokenRepositoryMock,
