@@ -75,6 +75,21 @@ update-swagger:
 	swag i --parseDependency
 
 # ==============================================================================
+# Trace generation
+
+.PHONY: tracegen
+tracegen:
+	go run ./main.go tracegen --path ./internal/modules --verbose
+
+.PHONY: tracegen-dry
+tracegen-dry:
+	go run ./main.go tracegen --path ./internal/modules --dry-run --verbose
+
+.PHONY: tracegen-remove
+tracegen-remove:
+	go run ./main.go tracegen --path ./internal/modules --remove --verbose
+
+# ==============================================================================
 # NOTES
 #
 # RSA Keys

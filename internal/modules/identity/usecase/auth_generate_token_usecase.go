@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 
+	"github.com/cristiano-pacheco/go-otel/trace"
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/enum"
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/errs"
 	"github.com/cristiano-pacheco/pingo/internal/modules/identity/repository"
@@ -11,8 +12,6 @@ import (
 	shared_errs "github.com/cristiano-pacheco/pingo/internal/shared/errs"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/logger"
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/validator"
-
-	"github.com/cristiano-pacheco/go-otel/trace"
 )
 
 type AuthGenerateTokenUseCase struct {
