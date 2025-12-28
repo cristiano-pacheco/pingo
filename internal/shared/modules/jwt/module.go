@@ -5,6 +5,6 @@ import (
 )
 
 var Module = fx.Module(
-	"kernel/jwt",
+	"sdk/jwt",
 	fx.Provide(NewParser),
 )

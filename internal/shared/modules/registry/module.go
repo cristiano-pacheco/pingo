@@ -5,7 +5,7 @@ import (
 )
 
 var Module = fx.Module(
-	"kernel/registry",
+	"sdk/registry",
 	fx.Provide(
 		fx.Annotate(
 			NewPrivateKeyRegistry,
