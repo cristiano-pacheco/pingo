@@ -4,7 +4,7 @@ go 1.25.5
 
 require (
 	github.com/ansrivas/fiberprometheus/v2 v2.14.0
-	github.com/cristiano-pacheco/go-otel v1.0.0
+	github.com/cristiano-pacheco/go-otel v1.1.0
 	github.com/go-mail/mail/v2 v2.3.0
 	github.com/go-playground/locales v0.14.1
 	github.com/go-playground/universal-translator v0.18.1
