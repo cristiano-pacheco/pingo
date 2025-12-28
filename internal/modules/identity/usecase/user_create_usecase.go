@@ -61,7 +61,7 @@ func NewUserCreateUseCase(
 }
 
 func (uc *UserCreateUseCase) Execute(ctx context.Context, input UserCreateInput) (UserCreateOutput, error) {
-	ctx, span := trace.StartSpan(ctx, "UserCreateUseCase.Execute")
+	ctx, span := trace.Span(ctx, "UserCreateUseCase.Execute")
 	defer span.End()
 
 	output := UserCreateOutput{}

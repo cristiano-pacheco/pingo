@@ -32,7 +32,7 @@ func (r *httpMonitorRepository) FindAll(
 	ctx context.Context,
 	page, pageSize int,
 ) ([]model.HTTPMonitorModel, int64, error) {
-	ctx, otelSpan := trace.StartSpan(ctx, "HTTPMonitorRepository.FindAll")
+	ctx, otelSpan := trace.Span(ctx, "HTTPMonitorRepository.FindAll")
 	defer otelSpan.End()
 
 	// Calculate offset
@@ -57,7 +57,7 @@ func (r *httpMonitorRepository) FindAll(
 }
 
 func (r *httpMonitorRepository) FindByID(ctx context.Context, monitorID uint64) (model.HTTPMonitorModel, error) {
-	ctx, otelSpan := trace.StartSpan(ctx, "HTTPMonitorRepository.FindByID")
+	ctx, otelSpan := trace.Span(ctx, "HTTPMonitorRepository.FindByID")
 	defer otelSpan.End()
 
 	monitor, err := gorm.G[model.HTTPMonitorModel](r.DB).
@@ -78,7 +78,7 @@ func (r *httpMonitorRepository) Create(
 	ctx context.Context,
 	monitor model.HTTPMonitorModel,
 ) (model.HTTPMonitorModel, error) {
-	ctx, otelSpan := trace.StartSpan(ctx, "HTTPMonitorRepository.Create")
+	ctx, otelSpan := trace.Span(ctx, "HTTPMonitorRepository.Create")
 	defer otelSpan.End()
 
 	err := gorm.G[model.HTTPMonitorModel](r.DB).Create(ctx, &monitor)
@@ -89,7 +89,7 @@ func (r *httpMonitorRepository) Update(
 	ctx context.Context,
 	monitor model.HTTPMonitorModel,
 ) (model.HTTPMonitorModel, error) {
-	ctx, otelSpan := trace.StartSpan(ctx, "HTTPMonitorRepository.Update")
+	ctx, otelSpan := trace.Span(ctx, "HTTPMonitorRepository.Update")
 	defer otelSpan.End()
 
 	_, err := gorm.G[model.HTTPMonitorModel](r.DB).Updates(ctx, monitor)
@@ -100,7 +100,7 @@ func (r *httpMonitorRepository) Update(
 }
 
 func (r *httpMonitorRepository) Delete(ctx context.Context, monitorID uint64) error {
-	ctx, otelSpan := trace.StartSpan(ctx, "HTTPMonitorRepository.Delete")
+	ctx, otelSpan := trace.Span(ctx, "HTTPMonitorRepository.Delete")
 	defer otelSpan.End()
 
 	rowsAffected, err := gorm.G[model.HTTPMonitorModel](r.DB).
@@ -116,7 +116,7 @@ func (r *httpMonitorRepository) Delete(ctx context.Context, monitorID uint64) er
 }
 
 func (r *httpMonitorRepository) AssignContacts(ctx context.Context, monitorID uint64, contactIDs []uint64) error {
-	ctx, otelSpan := trace.StartSpan(ctx, "HTTPMonitorRepository.AssignContacts")
+	ctx, otelSpan := trace.Span(ctx, "HTTPMonitorRepository.AssignContacts")
 	defer otelSpan.End()
 
 	// start a transaction

@@ -35,7 +35,7 @@ func (r *httpMonitorCheckRepository) FindByID(
 	ctx context.Context,
 	checkID uint64,
 ) (model.HTTPMonitorCheckModel, error) {
-	ctx, otelSpan := trace.StartSpan(ctx, "HTTPMonitorCheckRepository.FindByID")
+	ctx, otelSpan := trace.Span(ctx, "HTTPMonitorCheckRepository.FindByID")
 	defer otelSpan.End()
 
 	check, err := gorm.G[model.HTTPMonitorCheckModel](r.DB).
@@ -58,7 +58,7 @@ func (r *httpMonitorCheckRepository) FindAll(
 	from, to *time.Time,
 	page, pageSize int,
 ) ([]model.HTTPMonitorCheckModel, int64, error) {
-	ctx, otelSpan := trace.StartSpan(ctx, "HTTPMonitorCheckRepository.FindAll")
+	ctx, otelSpan := trace.Span(ctx, "HTTPMonitorCheckRepository.FindAll")
 	defer otelSpan.End()
 
 	// Calculate offset
@@ -112,7 +112,7 @@ func (r *httpMonitorCheckRepository) Create(
 	ctx context.Context,
 	check model.HTTPMonitorCheckModel,
 ) (model.HTTPMonitorCheckModel, error) {
-	ctx, otelSpan := trace.StartSpan(ctx, "HTTPMonitorCheckRepository.Create")
+	ctx, otelSpan := trace.Span(ctx, "HTTPMonitorCheckRepository.Create")
 	defer otelSpan.End()
 
 	err := gorm.G[model.HTTPMonitorCheckModel](r.DB).Create(ctx, &check)

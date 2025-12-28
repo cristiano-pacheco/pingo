@@ -32,7 +32,7 @@ func (r *oneTimeTokenRepository) Find(
 	userID uint64,
 	tokenTypeEnum enum.TokenTypeEnum,
 ) (model.OneTimeTokenModel, error) {
-	ctx, otelSpan := trace.StartSpan(ctx, "OneTimeTokenRepository.Find")
+	ctx, otelSpan := trace.Span(ctx, "OneTimeTokenRepository.Find")
 	defer otelSpan.End()
 
 	now := time.Now()
@@ -56,7 +56,7 @@ func (r *oneTimeTokenRepository) Create(
 	ctx context.Context,
 	token model.OneTimeTokenModel,
 ) (model.OneTimeTokenModel, error) {
-	ctx, otelSpan := trace.StartSpan(ctx, "OneTimeTokenRepository.Create")
+	ctx, otelSpan := trace.Span(ctx, "OneTimeTokenRepository.Create")
 	defer otelSpan.End()
 
 	err := gorm.G[model.OneTimeTokenModel](r.DB).Create(ctx, &token)
@@ -64,7 +64,7 @@ func (r *oneTimeTokenRepository) Create(
 }
 
 func (r *oneTimeTokenRepository) Delete(ctx context.Context, userID uint64, tokenTypeEnum enum.TokenTypeEnum) error {
-	ctx, otelSpan := trace.StartSpan(ctx, "OneTimeTokenRepository.Delete")
+	ctx, otelSpan := trace.Span(ctx, "OneTimeTokenRepository.Delete")
 	defer otelSpan.End()
 
 	rowsAffected, err := gorm.G[model.OneTimeTokenModel](r.DB).

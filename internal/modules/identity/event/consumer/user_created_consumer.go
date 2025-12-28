@@ -51,7 +51,7 @@ func (c *UserCreatedConsumer) GroupID() string {
 }
 
 func (c *UserCreatedConsumer) ProcessMessage(ctx context.Context, message kafka.Message) error {
-	ctx, span := trace.StartSpan(ctx, "UserCreatedConsumer.ProcessMessage")
+	ctx, span := trace.Span(ctx, "UserCreatedConsumer.ProcessMessage")
 	defer span.End()
 
 	var userCreatedMessage event.UserCreatedMessage

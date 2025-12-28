@@ -43,7 +43,7 @@ func NewUserCreatedProducer(
 }
 
 func (p *userCreatedProducer) Produce(ctx context.Context, message event.UserCreatedMessage) error {
-	ctx, span := trace.StartSpan(ctx, "UserCreatedProducer.Produce")
+	ctx, span := trace.Span(ctx, "UserCreatedProducer.Produce")
 	defer span.End()
 
 	msg, err := json.Marshal(message)

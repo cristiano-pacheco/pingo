@@ -43,7 +43,7 @@ func NewUserAuthenticatedProducer(
 }
 
 func (p *userAuthenticatedProducer) Produce(ctx context.Context, message event.UserAuthenticatedMessage) error {
-	ctx, span := trace.StartSpan(ctx, "UserAuthenticatedProducer.Produce")
+	ctx, span := trace.Span(ctx, "UserAuthenticatedProducer.Produce")
 	defer span.End()
 
 	msg, err := json.Marshal(message)

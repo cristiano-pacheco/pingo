@@ -33,7 +33,7 @@ func NewContactDeleteUseCase(
 }
 
 func (uc *ContactDeleteUseCase) Execute(ctx context.Context, input ContactDeleteInput) error {
-	ctx, span := trace.StartSpan(ctx, "ContactDeleteUseCase.Execute")
+	ctx, span := trace.Span(ctx, "ContactDeleteUseCase.Execute")
 	defer span.End()
 
 	err := uc.validate.Struct(input)

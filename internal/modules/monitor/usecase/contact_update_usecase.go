@@ -46,7 +46,7 @@ func NewContactUpdateUseCase(
 }
 
 func (uc *ContactUpdateUseCase) Execute(ctx context.Context, input ContactUpdateInput) error {
-	ctx, span := trace.StartSpan(ctx, "ContactUpdateUseCase.Execute")
+	ctx, span := trace.Span(ctx, "ContactUpdateUseCase.Execute")
 	defer span.End()
 
 	err := uc.validate.Struct(input)

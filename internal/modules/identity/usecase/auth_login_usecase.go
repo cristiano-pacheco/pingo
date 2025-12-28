@@ -51,7 +51,7 @@ func NewAuthLoginUseCase(
 }
 
 func (u *AuthLoginUseCase) Execute(ctx context.Context, input AuthLoginInput) (AuthLoginOutput, error) {
-	ctx, span := trace.StartSpan(ctx, "AuthLoginUseCase.Execute")
+	ctx, span := trace.Span(ctx, "AuthLoginUseCase.Execute")
 	defer span.End()
 	if err := u.validator.Struct(input); err != nil {
 		return AuthLoginOutput{}, err

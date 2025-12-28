@@ -32,7 +32,7 @@ func NewTokenService(
 }
 
 func (s *tokenService) GenerateJWT(ctx context.Context, user model.UserModel) (string, error) {
-	_, span := trace.StartSpan(ctx, "TokenService.GenerateJWT")
+	_, span := trace.Span(ctx, "TokenService.GenerateJWT")
 	defer span.End()
 
 	now := time.Now()

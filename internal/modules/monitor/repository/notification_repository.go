@@ -27,7 +27,7 @@ func NewNotificationRepository(db *database.PingoDB) NotificationRepository {
 }
 
 func (r *notificationRepository) FindByID(ctx context.Context, notificationID uint64) (model.NotificationModel, error) {
-	ctx, otelSpan := trace.StartSpan(ctx, "NotificationRepository.FindByID")
+	ctx, otelSpan := trace.Span(ctx, "NotificationRepository.FindByID")
 	defer otelSpan.End()
 
 	notification, err := gorm.G[model.NotificationModel](r.DB).
@@ -48,7 +48,7 @@ func (r *notificationRepository) FindByMonitorID(
 	ctx context.Context,
 	monitorID uint64,
 ) ([]model.NotificationModel, error) {
-	ctx, otelSpan := trace.StartSpan(ctx, "NotificationRepository.FindByMonitorID")
+	ctx, otelSpan := trace.Span(ctx, "NotificationRepository.FindByMonitorID")
 	defer otelSpan.End()
 
 	notifications, err := gorm.G[model.NotificationModel](r.DB).
@@ -66,7 +66,7 @@ func (r *notificationRepository) Create(
 	ctx context.Context,
 	notification model.NotificationModel,
 ) (model.NotificationModel, error) {
-	ctx, otelSpan := trace.StartSpan(ctx, "NotificationRepository.Create")
+	ctx, otelSpan := trace.Span(ctx, "NotificationRepository.Create")
 	defer otelSpan.End()
 
 	err := gorm.G[model.NotificationModel](r.DB).Create(ctx, &notification)
@@ -77,7 +77,7 @@ func (r *notificationRepository) Update(
 	ctx context.Context,
 	notification model.NotificationModel,
 ) (model.NotificationModel, error) {
-	ctx, otelSpan := trace.StartSpan(ctx, "NotificationRepository.Update")
+	ctx, otelSpan := trace.Span(ctx, "NotificationRepository.Update")
 	defer otelSpan.End()
 
 	_, err := gorm.G[model.NotificationModel](r.DB).Updates(ctx, notification)

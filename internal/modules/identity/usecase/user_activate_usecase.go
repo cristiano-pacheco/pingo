@@ -48,7 +48,7 @@ func NewUserActivateUseCase(
 }
 
 func (uc *UserActivateUseCase) Execute(ctx context.Context, input UserActivateInput) error {
-	ctx, span := trace.StartSpan(ctx, "UserActivateUseCase.Execute")
+	ctx, span := trace.Span(ctx, "UserActivateUseCase.Execute")
 	defer span.End()
 
 	err := uc.validate.Struct(input)

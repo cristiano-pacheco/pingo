@@ -4,7 +4,7 @@
 
 ## Features
 
-- **Automatic Trace Injection**: Automatically adds `trace.StartSpan` and `defer span.End()` to functions
+- **Automatic Trace Injection**: Automatically adds `trace.Span` and `defer span.End()` to functions
 - **Smart Detection**: Only instruments functions with `context.Context` as the first parameter
 - **Pattern Matching**: Filter functions by name pattern (e.g., only trace `Execute` methods)
 - **Safe & Reversible**: Can remove previously added traces with `--remove` flag
@@ -69,7 +69,7 @@ The tool uses Go's `ast` (Abstract Syntax Tree) package to:
    - Don't already have tracing code
 3. Inject the following code at the beginning of each matching function:
    ```go
-   ctx, span := trace.StartSpan(ctx, "TypeName.MethodName")
+   ctx, span := trace.Span(ctx, "TypeName.MethodName")
    defer span.End()
    ```
 4. Add the trace import if not already present
@@ -94,7 +94,7 @@ func (uc *AuthGenerateTokenUseCase) Execute(
     ctx context.Context,
     input GenerateTokenInput,
 ) (GenerateTokenOutput, error) {
-    ctx, span := trace.StartSpan(ctx, "AuthGenerateTokenUseCase.Execute")
+    ctx, span := trace.Span(ctx, "AuthGenerateTokenUseCase.Execute")
     defer span.End()
     
     output := GenerateTokenOutput{}

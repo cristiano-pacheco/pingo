@@ -24,7 +24,7 @@ var (
 	initialized          bool
 )
 
-// Initialize configures the global tracer. Must be called before using StartSpan.
+// Initialize configures the global tracer. Must be called before using Span.
 // Returns an error if initialization fails.
 func Initialize(config TracerConfig) error {
 	globalMutex.Lock()
@@ -178,9 +178,9 @@ func newHTTPExporter(ctx context.Context, config TracerConfig) (sdktrace.SpanExp
 	return exporter, nil
 }
 
-// StartSpan starts a new span with the given name.
+// Span starts a new span with the given name.
 // The tracer must be initialized first by calling Initialize or MustInitialize.
-func StartSpan(ctx context.Context, name string) (context.Context, oteltrace.Span) {
+func Span(ctx context.Context, name string) (context.Context, oteltrace.Span) {
 	globalMutex.RLock()
 	defer globalMutex.RUnlock()
 

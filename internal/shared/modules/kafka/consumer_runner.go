@@ -72,7 +72,7 @@ func NewConsumerRunner(
 // Run starts the consumer loop and delegates to the processor.
 func (r *ConsumerRunner) Run(ctx context.Context) error {
 	return r.consumer.Consume(ctx, func(ctx context.Context, msg kafka.Message) error {
-		ctx, span := trace.StartSpan(ctx, "kafka.consumer")
+		ctx, span := trace.Span(ctx, "kafka.consumer")
 		defer span.End()
 		return r.processor.ProcessMessage(ctx, msg)
 	})

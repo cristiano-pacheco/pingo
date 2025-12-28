@@ -54,7 +54,7 @@ func (uc *AuthGenerateTokenUseCase) Execute(
 	ctx context.Context,
 	input GenerateTokenInput,
 ) (GenerateTokenOutput, error) {
-	ctx, span := trace.StartSpan(ctx, "AuthGenerateTokenUseCase.Execute")
+	ctx, span := trace.Span(ctx, "AuthGenerateTokenUseCase.Execute")
 	defer span.End()
 
 	output := GenerateTokenOutput{}

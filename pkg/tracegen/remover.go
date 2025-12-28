@@ -118,14 +118,14 @@ func (r *Remover) removeTracingCode(funcDecl *ast.FuncDecl) bool {
 
 	modified := false
 
-	// Check if first two statements are trace.StartSpan and defer span.End()
+	// Check if first two statements are trace.Span and defer span.End()
 	if r.isStartSpanStatement(funcDecl.Body.List[0]) {
 		if r.config.Verbose {
 			spanName := r.getSpanName(funcDecl)
 			fmt.Printf("Removing trace from: %s\n", spanName)
 		}
 
-		// Remove the first statement (ctx, span := trace.StartSpan(...))
+		// Remove the first statement (ctx, span := trace.Span(...))
 		funcDecl.Body.List = funcDecl.Body.List[1:]
 		modified = true
 
@@ -138,7 +138,7 @@ func (r *Remover) removeTracingCode(funcDecl *ast.FuncDecl) bool {
 	return modified
 }
 
-// isStartSpanStatement checks if a statement is ctx, span := trace.StartSpan(...)
+// isStartSpanStatement checks if a statement is ctx, span := trace.Span(...)
 func (r *Remover) isStartSpanStatement(stmt ast.Stmt) bool {
 	assignStmt, ok := stmt.(*ast.AssignStmt)
 	if !ok {
@@ -156,7 +156,7 @@ func (r *Remover) isStartSpanStatement(stmt ast.Stmt) bool {
 		return false
 	}
 
-	// Check if right side is trace.StartSpan(...)
+	// Check if right side is trace.Span(...)
 	callExpr, ok := assignStmt.Rhs[0].(*ast.CallExpr)
 	if !ok {
 		return false
@@ -172,7 +172,7 @@ func (r *Remover) isStartSpanStatement(stmt ast.Stmt) bool {
 		return false
 	}
 
-	return ident.Name == "trace" && selector.Sel.Name == "StartSpan"
+	return ident.Name == "trace" && selector.Sel.Name == "Span"
 }
 
 // isDeferSpanEndStatement checks if a statement is defer span.End()

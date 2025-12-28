@@ -37,7 +37,7 @@ func NewContactListUseCase(
 }
 
 func (uc *ContactListUseCase) Execute(ctx context.Context) (ContactListOutput, error) {
-	ctx, span := trace.StartSpan(ctx, "ContactListUseCase.Execute")
+	ctx, span := trace.Span(ctx, "ContactListUseCase.Execute")
 	defer span.End()
 
 	output := ContactListOutput{}

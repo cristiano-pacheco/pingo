@@ -58,7 +58,7 @@ func (c *UserAuthenticatedConsumer) GroupID() string {
 }
 
 func (c *UserAuthenticatedConsumer) ProcessMessage(ctx context.Context, message kafka.Message) error {
-	ctx, span := trace.StartSpan(ctx, "AuthLoginUseCase.Execute")
+	ctx, span := trace.Span(ctx, "AuthLoginUseCase.Execute")
 	defer span.End()
 
 	var userAuthenticatedMessage event.UserAuthenticatedMessage

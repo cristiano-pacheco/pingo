@@ -54,7 +54,7 @@ func NewUserUpdateUseCase(
 }
 
 func (uc *UserUpdateUseCase) Execute(ctx context.Context, input UserUpdateInput) error {
-	ctx, span := trace.StartSpan(ctx, "UserUpdateUseCase.Execute")
+	ctx, span := trace.Span(ctx, "UserUpdateUseCase.Execute")
 	defer span.End()
 
 	err := uc.validate.Struct(input)

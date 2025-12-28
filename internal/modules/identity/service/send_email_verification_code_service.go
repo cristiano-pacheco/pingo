@@ -50,7 +50,7 @@ func (s *sendEmailVerificationCodeService) Execute(
 	ctx context.Context,
 	input SendEmailVerificationCodeInput,
 ) error {
-	ctx, span := trace.StartSpan(ctx, "SendEmailVerificationCodeService.Execute")
+	ctx, span := trace.Span(ctx, "SendEmailVerificationCodeService.Execute")
 	defer span.End()
 
 	user, err := s.userRepository.FindByID(ctx, input.UserID)

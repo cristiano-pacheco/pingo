@@ -51,7 +51,7 @@ func NewContactCreateUseCase(
 }
 
 func (uc *ContactCreateUseCase) Execute(ctx context.Context, input ContactCreateInput) (ContactCreateOutput, error) {
-	ctx, span := trace.StartSpan(ctx, "ContactCreateUseCase.Execute")
+	ctx, span := trace.Span(ctx, "ContactCreateUseCase.Execute")
 	defer span.End()
 
 	output := ContactCreateOutput{}

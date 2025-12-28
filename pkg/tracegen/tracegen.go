@@ -186,7 +186,7 @@ func (g *Generator) hasTracingCode(funcDecl *ast.FuncDecl) bool {
 		return false
 	}
 
-	// Check first statement for trace.StartSpan
+	// Check first statement for trace.Span
 	firstStmt := funcDecl.Body.List[0]
 	assignStmt, ok := firstStmt.(*ast.AssignStmt)
 	if !ok {
@@ -212,7 +212,7 @@ func (g *Generator) hasTracingCode(funcDecl *ast.FuncDecl) bool {
 		return false
 	}
 
-	return ident.Name == "trace" && selector.Sel.Name == "StartSpan"
+	return ident.Name == "trace" && selector.Sel.Name == "Span"
 }
 
 // injectTracingCode injects tracing code at the beginning of a function
@@ -228,7 +228,7 @@ func (g *Generator) injectTracingCode(funcDecl *ast.FuncDecl) bool {
 		fmt.Printf("Injecting trace into: %s\n", spanName)
 	}
 
-	// Create: ctx, span := trace.StartSpan(ctx, "SpanName")
+	// Create: ctx, span := trace.Span(ctx, "SpanName")
 	startSpanStmt := &ast.AssignStmt{
 		Lhs: []ast.Expr{
 			&ast.Ident{Name: "ctx"},
@@ -239,7 +239,7 @@ func (g *Generator) injectTracingCode(funcDecl *ast.FuncDecl) bool {
 			&ast.CallExpr{
 				Fun: &ast.SelectorExpr{
 					X:   &ast.Ident{Name: "trace"},
-					Sel: &ast.Ident{Name: "StartSpan"},
+					Sel: &ast.Ident{Name: "Span"},
 				},
 				Args: []ast.Expr{
 					&ast.Ident{Name: "ctx"},

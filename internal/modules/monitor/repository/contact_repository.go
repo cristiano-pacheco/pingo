@@ -28,7 +28,7 @@ func NewContactRepository(db *database.PingoDB) ContactRepository {
 }
 
 func (r *contactRepository) FindAll(ctx context.Context) ([]model.ContactModel, error) {
-	ctx, otelSpan := trace.StartSpan(ctx, "ContactRepository.FindAll")
+	ctx, otelSpan := trace.Span(ctx, "ContactRepository.FindAll")
 	defer otelSpan.End()
 
 	contacts, err := gorm.G[model.ContactModel](r.DB).Find(ctx)
@@ -39,7 +39,7 @@ func (r *contactRepository) FindAll(ctx context.Context) ([]model.ContactModel, 
 }
 
 func (r *contactRepository) FindByName(ctx context.Context, name string) (model.ContactModel, error) {
-	ctx, otelSpan := trace.StartSpan(ctx, "ContactRepository.FindByName")
+	ctx, otelSpan := trace.Span(ctx, "ContactRepository.FindByName")
 	defer otelSpan.End()
 
 	contact, err := gorm.G[model.ContactModel](r.DB).
@@ -55,7 +55,7 @@ func (r *contactRepository) FindByName(ctx context.Context, name string) (model.
 }
 
 func (r *contactRepository) Create(ctx context.Context, contact model.ContactModel) (model.ContactModel, error) {
-	ctx, otelSpan := trace.StartSpan(ctx, "ContactRepository.Create")
+	ctx, otelSpan := trace.Span(ctx, "ContactRepository.Create")
 	defer otelSpan.End()
 
 	err := gorm.G[model.ContactModel](r.DB).Create(ctx, &contact)
@@ -63,7 +63,7 @@ func (r *contactRepository) Create(ctx context.Context, contact model.ContactMod
 }
 
 func (r *contactRepository) Update(ctx context.Context, contact model.ContactModel) (model.ContactModel, error) {
-	ctx, otelSpan := trace.StartSpan(ctx, "ContactRepository.Update")
+	ctx, otelSpan := trace.Span(ctx, "ContactRepository.Update")
 	defer otelSpan.End()
 
 	_, err := gorm.G[model.ContactModel](r.DB).Updates(ctx, contact)
@@ -74,7 +74,7 @@ func (r *contactRepository) Update(ctx context.Context, contact model.ContactMod
 }
 
 func (r *contactRepository) Delete(ctx context.Context, contactID uint64) error {
-	ctx, otelSpan := trace.StartSpan(ctx, "ContactRepository.Delete")
+	ctx, otelSpan := trace.Span(ctx, "ContactRepository.Delete")
 	defer otelSpan.End()
 
 	rowsAffected, err := gorm.G[model.ContactModel](r.DB).

@@ -45,7 +45,7 @@ func NewSendEmailConfirmationService(
 }
 
 func (s *sendEmailConfirmationService) Execute(ctx context.Context, input SendEmailConfirmationInput) error {
-	ctx, span := trace.StartSpan(ctx, "SendEmailConfirmationService.Execute")
+	ctx, span := trace.Span(ctx, "SendEmailConfirmationService.Execute")
 	defer span.End()
 
 	confirmationToken := base64.StdEncoding.EncodeToString(input.ConfirmationTokenHash)
