@@ -12,7 +12,7 @@ import (
 	"gorm.io/gorm"
 )
 
-type UserRepository interface {
+type UserRepositoryI interface {
 	FindByID(ctx context.Context, userID uint64) (model.UserModel, error)
 	FindByEmail(ctx context.Context, email string) (model.UserModel, error)
 	Create(ctx context.Context, user model.UserModel) (model.UserModel, error)
@@ -20,15 +20,17 @@ type UserRepository interface {
 	IsUserActivated(ctx context.Context, userID uint64) (bool, error)
 }
 
-type userRepository struct {
+type UserRepository struct {
 	*database.PingoDB
 }
 
-func NewUserRepository(db *database.PingoDB) UserRepository {
-	return &userRepository{db}
+var _ UserRepositoryI = (*UserRepository)(nil)
+
+func NewUserRepository(db *database.PingoDB) *UserRepository {
+	return &UserRepository{db}
 }
 
-func (r *userRepository) FindByID(ctx context.Context, userID uint64) (model.UserModel, error) {
+func (r *UserRepository) FindByID(ctx context.Context, userID uint64) (model.UserModel, error) {
 	ctx, otelSpan := trace.Span(ctx, "UserRepository.FindByID")
 	defer otelSpan.End()
 
@@ -42,7 +44,7 @@ func (r *userRepository) FindByID(ctx context.Context, userID uint64) (model.Use
 	return user, nil
 }
 
-func (r *userRepository) FindByEmail(ctx context.Context, email string) (model.UserModel, error) {
+func (r *UserRepository) FindByEmail(ctx context.Context, email string) (model.UserModel, error) {
 	ctx, otelSpan := trace.Span(ctx, "UserRepository.FindByEmail")
 	defer otelSpan.End()
 
@@ -56,7 +58,7 @@ func (r *userRepository) FindByEmail(ctx context.Context, email string) (model.U
 	return user, nil
 }
 
-func (r *userRepository) Create(ctx context.Context, user model.UserModel) (model.UserModel, error) {
+func (r *UserRepository) Create(ctx context.Context, user model.UserModel) (model.UserModel, error) {
 	ctx, otelSpan := trace.Span(ctx, "UserRepository.Create")
 	defer otelSpan.End()
 
@@ -64,7 +66,7 @@ func (r *userRepository) Create(ctx context.Context, user model.UserModel) (mode
 	return user, err
 }
 
-func (r *userRepository) Update(ctx context.Context, user model.UserModel) error {
+func (r *UserRepository) Update(ctx context.Context, user model.UserModel) error {
 	ctx, otelSpan := trace.Span(ctx, "UserRepository.Update")
 	defer otelSpan.End()
 
@@ -80,7 +82,7 @@ func (r *userRepository) Update(ctx context.Context, user model.UserModel) error
 	return nil
 }
 
-func (r *userRepository) IsUserActivated(ctx context.Context, userID uint64) (bool, error) {
+func (r *UserRepository) IsUserActivated(ctx context.Context, userID uint64) (bool, error) {
 	ctx, otelSpan := trace.Span(ctx, "UserRepository.IsUserActivated")
 	defer otelSpan.End()
 

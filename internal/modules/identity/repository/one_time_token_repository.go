@@ -13,21 +13,23 @@ import (
 	"gorm.io/gorm"
 )
 
-type OneTimeTokenRepository interface {
+type OneTimeTokenRepositoryI interface {
 	Find(ctx context.Context, userID uint64, tokenTypeEnum enum.TokenTypeEnum) (model.OneTimeTokenModel, error)
 	Create(ctx context.Context, token model.OneTimeTokenModel) (model.OneTimeTokenModel, error)
 	Delete(ctx context.Context, userID uint64, tokenTypeEnum enum.TokenTypeEnum) error
 }
 
-type oneTimeTokenRepository struct {
+type OneTimeTokenRepository struct {
 	*database.PingoDB
 }
 
-func NewOneTimeTokenRepository(db *database.PingoDB) OneTimeTokenRepository {
-	return &oneTimeTokenRepository{db}
+var _ OneTimeTokenRepositoryI = (*OneTimeTokenRepository)(nil)
+
+func NewOneTimeTokenRepository(db *database.PingoDB) *OneTimeTokenRepository {
+	return &OneTimeTokenRepository{db}
 }
 
-func (r *oneTimeTokenRepository) Find(
+func (r *OneTimeTokenRepository) Find(
 	ctx context.Context,
 	userID uint64,
 	tokenTypeEnum enum.TokenTypeEnum,
@@ -52,7 +54,7 @@ func (r *oneTimeTokenRepository) Find(
 	return token, nil
 }
 
-func (r *oneTimeTokenRepository) Create(
+func (r *OneTimeTokenRepository) Create(
 	ctx context.Context,
 	token model.OneTimeTokenModel,
 ) (model.OneTimeTokenModel, error) {
@@ -63,7 +65,7 @@ func (r *oneTimeTokenRepository) Create(
 	return token, err
 }
 
-func (r *oneTimeTokenRepository) Delete(ctx context.Context, userID uint64, tokenTypeEnum enum.TokenTypeEnum) error {
+func (r *OneTimeTokenRepository) Delete(ctx context.Context, userID uint64, tokenTypeEnum enum.TokenTypeEnum) error {
 	ctx, otelSpan := trace.Span(ctx, "OneTimeTokenRepository.Delete")
 	defer otelSpan.End()
 

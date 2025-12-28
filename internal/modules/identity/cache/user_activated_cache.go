@@ -16,23 +16,25 @@ const (
 	cacheTTL       = 24 * time.Hour
 )
 
-type UserActivatedCache interface {
+type UserActivatedCacheI interface {
 	Set(userID uint64) error
 	Get(userID uint64) (bool, error)
 	Delete(userID uint64) error
 }
 
-type userActivatedCache struct {
+type UserActivatedCache struct {
 	redisClient redis.Redis
 }
 
-func NewUserActivatedCache(redisClient redis.Redis) UserActivatedCache {
-	return &userActivatedCache{
+var _ UserActivatedCacheI = (*UserActivatedCache)(nil)
+
+func NewUserActivatedCache(redisClient redis.Redis) *UserActivatedCache {
+	return &UserActivatedCache{
 		redisClient: redisClient,
 	}
 }
 
-func (c *userActivatedCache) Set(userID uint64) error {
+func (c *UserActivatedCache) Set(userID uint64) error {
 	key := c.buildKey(userID)
 	ctx := context.Background()
 
@@ -44,7 +46,7 @@ func (c *userActivatedCache) Set(userID uint64) error {
 	return client.Set(ctx, key, "1", cacheTTL).Err()
 }
 
-func (c *userActivatedCache) Get(userID uint64) (bool, error) {
+func (c *UserActivatedCache) Get(userID uint64) (bool, error) {
 	key := c.buildKey(userID)
 	ctx := context.Background()
 
@@ -64,7 +66,7 @@ func (c *userActivatedCache) Get(userID uint64) (bool, error) {
 	return true, nil
 }
 
-func (c *userActivatedCache) Delete(userID uint64) error {
+func (c *UserActivatedCache) Delete(userID uint64) error {
 	key := c.buildKey(userID)
 	ctx := context.Background()
 
@@ -76,6 +78,6 @@ func (c *userActivatedCache) Delete(userID uint64) error {
 	return client.Del(ctx, key).Err()
 }
 
-func (c *userActivatedCache) buildKey(userID uint64) string {
+func (c *UserActivatedCache) buildKey(userID uint64) string {
 	return fmt.Sprintf("%s%s", cacheKeyPrefix, strconv.FormatUint(userID, 10))
 }

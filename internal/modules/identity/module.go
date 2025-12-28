@@ -23,8 +23,14 @@ var Module = fx.Module(
 		handler.NewAuthHandler,
 		handler.NewUserHandler,
 
-		repository.NewUserRepository,
-		repository.NewOneTimeTokenRepository,
+		fx.Annotate(
+			repository.NewUserRepository,
+			fx.As(new(repository.UserRepositoryI)),
+		),
+		fx.Annotate(
+			repository.NewOneTimeTokenRepository,
+			fx.As(new(repository.OneTimeTokenRepositoryI)),
+		),
 
 		service.NewSendEmailConfirmationService,
 		service.NewSendEmailVerificationCodeService,
@@ -35,7 +41,10 @@ var Module = fx.Module(
 
 		validator.NewPasswordValidator,
 
-		cache.NewUserActivatedCache,
+		fx.Annotate(
+			cache.NewUserActivatedCache,
+			fx.As(new(cache.UserActivatedCacheI)),
+		),
 
 		usecase.NewUserActivateUseCase,
 		usecase.NewUserCreateUseCase,
