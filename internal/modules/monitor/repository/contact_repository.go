@@ -11,7 +11,7 @@ import (
 	"gorm.io/gorm"
 )
 
-type ContactRepository interface {
+type ContactRepositoryI interface {
 	FindAll(ctx context.Context) ([]model.ContactModel, error)
 	FindByName(ctx context.Context, name string) (model.ContactModel, error)
 	Create(ctx context.Context, contact model.ContactModel) (model.ContactModel, error)
@@ -19,15 +19,17 @@ type ContactRepository interface {
 	Delete(ctx context.Context, contactID uint64) error
 }
 
-type contactRepository struct {
+type ContactRepository struct {
 	*database.PingoDB
 }
 
-func NewContactRepository(db *database.PingoDB) ContactRepository {
-	return &contactRepository{db}
+var _ ContactRepositoryI = (*ContactRepository)(nil)
+
+func NewContactRepository(db *database.PingoDB) *ContactRepository {
+	return &ContactRepository{db}
 }
 
-func (r *contactRepository) FindAll(ctx context.Context) ([]model.ContactModel, error) {
+func (r *ContactRepository) FindAll(ctx context.Context) ([]model.ContactModel, error) {
 	ctx, otelSpan := trace.Span(ctx, "ContactRepository.FindAll")
 	defer otelSpan.End()
 
@@ -38,7 +40,7 @@ func (r *contactRepository) FindAll(ctx context.Context) ([]model.ContactModel, 
 	return contacts, nil
 }
 
-func (r *contactRepository) FindByName(ctx context.Context, name string) (model.ContactModel, error) {
+func (r *ContactRepository) FindByName(ctx context.Context, name string) (model.ContactModel, error) {
 	ctx, otelSpan := trace.Span(ctx, "ContactRepository.FindByName")
 	defer otelSpan.End()
 
@@ -54,7 +56,7 @@ func (r *contactRepository) FindByName(ctx context.Context, name string) (model.
 	return contact, nil
 }
 
-func (r *contactRepository) Create(ctx context.Context, contact model.ContactModel) (model.ContactModel, error) {
+func (r *ContactRepository) Create(ctx context.Context, contact model.ContactModel) (model.ContactModel, error) {
 	ctx, otelSpan := trace.Span(ctx, "ContactRepository.Create")
 	defer otelSpan.End()
 
@@ -62,7 +64,7 @@ func (r *contactRepository) Create(ctx context.Context, contact model.ContactMod
 	return contact, err
 }
 
-func (r *contactRepository) Update(ctx context.Context, contact model.ContactModel) (model.ContactModel, error) {
+func (r *ContactRepository) Update(ctx context.Context, contact model.ContactModel) (model.ContactModel, error) {
 	ctx, otelSpan := trace.Span(ctx, "ContactRepository.Update")
 	defer otelSpan.End()
 
@@ -73,7 +75,7 @@ func (r *contactRepository) Update(ctx context.Context, contact model.ContactMod
 	return contact, nil
 }
 
-func (r *contactRepository) Delete(ctx context.Context, contactID uint64) error {
+func (r *ContactRepository) Delete(ctx context.Context, contactID uint64) error {
 	ctx, otelSpan := trace.Span(ctx, "ContactRepository.Delete")
 	defer otelSpan.End()
 

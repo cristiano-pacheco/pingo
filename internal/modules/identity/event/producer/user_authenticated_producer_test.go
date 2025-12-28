@@ -25,7 +25,7 @@ func (m *mockLifecycle) Append(hook fx.Hook) {
 
 type UserAuthenticatedProducerTestSuite struct {
 	suite.Suite
-	sut          producer.UserAuthenticatedProducer
+	sut          *producer.UserAuthenticatedProducer
 	kafkaBuilder *kafka_mocks.MockBuilder
 	mockProducer *kafka_mocks.MockProducer
 	logger       logger.Logger

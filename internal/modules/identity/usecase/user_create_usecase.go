@@ -34,19 +34,19 @@ type UserCreateOutput struct {
 }
 
 type UserCreateUseCase struct {
-	passwordValidator   identity_validator.PasswordValidator
-	userCreatedProducer producer.UserCreatedProducer
-	userRepository      repository.UserRepository
-	hashService         service.HashService
+	passwordValidator   identity_validator.PasswordValidatorI
+	userCreatedProducer producer.UserCreatedProducerI
+	userRepository      repository.UserRepositoryI
+	hashService         service.HashServiceI
 	validate            validator.Validate
 	logger              logger.Logger
 }
 
 func NewUserCreateUseCase(
-	passwordValidator identity_validator.PasswordValidator,
-	hashService service.HashService,
-	userRepository repository.UserRepository,
-	userCreatedProducer producer.UserCreatedProducer,
+	passwordValidator identity_validator.PasswordValidatorI,
+	hashService service.HashServiceI,
+	userRepository repository.UserRepositoryI,
+	userCreatedProducer producer.UserCreatedProducerI,
 	validate validator.Validate,
 	logger logger.Logger,
 ) *UserCreateUseCase {

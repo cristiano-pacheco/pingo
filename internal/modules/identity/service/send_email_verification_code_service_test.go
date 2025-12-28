@@ -19,7 +19,7 @@ import (
 
 type SendEmailVerificationCodeServiceTestSuite struct {
 	suite.Suite
-	sut                  service.SendEmailVerificationCodeService
+	sut                  *service.SendEmailVerificationCodeService
 	emailTemplateService *email_template_service_mocks.MockEmailTemplateService
 	mailerSMTP           *mailer_mocks.MockSMTP
 	userRepository       *mocks.MockUserRepository

@@ -5,16 +5,18 @@ import (
 	"html/template"
 )
 
-type EmailTemplateService interface {
+type EmailTemplateServiceI interface {
 	CompileAccountConfirmationTemplate(input AccountConfirmationInput) (string, error)
 	CompileAuthVerificationCodeTemplate(name string, code string) (string, error)
 }
 
-type emailTemplateService struct {
+type EmailTemplateService struct {
 }
 
-func NewEmailTemplateService() EmailTemplateService {
-	return &emailTemplateService{}
+var _ EmailTemplateServiceI = (*EmailTemplateService)(nil)
+
+func NewEmailTemplateService() *EmailTemplateService {
+	return &EmailTemplateService{}
 }
 
 type AccountConfirmationInput struct {
@@ -22,7 +24,7 @@ type AccountConfirmationInput struct {
 	AccountConfirmationLink string
 }
 
-func (s *emailTemplateService) CompileAccountConfirmationTemplate(input AccountConfirmationInput) (string, error) {
+func (s *EmailTemplateService) CompileAccountConfirmationTemplate(input AccountConfirmationInput) (string, error) {
 	// Load templates
 	tmpl, err := template.New("layout_default.gohtml").
 		ParseFiles(
@@ -49,7 +51,7 @@ func (s *emailTemplateService) CompileAccountConfirmationTemplate(input AccountC
 	return buf.String(), nil
 }
 
-func (s *emailTemplateService) CompileAuthVerificationCodeTemplate(name string, code string) (string, error) {
+func (s *EmailTemplateService) CompileAuthVerificationCodeTemplate(name string, code string) (string, error) {
 	// Load templates
 	tmpl, err := template.New("layout_default.gohtml").
 		ParseFiles(

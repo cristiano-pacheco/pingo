@@ -8,18 +8,20 @@ import (
 	"github.com/cristiano-pacheco/pingo/internal/modules/monitor/errs"
 )
 
-type ContactValidator interface {
+type ContactValidatorI interface {
 	Validate(contactType, contactData string) error
 }
 
-type contactValidator struct {
+type ContactValidator struct {
 }
 
-func NewContactValidator() ContactValidator {
-	return &contactValidator{}
+var _ ContactValidatorI = (*ContactValidator)(nil)
+
+func NewContactValidator() *ContactValidator {
+	return &ContactValidator{}
 }
 
-func (v *contactValidator) Validate(contactType, contactData string) error {
+func (v *ContactValidator) Validate(contactType, contactData string) error {
 	switch contactType {
 	case enum.ContactTypeEmail:
 		return v.validateEmail(contactData)
@@ -29,7 +31,7 @@ func (v *contactValidator) Validate(contactType, contactData string) error {
 	return nil
 }
 
-func (v *contactValidator) validateEmail(contactData string) error {
+func (v *ContactValidator) validateEmail(contactData string) error {
 	_, err := mail.ParseAddress(contactData)
 	if err != nil {
 		return errs.ErrInvalidContactEmail
@@ -37,7 +39,7 @@ func (v *contactValidator) validateEmail(contactData string) error {
 	return nil
 }
 
-func (v *contactValidator) validateWebhook(contactData string) error {
+func (v *ContactValidator) validateWebhook(contactData string) error {
 	parsedURL, err := url.ParseRequestURI(contactData)
 	if err != nil || (parsedURL.Scheme != "http" && parsedURL.Scheme != "https") {
 		return errs.ErrInvalidContactWebhook

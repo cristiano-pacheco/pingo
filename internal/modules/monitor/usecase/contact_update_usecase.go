@@ -25,15 +25,15 @@ type ContactUpdateInput struct {
 }
 
 type ContactUpdateUseCase struct {
-	contactValidator  monitor_validator.ContactValidator
-	contactRepository repository.ContactRepository
+	contactValidator  monitor_validator.ContactValidatorI
+	contactRepository repository.ContactRepositoryI
 	validate          validator.Validate
 	logger            logger.Logger
 }
 
 func NewContactUpdateUseCase(
-	contactValidator monitor_validator.ContactValidator,
-	contactRepository repository.ContactRepository,
+	contactValidator monitor_validator.ContactValidatorI,
+	contactRepository repository.ContactRepositoryI,
 	validate validator.Validate,
 	logger logger.Logger,
 ) *ContactUpdateUseCase {

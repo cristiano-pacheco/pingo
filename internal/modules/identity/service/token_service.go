@@ -13,25 +13,27 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-type TokenService interface {
+type TokenServiceI interface {
 	GenerateJWT(ctx context.Context, user model.UserModel) (string, error)
 }
 
-type tokenService struct {
-	privateKeyRegistry registry.PrivateKeyRegistry
+type TokenService struct {
+	privateKeyRegistry registry.PrivateKeyRegistryI
 	conf               config.Config
 	logger             logger.Logger
 }
 
+var _ TokenServiceI = (*TokenService)(nil)
+
 func NewTokenService(
 	conf config.Config,
-	privateKeyRegistry registry.PrivateKeyRegistry,
+	privateKeyRegistry registry.PrivateKeyRegistryI,
 	logger logger.Logger,
-) TokenService {
-	return &tokenService{privateKeyRegistry, conf, logger}
+) *TokenService {
+	return &TokenService{privateKeyRegistry, conf, logger}
 }
 
-func (s *tokenService) GenerateJWT(ctx context.Context, user model.UserModel) (string, error) {
+func (s *TokenService) GenerateJWT(ctx context.Context, user model.UserModel) (string, error) {
 	_, span := trace.Span(ctx, "TokenService.GenerateJWT")
 	defer span.End()
 

@@ -19,7 +19,7 @@ import (
 
 type SendEmailConfirmationServiceTestSuite struct {
 	suite.Suite
-	sut                  service.SendEmailConfirmationService
+	sut                  *service.SendEmailConfirmationService
 	emailTemplateService *email_template_service_mocks.MockEmailTemplateService
 	mailerSMTP           *mailer_mocks.MockSMTP
 	logger               logger.Logger

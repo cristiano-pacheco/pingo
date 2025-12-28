@@ -17,15 +17,15 @@ import (
 )
 
 type AuthMiddleware struct {
-	privateKeyRegistry    registry.PrivateKeyRegistry
-	userActivationService service.UserActivationService
+	privateKeyRegistry    registry.PrivateKeyRegistryI
+	userActivationService service.UserActivationServiceI
 	jwtParser             *jwt.Parser
 	logger                logger.Logger
 }
 
 func NewAuthMiddleware(
-	privateKeyRegistry registry.PrivateKeyRegistry,
-	userActivationService service.UserActivationService,
+	privateKeyRegistry registry.PrivateKeyRegistryI,
+	userActivationService service.UserActivationServiceI,
 	jwtParser *jwt.Parser,
 	logger logger.Logger,
 ) *AuthMiddleware {

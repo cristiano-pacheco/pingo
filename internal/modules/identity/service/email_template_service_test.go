@@ -12,7 +12,7 @@ import (
 
 type EmailTemplateServiceTestSuite struct {
 	suite.Suite
-	sut              service.EmailTemplateService
+	sut              *service.EmailTemplateService
 	originalWorkDir  string
 	projectRootFound bool
 }

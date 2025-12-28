@@ -14,12 +14,27 @@ var Module = fx.Module(
 	fx.Provide(
 		handler.NewContactHandler,
 
-		repository.NewContactRepository,
-		repository.NewHTTPMonitorRepository,
-		repository.NewHTTPMonitorCheckRepository,
-		repository.NewNotificationRepository,
+		fx.Annotate(
+			repository.NewContactRepository,
+			fx.As(new(repository.ContactRepositoryI)),
+		),
+		fx.Annotate(
+			repository.NewHTTPMonitorRepository,
+			fx.As(new(repository.HTTPMonitorRepositoryI)),
+		),
+		fx.Annotate(
+			repository.NewHTTPMonitorCheckRepository,
+			fx.As(new(repository.HTTPMonitorCheckRepositoryI)),
+		),
+		fx.Annotate(
+			repository.NewNotificationRepository,
+			fx.As(new(repository.NotificationRepositoryI)),
+		),
 
-		validator.NewContactValidator,
+		fx.Annotate(
+			validator.NewContactValidator,
+			fx.As(new(validator.ContactValidatorI)),
+		),
 
 		usecase.NewContactCreateUseCase,
 		usecase.NewContactListUseCase,

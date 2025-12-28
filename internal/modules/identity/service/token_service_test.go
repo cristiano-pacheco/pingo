@@ -20,7 +20,7 @@ import (
 
 type TokenServiceTestSuite struct {
 	suite.Suite
-	sut                    service.TokenService
+	sut                    *service.TokenService
 	privateKeyRegistryMock *registry_mocks.MockPrivateKeyRegistry
 	logger                 logger.Logger
 	cfg                    config.Config

@@ -24,17 +24,17 @@ type UserActivateInput struct {
 }
 
 type UserActivateUseCase struct {
-	oneTimeTokenRepository repository.OneTimeTokenRepository
-	userRepository         repository.UserRepository
-	userActivatedCache     cache.UserActivatedCache
+	oneTimeTokenRepository repository.OneTimeTokenRepositoryI
+	userRepository         repository.UserRepositoryI
+	userActivatedCache     cache.UserActivatedCacheI
 	validate               validator.Validate
 	logger                 logger.Logger
 }
 
 func NewUserActivateUseCase(
-	oneTimeTokenRepository repository.OneTimeTokenRepository,
-	userRepository repository.UserRepository,
-	userActivatedCache cache.UserActivatedCache,
+	oneTimeTokenRepository repository.OneTimeTokenRepositoryI,
+	userRepository repository.UserRepositoryI,
+	userActivatedCache cache.UserActivatedCacheI,
 	validate validator.Validate,
 	logger logger.Logger,
 ) *UserActivateUseCase {

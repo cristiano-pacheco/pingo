@@ -30,18 +30,18 @@ type UserUpdateOutput struct {
 }
 
 type UserUpdateUseCase struct {
-	hashService       service.HashService
-	userRepository    repository.UserRepository
+	hashService       service.HashServiceI
+	userRepository    repository.UserRepositoryI
 	validate          validator.Validate
-	passwordValidator identity_validator.PasswordValidator
+	passwordValidator identity_validator.PasswordValidatorI
 	logger            logger.Logger
 }
 
 func NewUserUpdateUseCase(
-	hashService service.HashService,
-	userRepo repository.UserRepository,
+	hashService service.HashServiceI,
+	userRepo repository.UserRepositoryI,
 	validate validator.Validate,
-	passwordValidator identity_validator.PasswordValidator,
+	passwordValidator identity_validator.PasswordValidatorI,
 	logger logger.Logger,
 ) *UserUpdateUseCase {
 	return &UserUpdateUseCase{

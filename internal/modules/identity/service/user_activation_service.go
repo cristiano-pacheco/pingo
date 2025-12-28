@@ -11,29 +11,31 @@ import (
 	"github.com/cristiano-pacheco/pingo/internal/shared/modules/logger"
 )
 
-type UserActivationService interface {
+type UserActivationServiceI interface {
 	IsUserActivated(ctx context.Context, userID uint64) (bool, error)
 }
 
-type userActivationService struct {
-	userActivatedCache cache.UserActivatedCache
-	userRepository     repository.UserRepository
+type UserActivationService struct {
+	userActivatedCache cache.UserActivatedCacheI
+	userRepository     repository.UserRepositoryI
 	logger             logger.Logger
 }
 
+var _ UserActivationServiceI = (*UserActivationService)(nil)
+
 func NewUserActivationService(
-	userActivatedCache cache.UserActivatedCache,
-	userRepository repository.UserRepository,
+	userActivatedCache cache.UserActivatedCacheI,
+	userRepository repository.UserRepositoryI,
 	logger logger.Logger,
-) UserActivationService {
-	return &userActivationService{
+) *UserActivationService {
+	return &UserActivationService{
 		userActivatedCache: userActivatedCache,
 		userRepository:     userRepository,
 		logger:             logger,
 	}
 }
 
-func (s *userActivationService) IsUserActivated(ctx context.Context, userID uint64) (bool, error) {
+func (s *UserActivationService) IsUserActivated(ctx context.Context, userID uint64) (bool, error) {
 	// Try cache first for fast lookup
 	isActivated, err := s.userActivatedCache.Get(userID)
 	if err != nil {

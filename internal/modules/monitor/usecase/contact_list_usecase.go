@@ -22,12 +22,12 @@ type ContactListItem struct {
 }
 
 type ContactListUseCase struct {
-	contactRepository repository.ContactRepository
+	contactRepository repository.ContactRepositoryI
 	logger            logger.Logger
 }
 
 func NewContactListUseCase(
-	contactRepository repository.ContactRepository,
+	contactRepository repository.ContactRepositoryI,
 	logger logger.Logger,
 ) *ContactListUseCase {
 	return &ContactListUseCase{

@@ -19,18 +19,18 @@ import (
 const accountConfirmationTokenExpiration = 24 * time.Hour
 
 type UserCreatedConsumer struct {
-	sendEmailConfirmationService service.SendEmailConfirmationService
-	oneTimeTokenRepository       repository.OneTimeTokenRepository
-	userRepository               repository.UserRepository
-	hashService                  service.HashService
+	sendEmailConfirmationService service.SendEmailConfirmationServiceI
+	oneTimeTokenRepository       repository.OneTimeTokenRepositoryI
+	userRepository               repository.UserRepositoryI
+	hashService                  service.HashServiceI
 	logger                       logger.Logger
 }
 
 func NewUserCreatedConsumer(
-	sendEmailConfirmationService service.SendEmailConfirmationService,
-	oneTimeTokenRepository repository.OneTimeTokenRepository,
-	userRepository repository.UserRepository,
-	hashService service.HashService,
+	sendEmailConfirmationService service.SendEmailConfirmationServiceI,
+	oneTimeTokenRepository repository.OneTimeTokenRepositoryI,
+	userRepository repository.UserRepositoryI,
+	hashService service.HashServiceI,
 	logger logger.Logger,
 ) *UserCreatedConsumer {
 	return &UserCreatedConsumer{

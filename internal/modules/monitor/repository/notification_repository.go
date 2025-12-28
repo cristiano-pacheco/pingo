@@ -11,22 +11,24 @@ import (
 	"gorm.io/gorm"
 )
 
-type NotificationRepository interface {
+type NotificationRepositoryI interface {
 	FindByID(ctx context.Context, notificationID uint64) (model.NotificationModel, error)
 	FindByMonitorID(ctx context.Context, monitorID uint64) ([]model.NotificationModel, error)
 	Create(ctx context.Context, notification model.NotificationModel) (model.NotificationModel, error)
 	Update(ctx context.Context, notification model.NotificationModel) (model.NotificationModel, error)
 }
 
-type notificationRepository struct {
+type NotificationRepository struct {
 	*database.PingoDB
 }
 
-func NewNotificationRepository(db *database.PingoDB) NotificationRepository {
-	return &notificationRepository{db}
+var _ NotificationRepositoryI = (*NotificationRepository)(nil)
+
+func NewNotificationRepository(db *database.PingoDB) *NotificationRepository {
+	return &NotificationRepository{db}
 }
 
-func (r *notificationRepository) FindByID(ctx context.Context, notificationID uint64) (model.NotificationModel, error) {
+func (r *NotificationRepository) FindByID(ctx context.Context, notificationID uint64) (model.NotificationModel, error) {
 	ctx, otelSpan := trace.Span(ctx, "NotificationRepository.FindByID")
 	defer otelSpan.End()
 
@@ -44,7 +46,7 @@ func (r *notificationRepository) FindByID(ctx context.Context, notificationID ui
 	return notification, nil
 }
 
-func (r *notificationRepository) FindByMonitorID(
+func (r *NotificationRepository) FindByMonitorID(
 	ctx context.Context,
 	monitorID uint64,
 ) ([]model.NotificationModel, error) {
@@ -62,7 +64,7 @@ func (r *notificationRepository) FindByMonitorID(
 	return notifications, nil
 }
 
-func (r *notificationRepository) Create(
+func (r *NotificationRepository) Create(
 	ctx context.Context,
 	notification model.NotificationModel,
 ) (model.NotificationModel, error) {
@@ -73,7 +75,7 @@ func (r *notificationRepository) Create(
 	return notification, err
 }
 
-func (r *notificationRepository) Update(
+func (r *NotificationRepository) Update(
 	ctx context.Context,
 	notification model.NotificationModel,
 ) (model.NotificationModel, error) {

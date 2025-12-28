@@ -18,7 +18,7 @@ import (
 
 type UserCreatedProducerTestSuite struct {
 	suite.Suite
-	sut          producer.UserCreatedProducer
+	sut          *producer.UserCreatedProducer
 	producerMock *kafka_mocks.MockProducer
 	builderMock  *kafka_mocks.MockBuilder
 	logger       logger.Logger

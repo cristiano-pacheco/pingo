@@ -13,26 +13,28 @@ import (
 
 const emailVerificationCodeSubject = "Verification Code"
 
-type SendEmailVerificationCodeService interface {
+type SendEmailVerificationCodeServiceI interface {
 	Execute(ctx context.Context, input SendEmailVerificationCodeInput) error
 }
 
-type sendEmailVerificationCodeService struct {
-	emailTemplateService EmailTemplateService
+type SendEmailVerificationCodeService struct {
+	emailTemplateService EmailTemplateServiceI
 	mailerSMTP           mailer.SMTP
-	userRepository       repository.UserRepository
+	userRepository       repository.UserRepositoryI
 	logger               logger.Logger
 	cfg                  config.Config
 }
 
+var _ SendEmailVerificationCodeServiceI = (*SendEmailVerificationCodeService)(nil)
+
 func NewSendEmailVerificationCodeService(
-	emailTemplateService EmailTemplateService,
+	emailTemplateService EmailTemplateServiceI,
 	mailerSMTP mailer.SMTP,
-	userRepository repository.UserRepository,
+	userRepository repository.UserRepositoryI,
 	logger logger.Logger,
 	cfg config.Config,
-) SendEmailVerificationCodeService {
-	return &sendEmailVerificationCodeService{
+) *SendEmailVerificationCodeService {
+	return &SendEmailVerificationCodeService{
 		emailTemplateService,
 		mailerSMTP,
 		userRepository,
@@ -46,7 +48,7 @@ type SendEmailVerificationCodeInput struct {
 	Code   string
 }
 
-func (s *sendEmailVerificationCodeService) Execute(
+func (s *SendEmailVerificationCodeService) Execute(
 	ctx context.Context,
 	input SendEmailVerificationCodeInput,
 ) error {

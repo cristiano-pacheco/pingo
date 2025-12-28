@@ -30,15 +30,15 @@ type ContactCreateOutput struct {
 }
 
 type ContactCreateUseCase struct {
-	contactValidator  monitor_validator.ContactValidator
-	contactRepository repository.ContactRepository
+	contactValidator  monitor_validator.ContactValidatorI
+	contactRepository repository.ContactRepositoryI
 	validate          validator.Validate
 	logger            logger.Logger
 }
 
 func NewContactCreateUseCase(
-	contactValidator monitor_validator.ContactValidator,
-	contactRepository repository.ContactRepository,
+	contactValidator monitor_validator.ContactValidatorI,
+	contactRepository repository.ContactRepositoryI,
 	validate validator.Validate,
 	logger logger.Logger,
 ) *ContactCreateUseCase {

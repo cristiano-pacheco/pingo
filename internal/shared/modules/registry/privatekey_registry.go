@@ -15,25 +15,27 @@ var (
 	ErrNotRSAPrivateKey    = errors.New("key is not a valid RSA private key")
 )
 
-type PrivateKeyRegistry interface {
+type PrivateKeyRegistryI interface {
 	Get() *rsa.PrivateKey
 }
 
-type registry struct {
+type PrivateKeyRegistry struct {
 	pk *rsa.PrivateKey
 }
 
-func NewPrivateKeyRegistry(conf config.Config) PrivateKeyRegistry {
-	r := registry{}
+var _ PrivateKeyRegistryI = (*PrivateKeyRegistry)(nil)
+
+func NewPrivateKeyRegistry(conf config.Config) *PrivateKeyRegistry {
+	r := PrivateKeyRegistry{}
 	r.process(conf)
 	return &r
 }
 
-func (r *registry) Get() *rsa.PrivateKey {
+func (r *PrivateKeyRegistry) Get() *rsa.PrivateKey {
 	return r.pk
 }
 
-func (r *registry) process(conf config.Config) {
+func (r *PrivateKeyRegistry) process(conf config.Config) {
 	pkString, err := base64.StdEncoding.DecodeString(conf.JWT.PrivateKey)
 	if err != nil {
 		panic(err)

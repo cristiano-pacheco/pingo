@@ -7,6 +7,9 @@ import (
 var Module = fx.Module(
 	"kernel/registry",
 	fx.Provide(
-		NewPrivateKeyRegistry,
+		fx.Annotate(
+			NewPrivateKeyRegistry,
+			fx.As(new(PrivateKeyRegistryI)),
+		),
 	),
 )

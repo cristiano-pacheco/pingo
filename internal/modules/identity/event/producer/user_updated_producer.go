@@ -11,19 +11,21 @@ import (
 	"go.uber.org/fx"
 )
 
-type UserUpdatedProducer interface {
+type UserUpdatedProducerI interface {
 	Produce(ctx context.Context, message event.UserUpdatedMessage) error
 }
 
-type userUpdatedProducer struct {
+type UserUpdatedProducer struct {
 	producer kafka.Producer
 }
+
+var _ UserUpdatedProducerI = (*UserUpdatedProducer)(nil)
 
 func NewUserUpdatedProducer(lc fx.Lifecycle,
 	logger logger.Logger,
 	kafkaBuilder kafka.Builder,
-) UserUpdatedProducer {
-	p := userUpdatedProducer{
+) *UserUpdatedProducer {
+	p := UserUpdatedProducer{
 		producer: kafkaBuilder.BuildProducer(event.IdentityUserUpdatedTopic),
 	}
 
@@ -41,7 +43,7 @@ func NewUserUpdatedProducer(lc fx.Lifecycle,
 	return &p
 }
 
-func (p *userUpdatedProducer) Produce(ctx context.Context, message event.UserUpdatedMessage) error {
+func (p *UserUpdatedProducer) Produce(ctx context.Context, message event.UserUpdatedMessage) error {
 	ctx, span := trace.Span(ctx, "UserCreatedProducer.Produce")
 	defer span.End()
 

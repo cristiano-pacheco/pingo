@@ -15,13 +15,13 @@ type ContactDeleteInput struct {
 }
 
 type ContactDeleteUseCase struct {
-	contactRepository repository.ContactRepository
+	contactRepository repository.ContactRepositoryI
 	validate          validator.Validate
 	logger            logger.Logger
 }
 
 func NewContactDeleteUseCase(
-	contactRepository repository.ContactRepository,
+	contactRepository repository.ContactRepositoryI,
 	validate validator.Validate,
 	logger logger.Logger,
 ) *ContactDeleteUseCase {

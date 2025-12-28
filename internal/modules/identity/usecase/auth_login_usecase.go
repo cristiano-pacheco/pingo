@@ -27,18 +27,18 @@ type AuthLoginOutput struct {
 }
 
 type AuthLoginUseCase struct {
-	userAuthenticatedProducer producer.UserAuthenticatedProducer
-	userRepository            repository.UserRepository
-	hashService               service.HashService
+	userAuthenticatedProducer producer.UserAuthenticatedProducerI
+	userRepository            repository.UserRepositoryI
+	hashService               service.HashServiceI
 	validator                 validator.Validate
 	logger                    logger.Logger
 }
 
 func NewAuthLoginUseCase(
-	userAuthenticatedProducer producer.UserAuthenticatedProducer,
-	userRepository repository.UserRepository,
+	userAuthenticatedProducer producer.UserAuthenticatedProducerI,
+	userRepository repository.UserRepositoryI,
 	validator validator.Validate,
-	hashService service.HashService,
+	hashService service.HashServiceI,
 	logger logger.Logger,
 ) *AuthLoginUseCase {
 	return &AuthLoginUseCase{

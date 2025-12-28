@@ -15,19 +15,19 @@ import (
 )
 
 type AuthGenerateTokenUseCase struct {
-	oneTimeTokenRepository repository.OneTimeTokenRepository
-	userRepository         repository.UserRepository
-	tokenService           service.TokenService
-	hashService            service.HashService
+	oneTimeTokenRepository repository.OneTimeTokenRepositoryI
+	userRepository         repository.UserRepositoryI
+	tokenService           service.TokenServiceI
+	hashService            service.HashServiceI
 	validator              validator.Validate
 	logger                 logger.Logger
 }
 
 func NewAuthGenerateTokenUseCase(
-	oneTimeTokenRepository repository.OneTimeTokenRepository,
-	userRepository repository.UserRepository,
-	tokenService service.TokenService,
-	hashService service.HashService,
+	oneTimeTokenRepository repository.OneTimeTokenRepositoryI,
+	userRepository repository.UserRepositoryI,
+	tokenService service.TokenServiceI,
+	hashService service.HashServiceI,
 	validator validator.Validate,
 	logger logger.Logger,
 ) *AuthGenerateTokenUseCase {

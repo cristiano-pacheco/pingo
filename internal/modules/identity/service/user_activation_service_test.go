@@ -20,7 +20,7 @@ type UserActivationServiceTestSuite struct {
 	mockUserActivatedCache *cache_mocks.MockUserActivatedCache
 	mockUserRepository     *repository_mocks.MockUserRepository
 	mockLogger             *mocks.MockLogger
-	sut                    service.UserActivationService
+	sut                    *service.UserActivationService
 }
 
 func (s *UserActivationServiceTestSuite) SetupTest() {

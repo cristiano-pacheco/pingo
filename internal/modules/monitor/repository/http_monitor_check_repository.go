@@ -12,7 +12,7 @@ import (
 	"gorm.io/gorm"
 )
 
-type HTTPMonitorCheckRepository interface {
+type HTTPMonitorCheckRepositoryI interface {
 	FindByID(ctx context.Context, checkID uint64) (model.HTTPMonitorCheckModel, error)
 	FindAll(
 		ctx context.Context,
@@ -23,15 +23,17 @@ type HTTPMonitorCheckRepository interface {
 	Create(ctx context.Context, check model.HTTPMonitorCheckModel) (model.HTTPMonitorCheckModel, error)
 }
 
-type httpMonitorCheckRepository struct {
+type HTTPMonitorCheckRepository struct {
 	*database.PingoDB
 }
 
-func NewHTTPMonitorCheckRepository(db *database.PingoDB) HTTPMonitorCheckRepository {
-	return &httpMonitorCheckRepository{db}
+var _ HTTPMonitorCheckRepositoryI = (*HTTPMonitorCheckRepository)(nil)
+
+func NewHTTPMonitorCheckRepository(db *database.PingoDB) *HTTPMonitorCheckRepository {
+	return &HTTPMonitorCheckRepository{db}
 }
 
-func (r *httpMonitorCheckRepository) FindByID(
+func (r *HTTPMonitorCheckRepository) FindByID(
 	ctx context.Context,
 	checkID uint64,
 ) (model.HTTPMonitorCheckModel, error) {
@@ -52,7 +54,7 @@ func (r *httpMonitorCheckRepository) FindByID(
 	return check, nil
 }
 
-func (r *httpMonitorCheckRepository) FindAll(
+func (r *HTTPMonitorCheckRepository) FindAll(
 	ctx context.Context,
 	monitorID uint64,
 	from, to *time.Time,
@@ -108,7 +110,7 @@ func (r *httpMonitorCheckRepository) FindAll(
 	return checks, total, nil
 }
 
-func (r *httpMonitorCheckRepository) Create(
+func (r *HTTPMonitorCheckRepository) Create(
 	ctx context.Context,
 	check model.HTTPMonitorCheckModel,
 ) (model.HTTPMonitorCheckModel, error) {

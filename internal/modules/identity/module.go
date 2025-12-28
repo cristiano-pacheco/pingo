@@ -32,14 +32,35 @@ var Module = fx.Module(
 			fx.As(new(repository.OneTimeTokenRepositoryI)),
 		),
 
-		service.NewSendEmailConfirmationService,
-		service.NewSendEmailVerificationCodeService,
-		service.NewEmailTemplateService,
-		service.NewTokenService,
-		service.NewHashService,
-		service.NewUserActivationService,
+		fx.Annotate(
+			service.NewSendEmailConfirmationService,
+			fx.As(new(service.SendEmailConfirmationServiceI)),
+		),
+		fx.Annotate(
+			service.NewSendEmailVerificationCodeService,
+			fx.As(new(service.SendEmailVerificationCodeServiceI)),
+		),
+		fx.Annotate(
+			service.NewEmailTemplateService,
+			fx.As(new(service.EmailTemplateServiceI)),
+		),
+		fx.Annotate(
+			service.NewTokenService,
+			fx.As(new(service.TokenServiceI)),
+		),
+		fx.Annotate(
+			service.NewHashService,
+			fx.As(new(service.HashServiceI)),
+		),
+		fx.Annotate(
+			service.NewUserActivationService,
+			fx.As(new(service.UserActivationServiceI)),
+		),
 
-		validator.NewPasswordValidator,
+		fx.Annotate(
+			validator.NewPasswordValidator,
+			fx.As(new(validator.PasswordValidatorI)),
+		),
 
 		fx.Annotate(
 			cache.NewUserActivatedCache,
@@ -54,9 +75,18 @@ var Module = fx.Module(
 
 		middleware.NewAuthMiddleware,
 
-		producer.NewUserAuthenticatedProducer,
-		producer.NewUserCreatedProducer,
-		producer.NewUserUpdatedProducer,
+		fx.Annotate(
+			producer.NewUserAuthenticatedProducer,
+			fx.As(new(producer.UserAuthenticatedProducerI)),
+		),
+		fx.Annotate(
+			producer.NewUserCreatedProducer,
+			fx.As(new(producer.UserCreatedProducerI)),
+		),
+		fx.Annotate(
+			producer.NewUserUpdatedProducer,
+			fx.As(new(producer.UserUpdatedProducerI)),
+		),
 
 		consumer.NewUserCreatedConsumer,
 		consumer.NewUserAuthenticatedConsumer,

@@ -11,20 +11,22 @@ import (
 	"go.uber.org/fx"
 )
 
-type UserAuthenticatedProducer interface {
+type UserAuthenticatedProducerI interface {
 	Produce(ctx context.Context, message event.UserAuthenticatedMessage) error
 }
 
-type userAuthenticatedProducer struct {
+type UserAuthenticatedProducer struct {
 	producer kafka.Producer
 }
+
+var _ UserAuthenticatedProducerI = (*UserAuthenticatedProducer)(nil)
 
 func NewUserAuthenticatedProducer(
 	lc fx.Lifecycle,
 	kafkaFacade kafka.Builder,
 	logger logger.Logger,
-) UserAuthenticatedProducer {
-	p := userAuthenticatedProducer{
+) *UserAuthenticatedProducer {
+	p := UserAuthenticatedProducer{
 		producer: kafkaFacade.BuildProducer(event.IdentityUserAuthenticatedTopic),
 	}
 
@@ -42,7 +44,7 @@ func NewUserAuthenticatedProducer(
 	return &p
 }
 
-func (p *userAuthenticatedProducer) Produce(ctx context.Context, message event.UserAuthenticatedMessage) error {
+func (p *UserAuthenticatedProducer) Produce(ctx context.Context, message event.UserAuthenticatedMessage) error {
 	ctx, span := trace.Span(ctx, "UserAuthenticatedProducer.Produce")
 	defer span.End()
 

@@ -11,7 +11,7 @@ import (
 	"gorm.io/gorm"
 )
 
-type HTTPMonitorRepository interface {
+type HTTPMonitorRepositoryI interface {
 	FindAll(ctx context.Context, page, pageSize int) ([]model.HTTPMonitorModel, int64, error)
 	FindByID(ctx context.Context, monitorID uint64) (model.HTTPMonitorModel, error)
 	Create(ctx context.Context, monitor model.HTTPMonitorModel) (model.HTTPMonitorModel, error)
@@ -20,15 +20,17 @@ type HTTPMonitorRepository interface {
 	AssignContacts(ctx context.Context, monitorID uint64, contactIDs []uint64) error
 }
 
-type httpMonitorRepository struct {
+type HTTPMonitorRepository struct {
 	*database.PingoDB
 }
 
-func NewHTTPMonitorRepository(db *database.PingoDB) HTTPMonitorRepository {
-	return &httpMonitorRepository{db}
+var _ HTTPMonitorRepositoryI = (*HTTPMonitorRepository)(nil)
+
+func NewHTTPMonitorRepository(db *database.PingoDB) *HTTPMonitorRepository {
+	return &HTTPMonitorRepository{db}
 }
 
-func (r *httpMonitorRepository) FindAll(
+func (r *HTTPMonitorRepository) FindAll(
 	ctx context.Context,
 	page, pageSize int,
 ) ([]model.HTTPMonitorModel, int64, error) {
@@ -56,7 +58,7 @@ func (r *httpMonitorRepository) FindAll(
 	return monitors, total, nil
 }
 
-func (r *httpMonitorRepository) FindByID(ctx context.Context, monitorID uint64) (model.HTTPMonitorModel, error) {
+func (r *HTTPMonitorRepository) FindByID(ctx context.Context, monitorID uint64) (model.HTTPMonitorModel, error) {
 	ctx, otelSpan := trace.Span(ctx, "HTTPMonitorRepository.FindByID")
 	defer otelSpan.End()
 
@@ -74,7 +76,7 @@ func (r *httpMonitorRepository) FindByID(ctx context.Context, monitorID uint64) 
 	return monitor, nil
 }
 
-func (r *httpMonitorRepository) Create(
+func (r *HTTPMonitorRepository) Create(
 	ctx context.Context,
 	monitor model.HTTPMonitorModel,
 ) (model.HTTPMonitorModel, error) {
@@ -85,7 +87,7 @@ func (r *httpMonitorRepository) Create(
 	return monitor, err
 }
 
-func (r *httpMonitorRepository) Update(
+func (r *HTTPMonitorRepository) Update(
 	ctx context.Context,
 	monitor model.HTTPMonitorModel,
 ) (model.HTTPMonitorModel, error) {
@@ -99,7 +101,7 @@ func (r *httpMonitorRepository) Update(
 	return monitor, nil
 }
 
-func (r *httpMonitorRepository) Delete(ctx context.Context, monitorID uint64) error {
+func (r *HTTPMonitorRepository) Delete(ctx context.Context, monitorID uint64) error {
 	ctx, otelSpan := trace.Span(ctx, "HTTPMonitorRepository.Delete")
 	defer otelSpan.End()
 
@@ -115,7 +117,7 @@ func (r *httpMonitorRepository) Delete(ctx context.Context, monitorID uint64) er
 	return nil
 }
 
-func (r *httpMonitorRepository) AssignContacts(ctx context.Context, monitorID uint64, contactIDs []uint64) error {
+func (r *HTTPMonitorRepository) AssignContacts(ctx context.Context, monitorID uint64, contactIDs []uint64) error {
 	ctx, otelSpan := trace.Span(ctx, "HTTPMonitorRepository.AssignContacts")
 	defer otelSpan.End()
 

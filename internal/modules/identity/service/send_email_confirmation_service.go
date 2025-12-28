@@ -19,24 +19,26 @@ type SendEmailConfirmationInput struct {
 	ConfirmationTokenHash []byte
 }
 
-type SendEmailConfirmationService interface {
+type SendEmailConfirmationServiceI interface {
 	Execute(ctx context.Context, input SendEmailConfirmationInput) error
 }
 
-type sendEmailConfirmationService struct {
-	emailTemplateService EmailTemplateService
+type SendEmailConfirmationService struct {
+	emailTemplateService EmailTemplateServiceI
 	mailerSMTP           mailer.SMTP
 	logger               logger.Logger
 	cfg                  config.Config
 }
 
+var _ SendEmailConfirmationServiceI = (*SendEmailConfirmationService)(nil)
+
 func NewSendEmailConfirmationService(
-	emailTemplateService EmailTemplateService,
+	emailTemplateService EmailTemplateServiceI,
 	mailerSMTP mailer.SMTP,
 	logger logger.Logger,
 	cfg config.Config,
-) SendEmailConfirmationService {
-	return &sendEmailConfirmationService{
+) *SendEmailConfirmationService {
+	return &SendEmailConfirmationService{
 		emailTemplateService,
 		mailerSMTP,
 		logger,
@@ -44,7 +46,7 @@ func NewSendEmailConfirmationService(
 	}
 }
 
-func (s *sendEmailConfirmationService) Execute(ctx context.Context, input SendEmailConfirmationInput) error {
+func (s *SendEmailConfirmationService) Execute(ctx context.Context, input SendEmailConfirmationInput) error {
 	ctx, span := trace.Span(ctx, "SendEmailConfirmationService.Execute")
 	defer span.End()
 

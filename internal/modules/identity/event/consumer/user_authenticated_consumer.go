@@ -26,18 +26,18 @@ const (
 )
 
 type UserAuthenticatedConsumer struct {
-	sendEmailVerificationCodeService service.SendEmailVerificationCodeService
-	oneTimeTokenRepository           repository.OneTimeTokenRepository
-	userRepository                   repository.UserRepository
-	hashService                      service.HashService
+	sendEmailVerificationCodeService service.SendEmailVerificationCodeServiceI
+	oneTimeTokenRepository           repository.OneTimeTokenRepositoryI
+	userRepository                   repository.UserRepositoryI
+	hashService                      service.HashServiceI
 	logger                           logger.Logger
 }
 
 func NewUserAuthenticatedConsumer(
-	sendEmailVerificationCodeService service.SendEmailVerificationCodeService,
-	oneTimeTokenRepository repository.OneTimeTokenRepository,
-	userRepository repository.UserRepository,
-	hashService service.HashService,
+	sendEmailVerificationCodeService service.SendEmailVerificationCodeServiceI,
+	oneTimeTokenRepository repository.OneTimeTokenRepositoryI,
+	userRepository repository.UserRepositoryI,
+	hashService service.HashServiceI,
 	logger logger.Logger,
 ) *UserAuthenticatedConsumer {
 	return &UserAuthenticatedConsumer{
